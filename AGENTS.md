@@ -180,7 +180,8 @@ and tools that touch Rime use scratch user dirs, never the live one.
 | Task | Command |
 |---|---|
 | Test / vet / format | `go test ./...` · `go vet ./...` · `gofmt -l .` |
-| All CI gates locally | `scripts/ci.sh go\|macos\|fuzz` (`SHIXIN_PERF_TOLERANCE` scales latency budgets) |
+| All CI gates locally | `scripts/ci.sh go\|macos\|asan\|asan-full\|fuzz` (`SHIXIN_PERF_TOLERANCE` scales latency budgets) |
+| librime and the engine under ASan/UBSan: per push without the long rime-ice runs, or every engine test | `scripts/ci.sh asan` · `scripts/ci.sh asan-full` |
 | Engine + client tests incl. real rime-ice deploy (slow) | `go test ./internal/...` (`-short` skips the rime-ice deploy and replay) |
 | Tests against our librime (以词定字 etc.) | `SHIXIN_LIBRIME=… go test ./internal/engine` |
 | C++ tests of librime-shixin only (after a build) | `build/librime/out/plugins/shixin/shixin_test` |
@@ -342,8 +343,9 @@ shared into the guest read-only.
 ## Git
 
 - Repository: `github.com/shixin-labs/shixin-input`. CI
-  (`.github/workflows/ci.yml`) runs `scripts/ci.sh` on every push, on
-  ubuntu-24.04 and macos-15. librime comes from the
+  (`.github/workflows/ci.yml`) runs `scripts/ci.sh` on every push and pull
+  request: `go` and `fuzz` on ubuntu-24.04, and `macos` and `asan` as two
+  parallel macos-15 jobs. `asan-full` runs weekly and on manual dispatch. librime comes from the
   `github.com/shixin-labs/librime` fork; patches to librime go on a branch
   there, and the submodule pins it.
 - Small, focused commits with imperative subjects, prefixed with the area

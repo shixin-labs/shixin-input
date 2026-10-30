@@ -2,6 +2,9 @@ name: ci
 on:
   push:
   pull_request:
+  schedule:
+    - cron: "0 3 * * 1" # Mondays: every engine test under ASan (asan-full)
+  workflow_dispatch:
 
 jobs:
   linux:
@@ -28,6 +31,11 @@ jobs:
         with:
           go-version-file: go.mod
       - run: brew install cmake ninja
+      - id: keys
+        name: cache keys
+        run: |
+          echo "llama=$(git rev-parse HEAD:third_party/llama.cpp)" >>"$GITHUB_OUTPUT"
+          echo "week=$(date -u +%G-%V)" >>"$GITHUB_OUTPUT"
       - name: cache librime dependencies and Boost
         uses: actions/cache@v6
         with:
@@ -38,4 +46,46 @@ jobs:
             build/librime/src/deps/boost-*
           key: librime-deps-${{ runner.os }}-${{ hashFiles('.gitmodules', 'scripts/build-librime.sh') }}-${{ github.sha }}
           restore-keys: librime-deps-${{ runner.os }}-${{ hashFiles('.gitmodules', 'scripts/build-librime.sh') }}-
+      # build-llama.sh skips the build when the stamp matches the pinned commit.
+      - name: cache llama.cpp
+        uses: actions/cache@v6
+        with:
+          path: build/llama/lib
+          key: llama-${{ runner.os }}-${{ steps.keys.outputs.llama }}-${{ hashFiles('scripts/build-llama.sh') }}
+      # rime-ice is a nightly; refresh it weekly.
+      - name: cache rime-ice
+        uses: actions/cache@v6
+        with:
+          path: build/rime-data
+          key: rime-data-${{ steps.keys.outputs.week }}-${{ hashFiles('scripts/fetch-rime-data.sh') }}
       - run: scripts/ci.sh macos
+
+  macos-asan:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - run: brew install cmake ninja
+      - id: keys
+        name: cache keys
+        run: echo "week=$(date -u +%G-%V)" >>"$GITHUB_OUTPUT"
+      - name: cache librime dependencies and Boost
+        uses: actions/cache@v6
+        with:
+          path: |
+            build/librime/src/lib
+            build/librime/src/include
+            build/librime/src/share
+            build/librime/src/deps/boost-*
+          key: librime-deps-${{ runner.os }}-${{ hashFiles('.gitmodules', 'scripts/build-librime.sh') }}-${{ github.sha }}
+          restore-keys: librime-deps-${{ runner.os }}-${{ hashFiles('.gitmodules', 'scripts/build-librime.sh') }}-
+      - name: cache rime-ice
+        uses: actions/cache@v6
+        with:
+          path: build/rime-data
+          key: rime-data-${{ steps.keys.outputs.week }}-${{ hashFiles('scripts/fetch-rime-data.sh') }}
+      - run: scripts/ci.sh ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'asan-full' || 'asan' }}

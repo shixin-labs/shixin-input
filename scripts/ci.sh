@@ -1,12 +1,17 @@
 #!/usr/bin/env bash
-# All CI gates (DESIGN §9), runnable locally. GitHub Actions runs it too.
-#   scripts/ci.sh go      format, vet, build (no cgo), unit tests, race
-#   scripts/ci.sh macos   + our librime, engine/generation tests on it incl. the
-#                         rime-ice deploy (no-Lua gate) and the replay
-#                         corpus (latency + policy gate), ASan/UBSan runs
-#   scripts/ci.sh fuzz    libFuzzer on librime-shixin's parsers (a clang
-#                         with libFuzzer, e.g. on Linux; elsewhere a random
-#                         input driver)
+# All CI gates (DESIGN §9), runnable locally. GitHub Actions runs them too.
+#   scripts/ci.sh go        format, vet, build (no cgo), unit tests, race
+#   scripts/ci.sh macos     + our librime and its C++ tests, llama.cpp, the
+#                           engine on our librime incl. the rime-ice deploy
+#                           (no-Lua gate) and the replay corpus (latency +
+#                           policy gate), the bundle's no-Lua check
+#   scripts/ci.sh asan      librime under ASan/UBSan: its C++ tests, and the
+#                           engine tests that exercise librime-shixin, without
+#                           the long rime-ice runs (every push)
+#   scripts/ci.sh asan-full the same with every engine test (weekly)
+#   scripts/ci.sh fuzz      libFuzzer on librime-shixin's parsers (a clang
+#                           with libFuzzer, e.g. on Linux; elsewhere a random
+#                           input driver)
 # SHIXIN_PERF_TOLERANCE scales the latency budgets (default 1; CI runners
 # are noisy, the workflow sets 2).
 set -euo pipefail
@@ -46,15 +51,25 @@ macos_gates() {
   step "no Lua in the bundle"
   LIBRIME="$lib" scripts/bundle-macos.sh "$ROOT/build/ci/Shixin.app" >/dev/null
   if grep -rl "lua_" "$ROOT/build/ci/Shixin.app/Contents/Resources/rime-data/"*.custom.yaml 2>/dev/null; then exit 1; fi
-  step "ASan + UBSan: librime tests and the engine on rime-ice"
+}
+
+# The engine tests that only repeat rime-ice deploys and typing at scale.
+# They run under ASan weekly (asan-full), and on every push without it.
+long_engine_tests='^Test(Replay|RimeIce|RimeIceMixedPinyin)$'
+
+asan_gates() { # full: run every engine test
+  [ -f build/rime-data/rime_ice.schema.yaml ] || scripts/fetch-rime-data.sh
+  step "ASan + UBSan: librime tests and the engine on rime-ice${1:+ (all tests)}"
   scripts/build-librime.sh --asan --test
-  local rt
+  local rt skip=()
   rt=$(xcrun clang -print-file-name=libclang_rt.asan_osx_dynamic.dylib)
+  [ -n "${1:-}" ] || skip=(-test.skip "$long_engine_tests")
+  mkdir -p build/ci
   go test -c -o build/ci/engine.test ./internal/engine
   (cd internal/engine && SHIXIN_LIBRIME="$ROOT/build/librime/asan/lib/librime.1.dylib" \
     DYLD_INSERT_LIBRARIES="$rt" SHIXIN_DYLD_INSERT="$rt" \
     ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 \
-    SHIXIN_PERF_TOLERANCE=20 ../../build/ci/engine.test -test.count=1)
+    SHIXIN_PERF_TOLERANCE=20 ../../build/ci/engine.test -test.count=1 ${skip[@]+"${skip[@]}"})
 }
 
 fuzz_gates() {
@@ -84,7 +99,9 @@ fuzz_gates() {
 case "${1:-go}" in
 go) go_gates ;;
 macos) go_gates; macos_gates ;;
+asan) asan_gates ;;
+asan-full) asan_gates full ;;
 fuzz) fuzz_gates ;;
-*) echo "usage: scripts/ci.sh go|macos|fuzz" >&2; exit 2 ;;
+*) echo "usage: scripts/ci.sh go|macos|asan|asan-full|fuzz" >&2; exit 2 ;;
 esac
 step "ok"

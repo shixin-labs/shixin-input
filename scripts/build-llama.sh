@@ -18,6 +18,19 @@ export CMAKE_GENERATOR=Ninja
 mkdir -p "$ROOT/build" && [ -f "$ROOT/build/go.mod" ] || echo "module shixin/build" >"$ROOT/build/go.mod"
 [ -f "$SRC/CMakeLists.txt" ] || git -C "$ROOT" submodule update --init --depth 1 third_party/llama.cpp
 
+# The libraries are up to date when built from this commit by this script
+# (CI restores them from its cache; a fresh checkout's new source times
+# would otherwise make Ninja rebuild everything).
+STAMP="$(git -C "$SRC" rev-parse HEAD) $(shasum -a 256 "$0" | cut -d' ' -f1)"
+if [ -f "$LIB/libllama.dylib" ] && [ "$(cat "$LIB/.stamp" 2>/dev/null)" = "$STAMP" ]; then
+  echo "up to date: $LIB/libllama.dylib"
+  exit 0
+fi
+
+# A build directory configured from another checkout can't be reused.
+if [ -f "$OUT/CMakeCache.txt" ] && ! grep -qxF "CMAKE_HOME_DIRECTORY:INTERNAL=$SRC" "$OUT/CMakeCache.txt"; then
+  rm -rf "$OUT"
+fi
 cmake -S "$SRC" -B "$OUT" \
   -DCMAKE_BUILD_TYPE=Release \
   -DBUILD_SHARED_LIBS=ON \
@@ -46,4 +59,5 @@ for f in "$LIB"/*.dylib; do
     echo "$f links non-system libraries" >&2; exit 1
   fi
 done
+echo "$STAMP" >"$LIB/.stamp"
 echo "built $LIB/libllama.dylib"

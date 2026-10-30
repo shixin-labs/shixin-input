@@ -58,6 +58,10 @@ if [ ! -f "$S/lib/libleveldb.a" ] || [ ! -f "$S/lib/libopencc.a" ] || [ ! -f "$S
   rm -f "$LINK"
 fi
 
+# A build directory configured from another checkout can't be reused.
+if [ -f "$OUT/CMakeCache.txt" ] && ! grep -qxF "CMAKE_HOME_DIRECTORY:INTERNAL=$S" "$OUT/CMakeCache.txt"; then
+  rm -rf "$OUT"
+fi
 cmake -S "$S" -B "$OUT" \
   -DCMAKE_BUILD_TYPE=Release \
   -DBUILD_STATIC=ON \
