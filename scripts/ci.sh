@@ -13,7 +13,8 @@
 #                           with libFuzzer, e.g. on Linux; elsewhere a random
 #                           input driver)
 # SHIXIN_PERF_TOLERANCE scales the latency budgets (default 1; CI runners
-# are noisy, the workflow sets 2).
+# are noisy, the workflow sets 2). The ASan runs set it to "off": timings
+# under a sanitizer mean nothing.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
@@ -69,7 +70,7 @@ asan_gates() { # full: run every engine test
   (cd internal/engine && SHIXIN_LIBRIME="$ROOT/build/librime/asan/lib/librime.1.dylib" \
     DYLD_INSERT_LIBRARIES="$rt" SHIXIN_DYLD_INSERT="$rt" \
     ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 \
-    SHIXIN_PERF_TOLERANCE=20 ../../build/ci/engine.test -test.count=1 ${skip[@]+"${skip[@]}"})
+    SHIXIN_PERF_TOLERANCE=off ../../build/ci/engine.test -test.count=1 ${skip[@]+"${skip[@]}"})
 }
 
 fuzz_gates() {

@@ -180,7 +180,7 @@ and tools that touch Rime use scratch user dirs, never the live one.
 | Task | Command |
 |---|---|
 | Test / vet / format | `go test ./...` · `go vet ./...` · `gofmt -l .` |
-| All CI gates locally | `scripts/ci.sh go\|macos\|asan\|asan-full\|fuzz` (`SHIXIN_PERF_TOLERANCE` scales latency budgets) |
+| All CI gates locally | `scripts/ci.sh go\|macos\|asan\|asan-full\|fuzz` (`SHIXIN_PERF_TOLERANCE` scales latency budgets; `off` disables them, as the ASan runs do) |
 | librime and the engine under ASan/UBSan: per push without the long rime-ice runs, or every engine test | `scripts/ci.sh asan` · `scripts/ci.sh asan-full` |
 | Engine + client tests incl. real rime-ice deploy (slow) | `go test ./internal/...` (`-short` skips the rime-ice deploy and replay) |
 | Tests against our librime (以词定字 etc.) | `SHIXIN_LIBRIME=… go test ./internal/engine` |

@@ -60,7 +60,7 @@ func TestReplay(t *testing.T) {
 	t.Run("abbrev", func(t *testing.T) { off = replay(t, settings.Default(), abbrevCorpus, nil) })
 	t.Run("abbrev-rerank", func(t *testing.T) { on = replay(t, settings.Default(), abbrevCorpus, &reverser{}) })
 	t.Logf("简拼 p99: %v without reranking, %v with", off, on)
-	if limit := time.Duration(float64(500*time.Microsecond) * perfTolerance()); on-off > limit {
+	if limit, over := overBudget(on-off, 500*time.Microsecond); over {
 		t.Errorf("reranking adds %v to the 简拼 p99, over %v", on-off, limit)
 	}
 }
@@ -125,7 +125,7 @@ func replay(t *testing.T, s settings.Settings, corpus string, scorer *reverser) 
 	// warm already (Engine.warmSession).
 	cold := e.TakeStats()
 	t.Logf("first pass (fresh session): %v", &cold.KeyTime)
-	if limit := time.Duration(float64(8*time.Millisecond) * perfTolerance()); cold.KeyTime.Max() > limit {
+	if limit, over := overBudget(cold.KeyTime.Max(), 8*time.Millisecond); over {
 		t.Errorf("first pass: slowest key %v, over %v", cold.KeyTime.Max(), limit)
 	}
 	rounds := 5
@@ -139,13 +139,12 @@ func replay(t *testing.T, s settings.Settings, corpus string, scorer *reverser) 
 		t.Errorf("mispredict: %s", m)
 	}
 
-	tol := perfTolerance()
 	for _, b := range []struct {
 		q      float64
 		budget time.Duration
 	}{{.5, 300 * time.Microsecond}, {.99, 2 * time.Millisecond}, {.999, 8 * time.Millisecond}} {
-		limit := time.Duration(float64(b.budget) * tol)
-		if got := h.Quantile(b.q); got > limit {
+		got := h.Quantile(b.q)
+		if limit, over := overBudget(got, b.budget); over {
 			t.Errorf("p%g = %v, over budget %v", b.q*100, got, limit)
 		}
 	}
@@ -156,12 +155,28 @@ func replay(t *testing.T, s settings.Settings, corpus string, scorer *reverser) 
 }
 
 // perfTolerance scales latency budgets for slow CI machines
-// (SHIXIN_PERF_TOLERANCE).
+// (SHIXIN_PERF_TOLERANCE, default 1). "off" turns the latency gates off,
+// for sanitizer builds, whose timings mean nothing; it returns 0.
 func perfTolerance() float64 {
-	if v, err := strconv.ParseFloat(os.Getenv("SHIXIN_PERF_TOLERANCE"), 64); err == nil && v > 0 {
-		return v
+	v := os.Getenv("SHIXIN_PERF_TOLERANCE")
+	if v == "off" {
+		return 0
+	}
+	if f, err := strconv.ParseFloat(v, 64); err == nil && f > 0 {
+		return f
 	}
 	return 1
+}
+
+// overBudget reports whether d exceeds budget scaled by perfTolerance, and
+// the scaled limit. With the gates off it never does.
+func overBudget(d, budget time.Duration) (limit time.Duration, over bool) {
+	tol := perfTolerance()
+	if tol == 0 {
+		return 0, false
+	}
+	limit = time.Duration(float64(budget) * tol)
+	return limit, d > limit
 }
 
 type corpusKey struct {

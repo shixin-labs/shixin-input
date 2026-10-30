@@ -205,7 +205,8 @@ func TestRimeIceOptions(t *testing.T) {
 	e.TakeStats()
 	cl.typ("ceshi")
 	cl.key(policy.KeyEscape, 0)
-	if st := e.TakeStats(); st.KeyTime.Max() > time.Duration(float64(8*time.Millisecond)*perfTolerance()) {
+	st := e.TakeStats()
+	if _, over := overBudget(st.KeyTime.Max(), 8*time.Millisecond); over {
 		t.Errorf("first composition in a fresh session: slowest key %v", st.KeyTime.Max())
 	}
 	cl.setASCII(true)
