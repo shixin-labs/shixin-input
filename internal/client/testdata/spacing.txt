@@ -1,0 +1,122 @@
+# Auto spacing vectors (DESIGN §7.1). Every client's spacer must pass them.
+#
+#   events => the app's text afterwards
+#
+# Events are separated by "; ". Each vector starts with spacing on, an
+# empty history, and an app whose text is empty and readable.
+#
+#   commit X    the engine commits X
+#   key X       each character of X is typed and passed to the app
+#   bs          Backspace (passed)
+#   return      Return: the app inserts a line break, shown as ⏎
+#   tab         Tab: the app inserts ⇥
+#   esc, del    Escape, Forward Delete outside a composition
+#   left, right arrow keys: the caret moves
+#   cmd X       Command+X; cmd v pastes "P"
+#   void X      a key outside the keymap (another layout) inserting X
+#   click [N]   a mouse press; with N, the caret moves to N characters
+#   switch      another app or window became active, sleep, Spaces
+#   focus       a new text field (FocusIn)
+#   idle        31 seconds without a key
+#   text X      X appears in the app without the client seeing it
+#   noread      the app can't report its text: tracking alone decides
+#   stale       the app reports its text as it was before the last
+#               insertion (Slack, Google Docs apply insertText late)
+#   fakecaret   the app always reports the start of the text (Ghostty)
+#   on, off     the engine's ResultAutoSpace
+#   bs N, key   repeated: "bs 3"
+
+# Boundaries, both ways, with letters and digits.
+commit 中文; key abc => 中文 abc
+key abc; commit 中文 => abc 中文
+commit 用; key iPhone; commit 拍照 => 用 iPhone 拍照
+commit 共; key 3; commit 个 => 共 3 个
+commit 第; commit 3; commit 章 => 第 3 章
+key 2026; commit 年 => 2026 年
+commit 中文; commit hello => 中文 hello
+commit hello; commit 中文 => hello 中文
+commit 한국; key a => 한국 a
+commit ひらがな; key a => ひらがな a
+commit 中文; key é => 中文 é
+commit 中文; commit αβ; commit Кириллица => 中文 αβКириллица
+
+# No space next to spaces, punctuation and symbols, or between two of a kind.
+commit 中文; key  a => 中文 a
+key a ; commit 中文 => a 中文
+commit 中文; commit ，; key a => 中文，a
+commit 中文; key .a => 中文.a
+key a.; commit 中文 => a.中文
+commit 你好😀; key a => 你好😀a
+commit 中文; commit 文字 => 中文文字
+key ab; key cd => abcd
+key a; commit iPhone手机 => aiPhone手机
+
+# A commit is taken as given.
+commit 2026年10月26日 => 2026年10月26日
+commit 用iPhone拍照 => 用iPhone拍照
+commit 中文; commit iPhone手机 => 中文 iPhone手机
+commit 手机iPhone; commit 很好 => 手机iPhone 很好
+
+# Off: nothing is inserted, but tracking goes on.
+off; commit 中文; key a => 中文a
+off; key a; commit 中文 => a中文
+off; commit 中文; on; key a => 中文 a
+
+# Backspace.
+commit 中文; key a; bs; key b => 中文 b
+commit 中文; key a; bs 2; key b => 中文b
+commit 中文; key a; bs 2; key b; commit 好 => 中文b 好
+commit 中文; key a; bs 3; key b => 中 b
+noread; commit 中文; key ab; bs 2; key c => 中文 c
+noread; commit 一二三四五六七八九十一二三四五六七; bs 16; key a => 一a
+commit 一二三四五六七八九十一二三四五六七; bs 16; key a => 一 a
+noread; commit 👍🏽; bs; commit 中文 => 中文
+noread; commit 中文👍🏽; bs; key a => 中文a
+
+# Resets. noread shows what tracking alone would do: nothing.
+noread; key a; click; commit 中文 => a中文
+noread; commit 中文; switch; key a => 中文a
+noread; commit 中文; focus; key a => 中文a
+noread; commit 中文; idle; key a => 中文a
+noread; commit 中文; left; right; key a => 中文a
+noread; commit 中文; cmd z; key a => 中文a
+noread; commit 中文; cmd c; key a => 中文 a
+noread; commit 中文; cmd s; key a => 中文 a
+noread; commit 中文; cmd v; key a => 中文Pa
+noread; commit 中文; esc; key a => 中文a
+noread; commit 中文; del; key a => 中文a
+noread; commit 中文; tab; key a => 中文⇥a
+noread; commit 中文; return; key a => 中文⏎a
+noread; commit 中文; return; bs; key a => 中文a
+noread; commit 中文; void ü; key a => 中文üa
+
+# Reading the app: after a reset it learns the left character.
+key iPhone; click; commit 很好 => iPhone 很好
+commit 中文; click; key a => 中文 a
+commit 中文; idle; key a => 中文 a
+commit 中文; cmd v; key a => 中文Pa
+commit 中文; cmd v; commit 好 => 中文P 好
+text iPhone; commit 很好 => iPhone 很好
+noread; text iPhone; commit 很好 => iPhone很好
+commit 中文; return; key a => 中文⏎a
+commit 中文; left; key a => 中 a文
+key ab; click 0; commit 中文 => 中文ab
+key ab; click 1; commit 中文 => a 中文b
+
+# Reading the app before a space: text the client didn't see wins.
+commit 中文; text x; key a => 中文xa
+commit 中文; text x; key a; commit 好 => 中文xa 好
+noread; commit 中文; text x; key a => 中文x a
+key a; text 文; commit 好 => a文好
+
+# Apps that answer from before Shixin's last insertion: the tracking is
+# right, so a mismatch with the earlier state isn't a correction.
+stale; text 你好; commit 中文; commit ni; commit 里 => 你好中文 ni 里
+stale; text 你好; commit 中文; key ab; commit 好 => 你好中文 ab 好
+stale; commit 中文; text x; key a => 中文xa
+
+# Apps that always report the start of the text: tracking decides, and
+# after a reset nothing is spaced since the app can't be asked.
+fakecaret; commit 中文; key a => 中文 a
+fakecaret; commit 中文; click; key a => 中文a
+fakecaret; commit 中文; key a; click; commit 好 => 中文 a好

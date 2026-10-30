@@ -1,0 +1,5 @@
+/* Keep the Chinese brand visible in the input-menu section in English too. */
+"CFBundleName" = "拾新 (Shixin)";
+"CFBundleDisplayName" = "Shixin";
+"im.shixin.inputmethod.Shixin" = "拾新 (Shixin)";
+"im.shixin.inputmethod.Shixin.Hans" = "拾新 (Shixin)";

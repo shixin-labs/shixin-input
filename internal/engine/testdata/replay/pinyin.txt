@@ -1,0 +1,38 @@
+# Replay corpus (DESIGN §9): typing sessions in full pinyin against rime-ice.
+# One session per line. Plain characters are typed as is; {Name} is a key
+# by its Rime name ({space}, {Return}, {BackSpace}, {Shift_L} = a Shift tap,
+# {Shift+Tab}, …). Lines starting with # are comments.
+nihao{space}
+jintiantianqizhenhao{space}
+women{space}yiqu{space}chifan{space}ba{space}
+zhongguorenmin{space}
+shurufa{space}henhaoyong{space}
+woxihuan{space}chi{space}pingguo{space}
+jintian{space}xingqiji{space}
+mingtian{space}jiandao{space}
+zhegewentixuyaotaolun{space}
+nihao2
+shiyan3
+women,{space}
+ni{BackSpace}{BackSpace}wo{space}
+zhongguo{Escape}
+haode{Return}
+xiexie{space}nide{space}bangzhu{space}.
+{Shift_L}hello world{Shift_L}nihao{space}
+ceshi{Shift_L}
+woaini{space}
+shenme{space}shihou{space}huilai{space}?
+dianhua{space}haoma{space}
+beijing{space}shanghai{space}guangzhou{space}shenzhen{space}
+jisuanji{space}kexue{space}yu{space}jishu{space}
+rengongzhineng{space}
+shuju{space}fenxi{space}
+xiamian{space}kaishi{space}
+qingshuruminma{BackSpace}{BackSpace}{BackSpace}{BackSpace}{BackSpace}{BackSpace}{BackSpace}{BackSpace}{BackSpace}{BackSpace}{BackSpace}{BackSpace}{BackSpace}{BackSpace}{BackSpace}
+nihao{Down}{Down}{Up}{space}
+zhongguo{Next}{Prior}1
+wo{Left}{Right}{Escape}
+yige{Home}{End}{Escape}
+abc{Tab}{Escape}
+lvse{space}nvhai{space}
+xian{space}xi'an{space}

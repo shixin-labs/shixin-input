@@ -1,0 +1,10 @@
+# Test data for internal/engine. Small enough to deploy in well under a second.
+config_version: "1"
+schema_list:
+  - schema: test
+switcher:
+  hotkeys:
+    - F4
+    - Control+grave
+menu:
+  page_size: 5

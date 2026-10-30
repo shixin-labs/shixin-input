@@ -1,0 +1,25 @@
+# Replay corpus (DESIGN §9, §7.2): 简拼, initials only, against rime-ice.
+# Same format as pinyin.txt. 简拼 menus are where shixin_rerank buffers
+# the most candidates (50).
+nh{space}
+xx{space}
+tw{space}
+zg{space}
+bj{space}
+wm{space}yq{space}cf{space}
+jt{space}tq{space}
+mt{space}jd{space}
+gs{space}
+dd{space}
+pyq{space}
+zgr{space}
+srf{space}
+wsm{space}
+bzd{space}
+nzm{space}
+xd{space}
+yd{space}
+dsj{space}
+rgzn{space}
+hh{BackSpace}{space}
+sj{Escape}

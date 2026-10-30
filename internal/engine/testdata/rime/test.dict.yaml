@@ -1,0 +1,26 @@
+---
+name: test
+version: "1"
+sort: by_weight
+...
+你好	ni hao	100
+你	ni	50
+泥	ni	40
+好	hao	50
+拾新	shi xin	100
+是	shi	80
+试验	shi yan	60
+实验	shi yan	70
+新	xin	60
+中国	zhong guo	100
+啊	a	10
+测试	ce shi	100
+侧室	ce shi	90
+策士	ce shi	80
+台湾	tai wan	100
+太晚	tai wan	90
+抬碗	tai wan	80
+天气	tian qi	100
+天启	tian qi	90
+上海	shang hai	100
+伤害	shang hai	90

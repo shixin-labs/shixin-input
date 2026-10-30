@@ -1,0 +1,7 @@
+[submodule "third_party/librime"]
+	path = third_party/librime
+	url = https://github.com/shixin-labs/librime.git
+[submodule "third_party/llama.cpp"]
+	path = third_party/llama.cpp
+	url = https://github.com/ggml-org/llama.cpp.git
+	shallow = true
