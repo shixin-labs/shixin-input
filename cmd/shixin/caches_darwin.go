@@ -245,9 +245,14 @@ func cacheApps(repair bool) ([]string, error) {
 		if url == 0 {
 			return false
 		}
-		active := running.Send(objc.RegisterName("runningApplicationsWithBundleIdentifier:"), id).Send(objc.RegisterName("count")) != 0
-		// Include idle caches until the watcher has actually removed them.
-		if active || !repair {
+		apps := running.Send(objc.RegisterName("runningApplicationsWithBundleIdentifier:"), id)
+		active := apps.Send(objc.RegisterName("count")) != 0
+		// Only regular apps (with a Dock icon) are worth waiting for and
+		// naming: agents and extensions such as WindowManager,
+		// AirPlayUIAgent or a browser helper have no text field, never
+		// rebuild their caches, and run for good. An idle app's cache is
+		// removed instead, so it isn't named either.
+		if active && regularApp(apps) {
 			name := url.Send(objc.RegisterName("lastPathComponent")).Send(objc.RegisterName("stringByDeletingPathExtension"))
 			label := ""
 			if ptr := name.Send(objc.RegisterName("UTF8String")); ptr != 0 {
@@ -266,8 +271,21 @@ func cacheApps(repair bool) ([]string, error) {
 	return pending, err
 }
 
+// regularApp reports whether any of the running apps (an NSArray of
+// NSRunningApplication) is a regular app, one that appears in the Dock.
+func regularApp(apps objc.ID) bool {
+	const regular = 0 // NSApplicationActivationPolicyRegular
+	for i := uintptr(0); i < uintptr(apps.Send(objc.RegisterName("count"))); i++ {
+		app := apps.Send(objc.RegisterName("objectAtIndex:"), i)
+		if app.Send(objc.RegisterName("activationPolicy")) == regular {
+			return true
+		}
+	}
+	return false
+}
+
 // userCacheDir is the per-user cache directory, looked up once: the
-// watcher asks every second for as long as a stale app keeps running.
+// watcher asks every few seconds while a stale app keeps running.
 var userCacheDir = sync.OnceValues(func() (string, error) {
 	out, err := exec.Command("/usr/bin/getconf", "DARWIN_USER_CACHE_DIR").Output()
 	if err != nil {
@@ -309,7 +327,12 @@ func watchCaches() {
 	}
 	defer syscall.Flock(int(f.Fd()), syscall.LOCK_UN)
 	refreshed := false
-	for loadTIS().added(bundleID) {
+	for start := time.Now(); loadTIS().added(bundleID); time.Sleep(watchInterval) {
+		if time.Since(start) > watchLimit {
+			// The front starts a new watcher at its next launch.
+			logf("cache watcher: apps still have stale caches after %v; stopping", watchLimit)
+			return
+		}
 		pending, err := cacheApps(true)
 		if err != nil {
 			logf("cache watcher: %v", err)
@@ -329,9 +352,16 @@ func watchCaches() {
 			}
 			refreshed = true // never repeatedly invalidate while a client is idle
 		}
-		time.Sleep(time.Second)
 	}
 }
+
+// The watcher checks every watchInterval and gives up after watchLimit:
+// an app that keeps a stale cache that long is left until it quits and the
+// front next starts a watcher.
+const (
+	watchInterval = 5 * time.Second
+	watchLimit    = 30 * time.Minute
+)
 
 func printCacheStatus() error {
 	var pending []string

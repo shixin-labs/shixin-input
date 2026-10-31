@@ -23,7 +23,7 @@ method and back to Shixin. This leaves the general clipboard and its service
 alone. If input still fails, save work and quit the affected app; the
 background helper then removes only its two stale input-source cache files.
 It continues after Settings closes. Reopen Settings to check completion;
-`Shixin -cache-status` prints pending app names as JSON.
+`Shixin -cache-status` prints the running apps still waiting, as JSON.
 
 A stale cache can also cause an app to crash during input-source switching:
 WeCom on macOS 26.7.1 hit `CFRelease(NULL)` in
