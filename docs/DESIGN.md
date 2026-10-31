@@ -1202,14 +1202,18 @@ controls and Shixin's current support separately from the plans below.
 **Built by Shixin:**
 - Settings app and first-run guide
 - Skins and skin editor
-- Mode indicator bubble (macOS): 中 / 英 (En in the English UI), beside the
-  caret for 900 ms after a focused field's first confirmed mode or a mode
-  change. It uses the candidate skin and the same screen/work-area clamping.
-  Repeated results do not restart it; candidates take priority. Focus loss,
-  mouse clicks, input-source changes, engine disconnects and secure fields
-  dismiss it. Only engine results request a mode; focus alone never guesses
-  one. Verified with Shift toggles, expiration, candidate priority and
-  focus changes in the VM; lifecycle and allocation tests are headless.
+- Mode indicator bubble (macOS): a small card (26 pt, about a line of
+  text) with 中 / 英 (En in the English UI) beside the caret for 900 ms
+  when the confirmed mode differs from the last one: a Shift toggle, or a
+  per-app mode that switches on focus. Focusing a field or selecting 拾新
+  in the same mode shows nothing; macOS 26 already shows its own indicator
+  for an input source switch, and a bubble on every focus was too loud. It
+  uses the candidate skin's background, 中 in its highlight color, and the
+  same screen/work-area clamping as the candidates. Repeated results do not
+  restart it; candidates take priority. Focus loss, mouse clicks,
+  input-source changes, engine disconnects and secure fields dismiss it.
+  Only engine results request a mode; focus alone never guesses one.
+  Lifecycle and allocation tests are headless.
 - Per-app mode and secure-field handling
 - Auto spacing between Chinese and English (§7.1)
 - Right-click delete word

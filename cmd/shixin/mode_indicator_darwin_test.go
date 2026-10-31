@@ -17,6 +17,10 @@ func TestModeIndicatorResults(t *testing.T) {
 	if modeBubble.state.known {
 		t.Fatal("local empty result invented Chinese mode")
 	}
+	observeModeResult(&ipc.Result{Ctx: 1})
+	if !modeBubble.state.known || modeBubble.state.pending {
+		t.Fatal("the first confirmed mode was not recorded quietly")
+	}
 	observeModeResult(&ipc.Result{Ctx: 1, Flags: ipc.ResultASCII})
 	if !modeBubble.state.pending || !modeBubble.state.ascii {
 		t.Fatal("confirmed English result was not observed")

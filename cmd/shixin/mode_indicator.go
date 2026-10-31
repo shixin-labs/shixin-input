@@ -7,6 +7,11 @@ const modeBubbleDuration = 900 * time.Millisecond
 // modeIndicator tracks only confirmed results for the current text-field
 // proxy. It does no UI work: even Drain called from a key barrier can update
 // it without querying the app, allocating, or showing a window.
+//
+// The bubble shows only when the confirmed mode differs from the last one,
+// in any field: a Shift toggle, or a per-app mode that switches on focus.
+// Focusing a field or selecting 拾新 in the same mode shows nothing; macOS
+// shows its own indicator for an input source switch.
 type modeIndicator struct {
 	client  uintptr
 	known   bool
@@ -16,7 +21,7 @@ type modeIndicator struct {
 }
 
 func (m *modeIndicator) focus(client uintptr) bool {
-	m.client, m.known = client, false
+	m.client = client
 	return m.dismiss()
 }
 
@@ -24,7 +29,12 @@ func (m *modeIndicator) observe(ascii bool) bool {
 	if m.client == 0 || m.known && m.ascii == ascii {
 		return false
 	}
-	m.known, m.ascii, m.pending = true, ascii, true
+	first := !m.known
+	m.known, m.ascii = true, ascii
+	if first {
+		return false
+	}
+	m.pending = true
 	return true
 }
 
