@@ -114,7 +114,7 @@ func (w *worker) start() error {
 	touchData(w.logf, make([]byte, 1<<20), filepath.Join(c.generation, "build"), c.prebuilt)
 	opt := engine.Options{LibPath: c.lib, SharedDataDir: c.data, UserDataDir: c.user, PrebuiltDataDir: c.prebuilt,
 		StagingDir: filepath.Join(c.generation, "build"), Standby: true, LogDir: "", MinLogLevel: 2, Version: version,
-		Warmup: engine.DefaultWarmup, Apps: appModes(&w.s), Logf: w.logf}
+		Warmup: engine.DefaultWarmup, Apps: liveApps(c.settings, &w.s), Logf: w.logf}
 	// 智能排序 is applied live from the settings file, not the
 	// generation's snapshot. shixin-ai is reached only once this generation
 	// is active, so a standby never takes it over.
@@ -149,6 +149,9 @@ func (w *worker) promote() error {
 	}
 	w.listener = l
 	e, remote := w.e, w.remote
+	// The rules may have changed while this generation waited as a standby;
+	// the watcher only sees later changes.
+	e.SetApps(liveApps(c.settings, &w.s))
 	go e.Serve(l)
 	go settings.Watch(c.settings, time.Second, nil, func(s settings.Settings) {
 		e.SetApps(appModes(&s))
@@ -176,4 +179,15 @@ func (w *worker) close() {
 		w.release()
 		w.release = nil
 	}
+}
+
+// liveApps is the per-app rules (auto spacing, per-app modes) from the
+// live settings file, or from snapshot if it can't be read. They never
+// reach Rime, so a generation's snapshot keeps whatever they were when it
+// was built: an engine restart must not bring those back.
+func liveApps(path string, snapshot *settings.Settings) engine.AppModes {
+	if live, err := settings.Load(path); err == nil {
+		return appModes(&live)
+	}
+	return appModes(snapshot)
 }
