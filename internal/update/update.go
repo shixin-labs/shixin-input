@@ -137,8 +137,21 @@ func ParseRelease(body []byte) (*Release, error) {
 	return nil, fmt.Errorf("update: release %s has no %s", ver, AssetName)
 }
 
+// trimNotes turns the release's Markdown into plain text for the 关于
+// page: no heading marks, emphasis or code ticks, and bullets for list
+// items. Links and the rest stay as written.
 func trimNotes(s string) string {
-	s = strings.TrimSpace(strings.ReplaceAll(s, "\r\n", "\n"))
+	lines := strings.Split(strings.ReplaceAll(s, "\r\n", "\n"), "\n")
+	for i, l := range lines {
+		if t := strings.TrimLeft(l, "#"); len(t) < len(l) && strings.HasPrefix(t, " ") {
+			l = strings.TrimSpace(t)
+		}
+		if t, ok := strings.CutPrefix(l, "- "); ok {
+			l = "• " + t
+		}
+		lines[i] = strings.NewReplacer("**", "", "`", "").Replace(l)
+	}
+	s = strings.TrimSpace(strings.Join(lines, "\n"))
 	if utf8.RuneCountInString(s) <= MaxNotes {
 		return s
 	}

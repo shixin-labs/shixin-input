@@ -77,12 +77,20 @@ func releaseJSON(tag, digest, extra string) string {
 		{"name":"Shixin.dmg","browser_download_url":"https://x/Shixin.dmg","size":1234%s}%s]}`, tag, d, extra)
 }
 
+func TestTrimNotes(t *testing.T) {
+	in := "## 安装 / Install\r\n\n**Requires:** macOS 13.\n- open `Shixin.dmg`\n#hashtag stays"
+	want := "安装 / Install\n\nRequires: macOS 13.\n• open Shixin.dmg\n#hashtag stays"
+	if got := trimNotes(in); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestParseRelease(t *testing.T) {
 	r, err := ParseRelease([]byte(releaseJSON("v0.1.2", goodDigest, "")))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if r.Version != "0.1.2" || r.URL != "https://x/Shixin.dmg" || r.Size != 1234 || r.SHA256 != goodDigest[7:] || r.Notes != "Fixes\n- one" {
+	if r.Version != "0.1.2" || r.URL != "https://x/Shixin.dmg" || r.Size != 1234 || r.SHA256 != goodDigest[7:] || r.Notes != "Fixes\n• one" {
 		t.Errorf("%+v", r)
 	}
 	r, err = ParseRelease([]byte(releaseJSON("0.1.3", "", "")))

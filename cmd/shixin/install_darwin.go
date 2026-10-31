@@ -295,9 +295,11 @@ func uninstall() error {
 func stopFronts(app string) { stopProcs(filepath.Join(app, "Contents", "MacOS", "Shixin")) }
 
 // stopProcs stops the processes running exe, other than this one, and
-// waits up to five seconds for them to exit.
+// waits up to five seconds for them to exit. pgrep -a includes this
+// process's ancestors, which macOS's pgrep otherwise skips: -apply-update
+// runs as a child of the settings app it has to stop.
 func stopProcs(exe string) {
-	out, _ := exec.Command("/usr/bin/pgrep", "-f", exe).Output()
+	out, _ := exec.Command("/usr/bin/pgrep", "-a", "-f", exe).Output()
 	var pids []int
 	for _, f := range strings.Fields(string(out)) {
 		if pid, err := strconv.Atoi(f); err == nil && pid != os.Getpid() {

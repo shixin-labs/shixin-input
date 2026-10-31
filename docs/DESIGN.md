@@ -1081,7 +1081,16 @@ appear after restarting the app.
   installed build. An ad hoc installed copy has no team, so it can't update
   itself. The install is the Update above (staged copy, `Contents` swap,
   front relaunch), after which the front reopens Settings on 关于 and
-  deletes the download.
+  deletes the download. The release notes are shown as plain text (heading
+  marks, emphasis and code ticks dropped).
+
+  `-apply-update` is a child of the settings app it has to stop, and
+  macOS's `pgrep` skips its caller's ancestors unless given `-a`; without
+  it the old Settings survived the upgrade. Verified in the VM
+  (2026-10-31): a Developer ID 0.1.0 test build checked, downloaded,
+  verified and installed v0.1.1 in place, with 拾新 still selected. The
+  reopened Settings was v0.1.1, which predates `-page` and exited at once;
+  releases from then on have the flag.
 
 - **Bundle metadata:** localized `InfoPlist.strings` for the bundle and
   input mode names (otherwise the raw source ID is shown). The English
