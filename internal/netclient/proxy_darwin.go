@@ -1,4 +1,4 @@
-package models
+package netclient
 
 import (
 	"net/url"

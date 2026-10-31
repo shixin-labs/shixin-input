@@ -1,6 +1,6 @@
 //go:build !darwin
 
-package models
+package netclient
 
 import "net/url"
 

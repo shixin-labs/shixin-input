@@ -11,13 +11,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"time"
 
+	"shixin/internal/netclient"
 	"shixin/internal/settings"
 )
 
@@ -74,25 +73,6 @@ var ErrMismatch = errors.New("models: the download doesn't match its checksum")
 // next URL gets its turn.
 var stallTimeout = 30 * time.Second
 
-// client follows the user's proxy: the environment's, else the system's
-// (apps opened from Finder have no proxy variables). Blocked hosts fail
-// within seconds rather than minutes.
-var client = &http.Client{Transport: &http.Transport{
-	Proxy: func(r *http.Request) (*url.URL, error) {
-		if u, err := http.ProxyFromEnvironment(r); u != nil || err != nil {
-			return u, err
-		}
-		if h := r.URL.Hostname(); h == "localhost" || net.ParseIP(h).IsLoopback() {
-			return nil, nil
-		}
-		return systemProxy(), nil
-	},
-	DialContext:           (&net.Dialer{Timeout: 10 * time.Second}).DialContext,
-	TLSHandshakeTimeout:   10 * time.Second,
-	ResponseHeaderTimeout: 20 * time.Second,
-	ForceAttemptHTTP2:     true,
-}}
-
 // Download fetches m into dir from the first of its URLs that works,
 // reporting progress, and keeps it only if its size and SHA-256 match. The
 // file is data: llama.cpp loads it, and nothing runs it.
@@ -122,7 +102,7 @@ func (m *Spec) fetch(ctx context.Context, u, dir string, progress func(done, tot
 		return err
 	}
 	host := req.URL.Host
-	resp, err := client.Do(req)
+	resp, err := netclient.Client.Do(req)
 	if err != nil {
 		return fmt.Errorf("models: %s: %w", host, err)
 	}
