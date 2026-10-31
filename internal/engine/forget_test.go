@@ -10,6 +10,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"shixin/internal/ipc"
+	"shixin/internal/perf"
 	"shixin/internal/policy"
 	"shixin/internal/settings"
 )
@@ -213,7 +214,7 @@ func forgetProcess(t *testing.T, root, key, stage string) {
 	cl.key(k, m)
 	stats := e.TakeStats()
 	t.Logf("forget key: %v", stats.KeyTime.Max())
-	if _, over := overBudget(stats.KeyTime.Max(), 8*time.Millisecond); over {
+	if _, over := perf.OverBudget(stats.KeyTime.Max(), 8*time.Millisecond); over {
 		t.Fatal("forget key exceeded ASK budget")
 	}
 	cl.key(policy.KeyEscape, 0)

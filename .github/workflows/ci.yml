@@ -6,6 +6,11 @@ on:
     - cron: "0 3 * * 1" # Mondays: every engine test under ASan (asan-full)
   workflow_dispatch:
 
+# Shared runners can't time the latency gates reliably: run them locally
+# on real hardware (DESIGN §9). Allocation and mispredict gates still run.
+env:
+  SHIXIN_PERF_TOLERANCE: "off"
+
 jobs:
   linux:
     runs-on: ubuntu-24.04
@@ -21,8 +26,6 @@ jobs:
 
   macos:
     runs-on: macos-15
-    env:
-      SHIXIN_PERF_TOLERANCE: "2"
     steps:
       - uses: actions/checkout@v7
         with:

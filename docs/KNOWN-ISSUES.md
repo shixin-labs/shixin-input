@@ -164,12 +164,13 @@ Delete an entry when it's fixed, and mention it in the commit.
 ### Replay latency gates under parallel test runs
 - **What:** `TestReplay`'s latency gates pass when the engine package runs
   alone, but fail now and then when other packages' tests run alongside on
-  the M-series dev Mac. Seen: reranking adding 672 µs to the 简拼 p99
-  (gate 500 µs) in a full `go test ./...` (2026-10-28), and a cold first
-  key of 8.37 ms (gate 8 ms) in the `rerank` replay with the five other
-  packages of `scripts/ci.sh macos` (2026-10-30).
-- **Why:** the other tests compete for the CPU. CI scales the gates with
-  `SHIXIN_PERF_TOLERANCE=2`; locally the tolerance is 1.
+  a Mac. Seen: reranking adding 672 µs to the 简拼 p99 (gate 500 µs) in a
+  full `go test ./...` (2026-10-28), and a cold first key of 8.37 ms (gate
+  8 ms) in the `rerank` replay with the five other packages of
+  `scripts/ci.sh macos` (2026-10-30).
+- **Why:** the other tests compete for the CPU. CI no longer runs the
+  timing gates (`SHIXIN_PERF_TOLERANCE=off`): on GitHub's runners they
+  failed the same way even at twice the budgets.
 - **Until fixed:** rerun `go test ./internal/engine -run TestReplay` alone
   before treating a failure as a regression. A fix would run the latency
   gates serially (`-p 1`) or skip them when other packages run alongside.

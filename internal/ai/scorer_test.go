@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"shixin/internal/llama"
+	"shixin/internal/perf"
 	"shixin/internal/rerank"
 )
 
@@ -309,10 +310,6 @@ func TestAccuracyAndLatency(t *testing.T) {
 	pct := func(n int) string { return strconv.FormatFloat(100*float64(n)/float64(len(items)), 'f', 1, 64) + "%" }
 	t.Logf("%d items, first word / first page: rime %s / %s, reranked %s / %s",
 		len(items), pct(rimeFirst), pct(rimePage), pct(first), pct(page))
-	tol := 1.0
-	if v, err := strconv.ParseFloat(os.Getenv("SHIXIN_PERF_TOLERANCE"), 64); err == nil && v > 0 {
-		tol = v
-	}
 	q := func(d []time.Duration, f float64) time.Duration {
 		d = slices.Clone(d)
 		slices.Sort(d)
@@ -328,7 +325,7 @@ func TestAccuracyAndLatency(t *testing.T) {
 		{"score p50", q(score, .5), 8 * time.Millisecond},
 		{"score p95", q(score, .95), 15 * time.Millisecond},
 	} {
-		if limit := time.Duration(float64(g.budget) * tol); g.got > limit && !raceEnabled {
+		if limit, over := perf.OverBudget(g.got, g.budget); over && !raceEnabled {
 			t.Errorf("%s %v, over budget %v", g.name, g.got, limit)
 		}
 	}

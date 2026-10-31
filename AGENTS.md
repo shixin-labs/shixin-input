@@ -180,7 +180,7 @@ and tools that touch Rime use scratch user dirs, never the live one.
 | Task | Command |
 |---|---|
 | Test / vet / format | `go test ./...` · `go vet ./...` · `gofmt -l .` |
-| All CI gates locally | `scripts/ci.sh go\|macos\|asan\|asan-full\|fuzz` (`SHIXIN_PERF_TOLERANCE` scales latency budgets; `off` disables them, as the ASan runs do) |
+| All CI gates locally | `scripts/ci.sh go\|macos\|asan\|asan-full\|fuzz` (`SHIXIN_PERF_TOLERANCE` scales latency budgets; `off` disables them, as CI and the ASan runs do) |
 | librime and the engine under ASan/UBSan: per push without the long rime-ice runs, or every engine test | `scripts/ci.sh asan` · `scripts/ci.sh asan-full` |
 | Engine + client tests incl. real rime-ice deploy (slow) | `go test ./internal/...` (`-short` skips the rime-ice deploy and replay) |
 | Tests against our librime (以词定字 etc.) | `SHIXIN_LIBRIME=… go test ./internal/engine` |
@@ -356,4 +356,7 @@ shared into the guest read-only.
 - Don't commit generated files, `build/`, downloaded data or secrets.
 - Before sending a change: `gofmt`, `go vet`, `go test ./...` (or
   `scripts/ci.sh go`), plus the hot-path benchmarks if you touched the
-  engine or a client.
+  engine or a client. CI doesn't run the latency gates
+  (`SHIXIN_PERF_TOLERANCE=off`): for engine, rerank or AI changes, run
+  `go test -v ./internal/engine -run TestReplay` alone on a Mac and report
+  the numbers.

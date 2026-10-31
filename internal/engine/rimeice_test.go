@@ -11,6 +11,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"shixin/internal/ipc"
+	"shixin/internal/perf"
 	"shixin/internal/policy"
 	"shixin/internal/settings"
 )
@@ -206,7 +207,7 @@ func TestRimeIceOptions(t *testing.T) {
 	cl.typ("ceshi")
 	cl.key(policy.KeyEscape, 0)
 	st := e.TakeStats()
-	if _, over := overBudget(st.KeyTime.Max(), 8*time.Millisecond); over {
+	if _, over := perf.OverBudget(st.KeyTime.Max(), 8*time.Millisecond); over {
 		t.Errorf("first composition in a fresh session: slowest key %v", st.KeyTime.Max())
 	}
 	cl.setASCII(true)

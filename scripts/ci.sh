@@ -12,9 +12,10 @@
 #   scripts/ci.sh fuzz      libFuzzer on librime-shixin's parsers (a clang
 #                           with libFuzzer, e.g. on Linux; elsewhere a random
 #                           input driver)
-# SHIXIN_PERF_TOLERANCE scales the latency budgets (default 1; CI runners
-# are noisy, the workflow sets 2). The ASan runs set it to "off": timings
-# under a sanitizer mean nothing.
+# SHIXIN_PERF_TOLERANCE scales the latency budgets (default 1). "off"
+# turns the timing gates off: the CI workflow sets it, as shared runners
+# can't time them reliably, and the ASan runs always do, as timings under a
+# sanitizer mean nothing. Run the gates locally before merging.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
