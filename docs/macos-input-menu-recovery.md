@@ -15,15 +15,15 @@ procedure below is for diagnosing what it didn't fix.
 These causes were found on a Mac with macOS 26.7.1 (2026-10-28), where
 recovery was needed without logging out.
 
-Settings lists running apps whose input-source caches lack Shixin. Shixin
-invalidates Carbon's cache modification-date marker and HIToolbox's cached
-enabled-source state, allowing those apps to refresh on their next text-input
-activity. Switch to another input
-method and back to Shixin. This leaves the general clipboard and its service
-alone. If input still fails, save work and quit the affected app; the
-background helper then removes only its two stale input-source cache files.
-It continues after Settings closes. Reopen Settings to check completion;
-`Shixin -cache-status` prints the running apps still waiting, as JSON.
+Shixin invalidates Carbon's cache modification-date marker and HIToolbox's
+cached enabled-source state, allowing running apps to refresh on their next
+text-input activity. Settings shows nothing about this. If an app still
+won't switch to Shixin, switch to another input method and back; if input
+still fails, save work and quit the app. The background helper then removes
+only its two stale input-source cache files, and the app picks up Shixin when
+reopened. This leaves the general clipboard and its service alone.
+`Shixin -cache-status` prints the running apps whose caches are still stale,
+as JSON.
 
 A stale cache can also cause an app to crash during input-source switching:
 WeCom on macOS 26.7.1 hit `CFRelease(NULL)` in

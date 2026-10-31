@@ -973,8 +973,8 @@ appear after restarting the app.
     clipboard and `pboard` alone. Both names are undocumented; errors are
     logged and the fallback below remains available.
   - A detached, per-user locked helper (`-watch-caches`) scans every 5 s
-    while a running regular app (one with a Dock icon) keeps a stale cache,
-    even after Settings closes, and gives up after 30 minutes; the front
+    while a running regular app (one with a Dock icon) keeps a stale cache
+    and gives up after 30 minutes; the front
     starts another at its next launch. It invalidates the marker once per
     run, not on every scan. Installation, repair, and front startup launch
     it; it exits when no such app remains or Shixin is disabled. All
@@ -982,15 +982,15 @@ appear after restarting the app.
   - Only regular apps count. Agents and extensions (WindowManager,
     AirPlayUIAgent, the wallpaper agent, a password manager's browser
     helper) have no text field, never rebuild their caches and never quit:
-    on one Mac (2026-10-31) their October caches kept Settings' notice up
-    and the helper polling for hours. Their stale caches are removed once
+    on one Mac (2026-10-31) their October caches kept the helper
+    polling for hours. Their stale caches are removed once
     they aren't running, and they are never listed.
-  - Settings lists affected apps on every page and asks the user to switch
-    away from and back to Shixin. If input still fails, save work and quit
-    the app: the helper then removes only its two stale cache files.
+  - The repair is silent: Settings shows no notice about it. The 开始使用
+    guide says to quit and reopen an app that won't switch to Shixin. When
+    the app quits, the helper removes only its two stale cache files.
     `-cache-status` reports the running regular apps with stale caches as
-    JSON without changing caches. Removal failures are logged; a remaining stale cache is never
-    reported as refreshed. A fresh cache does not by itself prove that the
+    JSON without changing caches, for diagnosis. Removal failures are logged; a remaining stale cache is
+    never reported as refreshed. A fresh cache does not by itself prove that the
     client's input-method connection or key handling works.
   - Verified in the VM (2026-10-28): `TestMenuListRebuild` clears the list
     and sees it rebuilt with 拾新; a Safari cache rebuilt while 拾新 was

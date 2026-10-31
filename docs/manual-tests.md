@@ -140,9 +140,9 @@ it, so the front resets auto spacing on unforwarded modifier changes
 In the test VM, keep an app with a stale input-source cache open while
 installing Shixin or running `Shixin -repair`.
 
-1. Settings should list the app on every page (Chinese and English), asking
-   to switch input methods. Its two cache files must not be deleted while
-   it runs. The helper invalidates the shared modification-date marker and
+1. Settings shows nothing about it; the repair is silent. The app's two
+   cache files must not be deleted while it runs. `Shixin -cache-status`
+   lists it as JSON. The helper invalidates the shared modification-date marker and
    cached enabled-source state once.
 2. Switch away from and back to Shixin and type. Record whether the app's
    `.kbdx` now includes Shixin, whether Chinese input works, and whether the
@@ -153,12 +153,12 @@ installing Shixin or running `Shixin -repair`.
    input menu or Control-Space; a diagnostic TIS selection returning success
    does not prove that the app accepted the switch. Check that existing
    clipboard formats remain intact.
-3. For an app that has not refreshed, close Settings and quit that app.
+3. For an app that has not refreshed, quit that app (the 开始使用 guide
+   says to quit and reopen an app that won't switch).
    Only its two `com.apple.IntlDataCache.le*` files should be removed;
    unrelated cache files must remain. Repeated repair requests must not
    leave multiple watcher processes running.
-4. Reopen Settings: the app must no longer be listed. With Settings kept
-   open during repair, it should show “Input-source lists refreshed”.
+4. `Shixin -cache-status` must no longer list the app.
 5. Reopen the app, select Shixin, type and commit Chinese, then switch to
    ABC and back. Check that no new crash report appears.
 
