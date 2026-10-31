@@ -54,6 +54,19 @@ Delete an entry when it's fixed, and mention it in the commit.
 - **Fix (M4, before the fcitx5 front uses it):** make it match there, or
   place the window from the previous frame's `Element.Bounds()`.
 
+### PowerPoint crashes while typing
+- **What:** PowerPoint for Mac crashed while typing with Shixin (reported
+  2026-10-30, not yet reproduced; no crash report yet).
+- **Suspect:** auto spacing reads the character before the caret
+  (`markedRange`/`selectedRange`, then `attributedSubstringFromRange:`).
+  If PowerPoint reports a position that doesn't match its text, that
+  request can be out of range and throw inside PowerPoint. Other input
+  methods don't make that request.
+- **Next:** reproduce in the test VM (PowerPoint 16.114 is installed there
+  and needs a Microsoft 365 sign-in), read the crash report's stack, and
+  fix the call, e.g. by validating ranges or not reading Office apps'
+  text. Workaround: add PowerPoint to the apps without auto spacing.
+
 ### Other apps not yet tested
 - **Tested so far:** TextEdit, Terminal, and form fields in Safari
   (including a password field). Safari's address bar passed composition,
