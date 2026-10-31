@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 	"unsafe"
@@ -226,7 +227,7 @@ func restartMenuAgent() {
 func cacheApps(repair bool) ([]string, error) {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
-	out, err := exec.Command("/usr/bin/getconf", "DARWIN_USER_CACHE_DIR").Output()
+	cacheDir, err := userCacheDir()
 	if err != nil {
 		return nil, err
 	}
@@ -238,7 +239,7 @@ func cacheApps(repair bool) ([]string, error) {
 	workspace := objc.ID(objc.GetClass("NSWorkspace")).Send(objc.RegisterName("sharedWorkspace"))
 	running := objc.ID(objc.GetClass("NSRunningApplication"))
 	var pending []string
-	removed, err := removeStaleCaches(strings.TrimSpace(string(out)), func(app string) bool {
+	removed, err := removeStaleCaches(cacheDir, func(app string) bool {
 		id := nsStringOf(app)
 		url := workspace.Send(objc.RegisterName("URLForApplicationWithBundleIdentifier:"), id)
 		if url == 0 {
@@ -264,6 +265,16 @@ func cacheApps(repair bool) ([]string, error) {
 	}
 	return pending, err
 }
+
+// userCacheDir is the per-user cache directory, looked up once: the
+// watcher asks every second for as long as a stale app keeps running.
+var userCacheDir = sync.OnceValues(func() (string, error) {
+	out, err := exec.Command("/usr/bin/getconf", "DARWIN_USER_CACHE_DIR").Output()
+	if err != nil {
+		return "", fmt.Errorf("user cache dir: %w", err)
+	}
+	return strings.TrimSpace(string(out)), nil
+})
 
 func startCacheWatcher() {
 	exe, err := os.Executable()
