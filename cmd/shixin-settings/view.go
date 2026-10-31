@@ -15,20 +15,19 @@ const (
 type page struct {
 	id    string
 	icon  *ui.SVG
-	color ui.Color
 	build func(a *app, c *ui.Context)
 }
 
 var pages = []page{
-	{"start", iconStart, ui.Hex("#34c759"), (*app).start},
-	{"general", iconGeneral, ui.Hex("#8e8e93"), (*app).general},
-	{"appearance", iconAppear, ui.Hex("#5e5ce6"), (*app).appearance},
-	{"input", iconInput, ui.Hex("#0a84ff"), (*app).input},
-	{"shortcuts", iconKeys, ui.Hex("#ff9f0a"), (*app).shortcuts},
-	{"dictionary", iconDict, ui.Hex("#28b4c8"), (*app).dictionary},
-	{"apps", iconApps, ui.Hex("#30c45a"), (*app).apps},
-	{"perf", iconPerf, ui.Hex("#ff375f"), (*app).perf},
-	{"about", iconAbout, ui.Hex("#636366"), (*app).about},
+	{"start", iconStart, (*app).start},
+	{"general", iconGeneral, (*app).general},
+	{"appearance", iconAppear, (*app).appearance},
+	{"input", iconInput, (*app).input},
+	{"shortcuts", iconKeys, (*app).shortcuts},
+	{"dictionary", iconDict, (*app).dictionary},
+	{"apps", iconApps, (*app).apps},
+	{"perf", iconPerf, (*app).perf},
+	{"about", iconAbout, (*app).about},
 }
 
 func (a *app) current() *page {
@@ -76,7 +75,10 @@ func (a *app) sidebar(c *ui.Context) {
 			}
 			item.Children(func() {
 				ui.Row(c).Gap(9).AlignItems(ui.Center).Children(func() {
-					tile(c, pg.icon, pg.color, 22)
+					icon := ui.Icon(c, pg.icon).Size(16, 16).TextColor(t.TextMuted)
+					if selected {
+						icon.TextColor(t.Accent)
+					}
 					label := ui.Text(c, i18n.T("s.page."+pg.id)).FontSize(13).SingleLine()
 					if selected {
 						label.FontWeight(600)

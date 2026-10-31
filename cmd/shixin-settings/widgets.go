@@ -124,15 +124,6 @@ func block(c *ui.Context, fn func()) ui.Element {
 	return ui.Column(c).Padding(14).Gap(10).Children(fn)
 }
 
-// tile is a sidebar icon: a white glyph on a rounded colored square.
-func tile(c *ui.Context, ic *ui.SVG, color ui.Color, size float32) {
-	ui.Box(c).Size(size, size).Radius(size*0.26).Center().
-		Gradient(color.Mix(ui.RGB(255, 255, 255), 0.18), color, 180).
-		Children(func() {
-			ui.Icon(c, ic).Size(size*0.62, size*0.62).TextColor(ui.RGB(255, 255, 255))
-		})
-}
-
 // keycap shows a key or shortcut as a small raised cap.
 func keycap(c *ui.Context, s string) {
 	p := colors(c)
