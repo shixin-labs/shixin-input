@@ -14,12 +14,16 @@
 //	Shixin -uninstall         turn them off, stop Shixin and remove the installed bundle
 //	Shixin -added             exit 0 if the user has added 拾新 (both sources enabled)
 //	Shixin -upgrade-into APP  swap this staged bundle into APP in place
+//	Shixin -apply-update DMG -update-version V
+//	                          verify the downloaded release DMG (notarized, same developer team, version V,
+//	                          newer build) and upgrade in place; the settings app starts it detached
 //	Shixin -after-upgrade     restart the engine, then re-select our input mode
 package main
 
 import (
 	"bytes"
 	"flag"
+	"fmt"
 	"image/png"
 	"log"
 	"os"
@@ -64,6 +68,8 @@ func main() {
 	install := flag.Bool("install", false, "register this bundle with Text Input Sources")
 	upgrade := flag.String("upgrade-into", "", "swap this staged bundle's contents into the installed bundle at this path, without registering")
 	afterUpgrade := flag.Bool("after-upgrade", false, "restart the engine, then re-select our input source once ready")
+	applyDMG := flag.String("apply-update", "", "verify the downloaded disk image at this path and upgrade the installed bundle from it")
+	updateVersion := flag.String("update-version", "", "with -apply-update: the release version the disk image must contain")
 	status := flag.Bool("status", false, "print the state of our input sources")
 	remove := flag.Bool("uninstall", false, "turn our input sources off, stop Shixin and remove the installed bundle")
 	forget := flag.Bool("forget", false, "after a few seconds, drop LaunchServices' records of every copy of Shixin but the installed one")
@@ -79,6 +85,15 @@ func main() {
 	switch {
 	case *upgrade != "":
 		must(upgradeInto(*upgrade))
+		return
+	case *applyDMG != "":
+		openLog()
+		err := applyUpdate(*applyDMG, *updateVersion)
+		logger.Close()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
 		return
 	case *install:
 		exe, _ := os.Executable()
