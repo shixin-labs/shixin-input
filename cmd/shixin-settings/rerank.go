@@ -73,7 +73,7 @@ func (a *app) rerankGroup(c *ui.Context) {
 	m := &a.model
 	p := colors(c)
 	t := c.Theme()
-	group(c, T("s.i.rerank"), T("s.i.rerank.note"), func() {
+	group(c, "", T("s.i.rerank.note"), func() {
 		row(c, T("s.i.rerank"), T("s.i.rerank.desc"), func() {
 			segmented(c, &s.Rerank, []string{settings.RerankOff, settings.RerankCautious, settings.RerankStandard}, T("s.off"), T("s.i.rerank.cautious"), T("s.i.rerank.standard")).Label(T("s.i.rerank"))
 		})
@@ -150,3 +150,6 @@ func (a *app) rerankPerf(c *ui.Context, r *ipc.RerankStats) {
 		}
 	})
 }
+
+// rerankPage is 智能排序's own page: the switch, the model and its state.
+func (a *app) rerankPage(c *ui.Context) { a.rerankGroup(c) }

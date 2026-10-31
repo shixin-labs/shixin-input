@@ -43,8 +43,8 @@ M1 (macOS MVP) is done; M2 (DESIGN §10) is in progress. Built so far:
 - **智能排序** (context-aware reranking, DESIGN §7.2), phases 1–2:
   `shixin_rerank` in librime-shixin, the engine's hold of a key's result
   (≤ 16 ms, otherwise rime's order; a menu never changes once shown), and
-  `shixin-ai` running ERNIE-4.5-0.3B on Metal through llama.cpp. The 输入
-  page turns it on live and downloads the model (pinned SHA-256;
+  `shixin-ai` running ERNIE-4.5-0.3B on Metal through llama.cpp. Its own
+  settings page turns it on live and downloads the model (pinned SHA-256;
   `SHIXIN_AI_MODEL` overrides the path in development). On a machine too
   slow for the model, the engine stops holding results.
 

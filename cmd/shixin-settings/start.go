@@ -97,7 +97,7 @@ func (a *app) start(c *ui.Context) {
 	group(c, T("s.start.step3"), "", func() {
 		row(c, T("s.start.type"), T("s.start.type.desc"), nil)
 		row(c, T("s.i.rerank"), T("s.start.rerank.desc"), func() {
-			ui.Button(c, T("s.start.rerank.open")).OnClick(func() { a.page = "input" })
+			ui.Button(c, T("s.start.rerank.open")).OnClick(func() { a.page = "rerank" })
 		})
 	})
 }

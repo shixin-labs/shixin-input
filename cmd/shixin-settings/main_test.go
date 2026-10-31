@@ -212,9 +212,14 @@ func TestSnapshots(t *testing.T) {
 				// The model's state is the test's, not this machine's: on,
 				// a third downloaded, waiting for it.
 				a.model = modelState{dir: "models", active: true, done: models.ERNIE.Size / 3, total: models.ERNIE.Size, aiState: rerank.StateNoModel}
-				if pg.id == "input" {
+				if pg.id == "rerank" {
 					a.s.Rerank = "standard"
 					a.saved, a.seen = clone(a.s), clone(a.s)
+				}
+				if pg.id == "input" {
+					a.quickShown = true
+					writeSnapshot(t, a, language.lang, dark, 720, "input-quick")
+					a.quickShown = false
 					// No extra page keys, with [ ] taken by 以词定字: the
 					// page must say so, not show four unpicked chips.
 					off := clone(a.s)

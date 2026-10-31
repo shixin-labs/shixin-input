@@ -235,26 +235,45 @@ func (a *app) input(c *ui.Context) {
 		}
 	})
 
-	a.rerankGroup(c)
-
 	group(c, T("s.i.spacing"), T("s.i.auto_space.note"), func() {
 		switchRow(c, T("s.i.auto_space"), T("s.i.auto_space.desc"), &s.AutoSpace)
 	})
 
 	// The codes librime-shixin's translators answer (DESIGN §3.8), so they
-	// can be found; they aren't configurable.
-	codes := dateCodes(s.Scheme)
-	group(c, T("s.i.quick"), T("s.i.quick.note"), func() {
-		for _, q := range []struct{ id, code, desc string }{
-			{"date", codes["date"], fmt.Sprintf(T("s.i.quick.date.desc"), codes["datezh"], codes["dateen"])},
-			{"time", codes["time"], fmt.Sprintf(T("s.i.quick.time.desc"), codes["datetime"], codes["timestamp"])},
-			{"week", codes["week"], T("s.i.quick.week.desc")},
-			{"number", "R123", T("s.i.quick.number.desc")},
-			{"unicode", "U62fe", T("s.i.quick.unicode.desc")},
-			{"calc", "cC1+2*3", T("s.i.quick.calc.desc")},
-		} {
-			row(c, T("s.i.quick."+q.id), q.desc, func() { keycap(c, q.code) })
-		}
+	// can be found; they aren't configurable, so they're a sheet.
+	group(c, "", "", func() {
+		row(c, T("s.i.quick"), T("s.i.quick.summary"), func() {
+			ui.Button(c, T("s.i.quick.all")).OnClick(func() { a.quickShown = true })
+		})
+	})
+	a.quickSheet(c)
+}
+
+// quickSheet lists the quick-input codes.
+func (a *app) quickSheet(c *ui.Context) {
+	ui.Modal(c, &a.quickShown, func() {
+		codes := dateCodes(a.s.Scheme)
+		ui.Column(c).Width(520).Gap(12).Children(func() {
+			ui.Row(c).AlignItems(ui.Center).Gap(12).Children(func() {
+				ui.Text(c, T("s.i.quick")).FontSize(16).FontWeight(650).Grow(1)
+				ui.Button(c, T("s.g.chart.close")).OnClick(func() { a.quickShown = false })
+			})
+			_, height := c.Size()
+			ui.Scroll(c).MaxHeight(height - 140).Children(func() {
+				group(c, "", T("s.i.quick.note"), func() {
+					for _, q := range []struct{ id, code, desc string }{
+						{"date", codes["date"], fmt.Sprintf(T("s.i.quick.date.desc"), codes["datezh"], codes["dateen"])},
+						{"time", codes["time"], fmt.Sprintf(T("s.i.quick.time.desc"), codes["datetime"], codes["timestamp"])},
+						{"week", codes["week"], T("s.i.quick.week.desc")},
+						{"number", "R123", T("s.i.quick.number.desc")},
+						{"unicode", "U62fe", T("s.i.quick.unicode.desc")},
+						{"calc", "cC1+2*3", T("s.i.quick.calc.desc")},
+					} {
+						row(c, T("s.i.quick."+q.id), q.desc, func() { keycap(c, q.code) })
+					}
+				})
+			})
+		})
 	})
 }
 

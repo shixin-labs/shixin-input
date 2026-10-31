@@ -23,6 +23,7 @@ var pages = []page{
 	{"general", iconGeneral, (*app).general},
 	{"appearance", iconAppear, (*app).appearance},
 	{"input", iconInput, (*app).input},
+	{"rerank", iconSparkles, (*app).rerankPage},
 	{"shortcuts", iconKeys, (*app).shortcuts},
 	{"dictionary", iconDict, (*app).dictionary},
 	{"apps", iconApps, (*app).apps},
@@ -55,7 +56,7 @@ func (a *app) view(c *ui.Context) {
 		ui.Box(c).Width(1).Background(p.border)
 		ui.Column(c).Grow(1).MinWidth(0).Background(p.pane).Children(func() { a.pane(c) })
 	})
-	a.statsShown.Store(a.page == "perf" || a.page == "input")
+	a.statsShown.Store(a.page == "perf" || a.page == "rerank")
 	a.sync(c)
 }
 

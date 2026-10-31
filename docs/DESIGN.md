@@ -1822,7 +1822,7 @@ under the user, so none ever does. Instead:
 
 #### Settings
 
-- **输入 page: 智能排序**, its own group, with 关闭 / 保守 / 标准 (default
+- **智能排序 page** (its own sidebar entry, after 输入), with 关闭 / 保守 / 标准 (default
   关闭).
   - **Model:** its size (385 MB), and 下载 with progress and cancel, or
     删除 once downloaded.
