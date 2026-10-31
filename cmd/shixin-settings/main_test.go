@@ -221,6 +221,9 @@ func TestSnapshots(t *testing.T) {
 					off.PageKeys, off.SelectChar = []string{}, "brackets"
 					a.s, a.saved, a.seen = off, clone(off), clone(off)
 					writeSnapshot(t, a, language.lang, dark, 1400, "input-no-page-keys")
+					a.fuzzyShown = true
+					writeSnapshot(t, a, language.lang, dark, 720, "input-fuzzy")
+					a.fuzzyShown = false
 					a.s.PageKeys, a.s.SelectChar = []string{"minus_equal"}, "brackets"
 					a.saved, a.seen = clone(a.s), clone(a.s)
 				}
@@ -401,23 +404,16 @@ func TestDateCodes(t *testing.T) {
 	}
 }
 
-func TestPageKeysDesc(t *testing.T) {
+func TestFuzzySummary(t *testing.T) {
 	defer i18n.SetLang(i18n.Current())
 	i18n.SetLang(i18n.Chinese)
 	s := settings.Default()
-	s.SelectChar = "brackets"
-	for _, c := range []struct {
-		keys []string
-		want string
-	}{
-		{nil, "未开启额外翻页键，只能用 Page Up / Page Down 翻页"},
-		{[]string{"brackets"}, "未开启额外翻页键，只能用 Page Up / Page Down 翻页"}, // taken by 以词定字
-		{[]string{"minus_equal"}, "下一页 =，上一页 -；Page Up / Page Down 始终可用"},
-		{[]string{"minus_equal", "comma_period", "tab"}, "下一页 = . Tab，上一页 - , Shift+Tab；Page Up / Page Down 始终可用"},
-	} {
-		s.PageKeys = c.keys
-		if got := pageKeysDesc(&s); got != c.want {
-			t.Errorf("%v: %q, want %q", c.keys, got, c.want)
-		}
+	s.Fuzzy = nil
+	if got := fuzzySummary(&s); got != "未开启" {
+		t.Errorf("none: %q", got)
+	}
+	s.Fuzzy = []string{"s=sh", "z=zh"} // shown in table order
+	if got, want := fuzzySummary(&s), "已开启：z ⇄ zh、s ⇄ sh"; got != want {
+		t.Errorf("%q, want %q", got, want)
 	}
 }

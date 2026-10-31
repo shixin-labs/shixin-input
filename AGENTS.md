@@ -322,9 +322,13 @@ shared into the guest read-only.
 - **Brand artwork** is drawn in `internal/ui/brand`, shared by the settings
   app, temporary tray anchor and macOS packaging. ICNS/TIFF/PNG files are
   generated under `build/`; keep the Go artwork source, not generated assets.
-- **Settings UI:** pages are built from the helpers in
-  `cmd/shixin-settings/widgets.go` (`group`, `row`, `switchRow`, `chip`,
-  `segmented`, `selectID`) so they keep one look. A new setting needs: the
+- **Settings UI:** follow macOS System Settings. Pages are built from the
+  helpers in `cmd/shixin-settings/widgets.go` (`group`, `row`, `switchRow`,
+  `memberSwitchRow`, `segmented`, `selectID`) so they keep one look: every
+  on/off option is a row with a switch, a choice is a pop-up or a
+  segmented control, and a long set of options goes in a details sheet
+  (`ui.Modal`, like 模糊音's). Color marks only what needs attention
+  (warnings, errors, progress); settled states are muted. A new setting needs: the
   field in `settings.Settings` (with its default and validation), the
   compiler output if it reaches Rime (golden YAML plus a check in
   `TestRimeIceOptions`), and a control. Look at a change with `-snapshot`

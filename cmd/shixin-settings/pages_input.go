@@ -200,22 +200,18 @@ func (a *app) skinTile(c *ui.Context, sk *skin.Skin, dark bool) {
 
 func (a *app) input(c *ui.Context) {
 	s := &a.s
-	group(c, T("settings.fuzzy"), T("s.i.fuzzy.note"), func() {
-		block(c, func() {
-			ui.Row(c).Wrap().Gap(8).Children(func() {
-				for _, f := range settings.FuzzyPairs {
-					on := slices.Contains(s.Fuzzy, f.ID)
-					if chip(c, f.ID, strings.ReplaceAll(f.ID, "=", " ⇄ "), on, false).Clicked() {
-						if on {
-							s.Fuzzy = slices.DeleteFunc(s.Fuzzy, func(x string) bool { return x == f.ID })
-						} else {
-							s.Fuzzy = append(s.Fuzzy, f.ID)
-						}
-					}
-				}
-			})
+	group(c, T("s.i.candidates"), "", func() {
+		switchRow(c, T("s.i.mixed"), T("s.i.mixed.desc"), &s.MixedEnglish)
+		switchRow(c, T("s.i.emoji"), T("s.i.emoji.desc"), &s.Emoji)
+		switchRow(c, T("s.i.traditional"), T("s.i.traditional.desc"), &s.Traditional)
+	})
+
+	group(c, "", T("s.i.fuzzy.note"), func() {
+		row(c, T("settings.fuzzy"), fuzzySummary(s), func() {
+			ui.Button(c, T("s.i.fuzzy.details")).OnClick(func() { a.fuzzyShown = true })
 		})
 	})
+	a.fuzzySheet(c)
 
 	group(c, T("s.i.keys"), "", func() {
 		row(c, T("s.i.select_char"), T("s.i.select_char.desc"), func() {
@@ -223,36 +219,20 @@ func (a *app) input(c *ui.Context) {
 			names := []string{"[  ]", "-  =", ",  .", T("s.off")}
 			selectID(c, &s.SelectChar, ids, names).Width(120)
 		})
-		row(c, T("s.i.page_keys"), pageKeysDesc(s), func() {
-			for _, kp := range settings.KeyPairs {
-				on := slices.Contains(s.PageKeys, kp.ID)
-				taken := kp.ID == s.SelectChar
-				name := kp.Name
-				if kp.ID == "tab" {
-					name = "⇥ Tab"
-				}
-				if taken {
-					name += " · " + T("s.i.select_char")
-				}
-				ch := chip(c, "page-"+kp.ID, name, on, taken)
-				if taken {
-					ch.Tooltip(T("s.i.page_keys.taken"))
-				}
-				if ch.Clicked() && !taken {
-					if on {
-						s.PageKeys = slices.DeleteFunc(s.PageKeys, func(k string) bool { return k == kp.ID })
-					} else {
-						s.PageKeys = append(s.PageKeys, kp.ID)
-					}
-				}
-			}
-		})
 	})
 
-	group(c, T("s.i.candidates"), "", func() {
-		switchRow(c, T("s.i.mixed"), T("s.i.mixed.desc"), &s.MixedEnglish)
-		switchRow(c, T("s.i.emoji"), T("s.i.emoji.desc"), &s.Emoji)
-		switchRow(c, T("s.i.traditional"), T("s.i.traditional.desc"), &s.Traditional)
+	group(c, T("s.i.page_keys"), T("s.i.page_keys.note"), func() {
+		for _, kp := range settings.KeyPairs {
+			prev, next := pageKeyNames(kp.ID, kp.Name)
+			label := prev + "  " + next
+			desc := fmt.Sprintf(T("s.i.page_keys.pair"), prev, next)
+			if kp.ID == s.SelectChar {
+				// Both can't have the pair: say why it can't be turned on.
+				row(c, label, T("s.i.page_keys.taken"), nil)
+				continue
+			}
+			memberSwitchRow(c, label, desc, &s.PageKeys, kp.ID)
+		}
 	})
 
 	a.rerankGroup(c)
@@ -380,22 +360,48 @@ func (a *app) shortcut(c *ui.Context, act settings.HotkeyAction) {
 	})
 }
 
-// pageKeysDesc says which keys turn pages, so an empty selection reads as
-// off rather than as four unpicked chips.
-func pageKeysDesc(s *settings.Settings) string {
-	var next, prev []string
-	for _, kp := range settings.KeyPairs {
-		if !slices.Contains(s.PageKeys, kp.ID) || kp.ID == s.SelectChar {
-			continue
-		}
-		p, n, _ := strings.Cut(kp.Name, " ")
-		if kp.ID == "tab" {
-			p, n = "Shift+Tab", "Tab"
-		}
-		prev, next = append(prev, strings.TrimSpace(p)), append(next, strings.TrimSpace(n))
+// pageKeyNames is a key pair's previous- and next-page keys, as shown.
+func pageKeyNames(id, name string) (prev, next string) {
+	if id == "tab" {
+		return "Shift+Tab", "Tab"
 	}
-	if len(next) == 0 {
-		return T("s.i.page_keys.none")
+	prev, next, _ = strings.Cut(name, " ")
+	return strings.TrimSpace(prev), strings.TrimSpace(next)
+}
+
+// fuzzySummary says which fuzzy pairs are on, in their table order.
+func fuzzySummary(s *settings.Settings) string {
+	var on []string
+	for _, f := range settings.FuzzyPairs {
+		if slices.Contains(s.Fuzzy, f.ID) {
+			on = append(on, fuzzyName(f.ID))
+		}
 	}
-	return fmt.Sprintf(T("s.i.page_keys.on"), strings.Join(next, " "), strings.Join(prev, " "))
+	if len(on) == 0 {
+		return T("s.i.fuzzy.off")
+	}
+	return fmt.Sprintf(T("s.i.fuzzy.on"), strings.Join(on, "、"))
+}
+
+func fuzzyName(id string) string { return strings.ReplaceAll(id, "=", " ⇄ ") }
+
+// fuzzySheet lists every fuzzy pair with a switch, like a System Settings
+// details sheet.
+func (a *app) fuzzySheet(c *ui.Context) {
+	ui.Modal(c, &a.fuzzyShown, func() {
+		ui.Column(c).Width(420).Gap(12).Children(func() {
+			ui.Row(c).AlignItems(ui.Center).Gap(12).Children(func() {
+				ui.Text(c, T("settings.fuzzy")).FontSize(16).FontWeight(650).Grow(1)
+				ui.Button(c, T("s.g.chart.close")).OnClick(func() { a.fuzzyShown = false })
+			})
+			_, height := c.Size()
+			ui.Scroll(c).MaxHeight(height - 140).Children(func() {
+				group(c, "", T("s.i.fuzzy.note"), func() {
+					for _, f := range settings.FuzzyPairs {
+						memberSwitchRow(c, fuzzyName(f.ID), "", &a.s.Fuzzy, f.ID)
+					}
+				})
+			})
+		})
+	})
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"slices"
 	"time"
 
 	"github.com/egoist/mygo/ui"
@@ -92,24 +93,17 @@ func switchRow(c *ui.Context, label, desc string, on *bool) {
 	})
 }
 
-// chip is a toggle drawn as a rounded pill, accent-filled while on.
-func chip(c *ui.Context, key any, text string, on, disabled bool) ui.Element {
-	t := c.Theme()
-	p := colors(c)
-	b := ui.ButtonBase(c.Key(key)).Padding(5, 12).Radius(999).Label(text).Checked(on).Disabled(disabled)
+// memberSwitchRow is a switchRow for whether id is in list.
+func memberSwitchRow(c *ui.Context, label, desc string, list *[]string, id string) {
+	on := slices.Contains(*list, id)
+	was := on
+	switchRow(c, label, desc, &on)
 	switch {
-	case on:
-		b.Background(t.Accent.Alpha(0.14)).Border(1, t.Accent.Alpha(0.45)).TextColor(t.Accent)
-	case disabled:
-		b.Background(p.faint).TextColor(p.muted.Alpha(0.6))
-	default:
-		b.Background(p.faint).Border(1, p.border)
-		if b.Hovered() {
-			b.Background(p.faint.Mix(t.Accent, 0.08))
-		}
+	case on && !was:
+		*list = append(*list, id)
+	case !on && was:
+		*list = slices.DeleteFunc(*list, func(x string) bool { return x == id })
 	}
-	b.Children(func() { ui.Text(c, text).FontSize(12.5).Font("monospace").NoWrap() })
-	return b
 }
 
 func b2f(b bool) float32 {

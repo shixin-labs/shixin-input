@@ -71,6 +71,7 @@ type app struct {
 
 	page       string
 	chartShown bool
+	fuzzyShown bool     // 模糊音's details sheet
 	fonts      []string // installed families, enumerated once at startup
 
 	// 词库

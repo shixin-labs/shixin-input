@@ -125,7 +125,6 @@ func (a *app) statusPill(c *ui.Context) {
 		})
 	case statusError:
 		pill(c, i18n.T("s.status.error"), t.Danger, iconAlert).Tooltip(a.err)
-	default:
-		quiet(c, i18n.T("s.status.saved"), iconCheck)
 	}
+	// Saved shows nothing, as in System Settings: changes simply apply.
 }
