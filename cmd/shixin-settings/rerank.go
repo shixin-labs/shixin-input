@@ -88,7 +88,7 @@ func (a *app) rerankGroup(c *ui.Context) {
 				ui.Text(c, fmt.Sprintf(T("s.i.rerank.downloading"), pct)).FontSize(12.5).TextColor(p.muted).FontFeatures("tnum")
 				ui.Button(c, T("s.cancel")).OnClick(func() { m.cancel() })
 			case m.present:
-				pill(c, T("s.i.rerank.downloaded"), t.Success, iconCheck)
+				quiet(c, T("s.i.rerank.downloaded"), iconCheck)
 				ui.Button(c, T("s.i.rerank.remove")).OnClick(func() {
 					models.ERNIE.Remove(m.dir)
 					a.refreshModel()
@@ -121,7 +121,7 @@ func (a *app) rerankStatus(c *ui.Context) {
 	case slow:
 		pill(c, T("s.i.rerank.slow"), t.Warning, iconAlert).Tooltip(T("s.i.rerank.slow.desc"))
 	case ready:
-		pill(c, T("s.i.rerank.ready"), t.Success, iconCheck)
+		quiet(c, T("s.i.rerank.ready"), iconCheck)
 	case a.model.aiState == rerank.StateRunning:
 		pill(c, T("s.i.rerank.starting"), t.Warning, nil)
 	default:

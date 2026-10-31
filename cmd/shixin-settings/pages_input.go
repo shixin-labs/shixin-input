@@ -110,11 +110,7 @@ func (a *app) appearance(c *ui.Context) {
 	st := previewState
 	st.Items = st.Items[:n]
 	backdrop := ui.Column(c).MinHeight(170).Radius(12).Border(1, p.border).Clip().Padding(22, 26).Gap(6)
-	if dark {
-		backdrop.Gradient(ui.Hex("#2b3245"), ui.Hex("#151821"), 160)
-	} else {
-		backdrop.Gradient(ui.Hex("#dfe7f5"), ui.Hex("#f6f1ea"), 160)
-	}
+	backdrop.Background(p.card)
 	backdrop.Children(func() {
 		text := ui.Hex("#1d2129")
 		if dark {

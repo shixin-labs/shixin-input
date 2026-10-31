@@ -117,7 +117,7 @@ func (a *app) statusPill(c *ui.Context) {
 	t := c.Theme()
 	switch a.status {
 	case statusPending:
-		pill(c, i18n.T("s.status.pending"), t.TextMuted, nil)
+		quiet(c, i18n.T("s.status.pending"), nil)
 	case statusApplying:
 		ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
 			ui.Spinner(c).Size(12, 12)
@@ -126,6 +126,6 @@ func (a *app) statusPill(c *ui.Context) {
 	case statusError:
 		pill(c, i18n.T("s.status.error"), t.Danger, iconAlert).Tooltip(a.err)
 	default:
-		pill(c, i18n.T("s.status.saved"), t.Success, iconCheck)
+		quiet(c, i18n.T("s.status.saved"), iconCheck)
 	}
 }

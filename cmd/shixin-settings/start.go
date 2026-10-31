@@ -70,7 +70,7 @@ func (a *app) start(c *ui.Context) {
 			ui.Text(c, T("s.start.subtitle")).FontSize(12.5).TextColor(p.muted)
 		})
 		if a.added {
-			pill(c, T("s.start.added"), t.Success, iconCheck)
+			quiet(c, T("s.start.added"), iconCheck)
 		} else {
 			pill(c, T("s.start.not_added"), t.Warning, iconAlert)
 		}

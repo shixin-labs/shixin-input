@@ -99,7 +99,7 @@ func chip(c *ui.Context, key any, text string, on, disabled bool) ui.Element {
 	b := ui.ButtonBase(c.Key(key)).Padding(5, 12).Radius(999).Label(text).Checked(on).Disabled(disabled)
 	switch {
 	case on:
-		b.Background(t.Accent).TextColor(t.AccentText)
+		b.Background(t.Accent.Alpha(0.14)).Border(1, t.Accent.Alpha(0.45)).TextColor(t.Accent)
 	case disabled:
 		b.Background(p.faint).TextColor(p.muted.Alpha(0.6))
 	default:
@@ -138,6 +138,18 @@ func pill(c *ui.Context, text string, fg ui.Color, ic *ui.SVG) ui.Element {
 			ui.Icon(c, ic).Size(12, 12).TextColor(fg)
 		}
 		ui.Text(c, text).FontSize(11.5).FontWeight(500).TextColor(fg).NoWrap()
+	})
+}
+
+// quiet shows a settled, good state (saved, loaded, added) in the muted
+// text color: color is kept for states that need attention (pill).
+func quiet(c *ui.Context, text string, ic *ui.SVG) ui.Element {
+	muted := c.Theme().TextMuted
+	return ui.Row(c).Gap(5).AlignItems(ui.Center).Padding(3, 4).Children(func() {
+		if ic != nil {
+			ui.Icon(c, ic).Size(12, 12).TextColor(muted)
+		}
+		ui.Text(c, text).FontSize(11.5).TextColor(muted).NoWrap()
 	})
 }
 

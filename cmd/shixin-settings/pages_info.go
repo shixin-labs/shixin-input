@@ -45,14 +45,12 @@ func tildePath(p string) string {
 	return p
 }
 
-// budgetColor colors a latency against its budget (DESIGN §3.7).
+// budgetColor colors a latency against its budget (DESIGN §3.7): the
+// text color within it, red over it.
 func budgetColor(c *ui.Context, d, budget time.Duration) ui.Color {
 	t := c.Theme()
-	switch {
-	case d <= budget/2:
-		return t.Success
-	case d <= budget:
-		return t.Warning
+	if d <= budget {
+		return t.Text
 	}
 	return t.Danger
 }
@@ -84,7 +82,7 @@ func (a *app) perf(c *ui.Context) {
 	}
 	h := &st.KeyTime
 	ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
-		ui.Box(c).Size(8, 8).Radius(4).Background(t.Success)
+		ui.Box(c).Size(8, 8).Radius(4).Background(p.muted)
 		ui.Text(c, T("s.f.live")).FontSize(12).TextColor(p.muted).Grow(1)
 		ui.Button(c, T("s.f.reset")).OnClick(func() { a.resetHist.Store(true) })
 	})
@@ -115,7 +113,7 @@ func (a *app) perf(c *ui.Context) {
 		row(c, "librime", "", func() { ui.Text(c, string(st.Librime)).FontSize(12.5).TextColor(p.muted) })
 		row(c, T("s.f.native"), T("s.f.native.desc"), func() {
 			if st.Native {
-				pill(c, T("s.f.loaded"), t.Success, iconCheck)
+				quiet(c, T("s.f.loaded"), iconCheck)
 			} else {
 				pill(c, T("s.f.missing"), t.Warning, iconAlert)
 			}
@@ -143,7 +141,6 @@ func (a *app) perf(c *ui.Context) {
 // scale, one per histogram bucket from the fastest to the slowest key.
 func histogram(c *ui.Context, h *perf.Hist) {
 	p := colors(c)
-	t := c.Theme()
 	bs := h.Buckets()
 	if len(bs) == 0 {
 		ui.Text(c, T("s.f.no_keys")).FontSize(12.5).TextColor(p.muted).Padding(20, 0).TextAlign(ui.Center).FillWidth()
@@ -159,7 +156,7 @@ func histogram(c *ui.Context, h *perf.Hist) {
 			frac := float32(math.Log1p(float64(b.Count)) / math.Log1p(float64(peak)))
 			v, unit := fmtDur(b.Lo)
 			ui.Box(c).Grow(1).Height(max(2, frac*height)).Radius(3, 3, 0, 0).
-				Background(budgetColor(c, b.Lo, 2*time.Millisecond).Mix(t.Accent, 0.35)).
+				Background(barColor(c, b.Lo)).
 				Tooltip(fmt.Sprintf("≥ %s %s · %d", v, unit, b.Count))
 		}
 	})
@@ -227,4 +224,12 @@ func licensesDir() string {
 		return ""
 	}
 	return filepath.Clean(dir)
+}
+
+// barColor is a histogram bar's color: neutral, red past the p99 budget.
+func barColor(c *ui.Context, lo time.Duration) ui.Color {
+	if lo > 2*time.Millisecond {
+		return c.Theme().Danger.Alpha(0.7)
+	}
+	return c.Theme().TextMuted.Alpha(0.45)
 }
