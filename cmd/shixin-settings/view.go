@@ -97,6 +97,7 @@ func (a *app) sidebar(c *ui.Context) {
 func (a *app) pane(c *ui.Context) {
 	bar := c.TitleBar()
 	pg := a.current()
+	a.startShown.Store(pg.id == "start")
 	ui.Row(c).Height(titleBarH).Shrink(0).AlignItems(ui.Center).Padding(0, bar.Right+20, 0, 28).Gap(12).DragWindow().Children(func() {
 		ui.Text(c, i18n.T("s.page."+pg.id)).FontSize(15).FontWeight(650).SingleLine().Grow(1)
 		if pg.id != "start" { // it has no settings, and its own added/not added pill
@@ -105,7 +106,6 @@ func (a *app) pane(c *ui.Context) {
 	})
 	ui.Scroll(c).Grow(1).Children(func() {
 		ui.Column(c).Padding(4, 28, 32, 28).Gap(22).MaxWidth(680).FillWidth().Margin(0, ui.Auto).Children(func() {
-			a.cacheNotice(c)
 			pg.build(a, c)
 		})
 	})

@@ -85,9 +85,8 @@ type app struct {
 	appQuery  string
 
 	// 开始使用
-	cachePending    []string
-	cacheRepairSeen bool
-	added           bool // 拾新 is in the user's input sources
+	added      bool        // 拾新 is in the user's input sources
+	startShown atomic.Bool // the guide is showing: pollAdded runs only then
 
 	// 智能排序 (输入)
 	model modelState
