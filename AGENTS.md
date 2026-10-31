@@ -57,7 +57,7 @@ M1 (macOS MVP) is done; M2 (DESIGN §10) is in progress. Built so far:
 | `cmd/shixin` | macOS front: IMK, candidate window, input menu, installer, supervisor |
 | `cmd/shixin-settings` | Settings app |
 | `cmd/shixin-ai` | 智能排序 scorer |
-| `internal/{rime,engine,policy,ipc,client,keymap,settings,generation,lifecycle,perf,logx,i18n,rerank,ai,llama,models}` | Shared packages (DESIGN §5.1) |
+| `internal/{rime,engine,policy,ipc,client,keymap,settings,generation,lifecycle,perf,logx,i18n,rerank,ai,llama,models,netclient,update}` | Shared packages (DESIGN §5.1) |
 | `internal/ui/{brand,candview,fonts,modeview,skin}` | MyGo views shared by the front and the settings app |
 | `plugins/librime-shixin` | Native C++ librime components |
 | `third_party/librime`, `third_party/llama.cpp` | Submodules (our librime fork; llama.cpp, MIT): `git submodule update --init --recursive` |
@@ -118,8 +118,8 @@ works. Before writing hot-path code, re-read DESIGN §3. In short:
 - `cmd/shixin-engine`, `cmd/shixin-builder`, `cmd/shixin-ai`,
   `internal/engine`, `internal/rime`, `internal/ipc`, `internal/policy`,
   `internal/client`, `internal/settings`, `internal/generation`,
-  `internal/lifecycle`, `internal/rerank`, `internal/ai`, `internal/llama`
-  and `internal/models` **must not import MyGo** (`scripts/ci.sh go`
+  `internal/lifecycle`, `internal/rerank`, `internal/ai`, `internal/llama`,
+  `internal/models`, `internal/netclient` and `internal/update` **must not import MyGo** (`scripts/ci.sh go`
   checks). MyGo is only for UI processes (`cmd/shixin`,
   `cmd/shixin-settings`, `internal/ui/...`).
 - Bind librime with `purego`. **No cgo** in Go code (`CGO_ENABLED=0`
@@ -232,6 +232,7 @@ and tools that touch Rime use scratch user dirs, never the live one.
 | Render every settings page and shuangpin chart (Chinese/English, light/dark) / every skin to PNGs | `go test ./cmd/shixin-settings -snapshot DIR` · `go test ./internal/ui/candview -snapshot DIR` (English settings PNGs add `-en`; charts also include minimum-window scrolled views) |
 | macOS IMK connection-name agreement with the installed OS (scratch bundle, no registration) | `go test ./cmd/shixin -run TestConnectionName` |
 | Stale input-source cache choice and cleanup after app exit (scratch dir) | `go test ./cmd/shixin -run TestRemoveStaleCaches` |
+| In-app update: release parsing, version order, download checks (httptest, no network) / the front's verification decisions with fake `codesign`, `spctl` and `plutil` / the 关于 update states | `go test ./internal/update ./internal/netclient` · `go test ./cmd/shixin -run 'Test(Team\|VerifyUpdate)'` · `go test ./cmd/shixin-settings -run 'Test(CheckUpdate\|FinishCheck)'` (`-snapshot DIR` renders every state) |
 | Cache-marker refresh preserves clipboard types and change count (**VM only**, seeds the clipboard) | `SHIXIN_TEST_CACHE_REFRESH=1 ./shixin-front.test -test.run TestCacheRefreshPreservesClipboard` (`go test -c ./cmd/shixin`) |
 
 ### macOS app, packaging and install
@@ -242,6 +243,7 @@ and tools that touch Rime use scratch user dirs, never the live one.
 | Package the release disk image (opening the app inside installs or upgrades) | `SIGN_IDENTITY="Developer ID Application: …" [NOTARY_PROFILE=…] VERSION=x.y.z scripts/package-macos.sh` → `build/dist/Shixin.dmg` (notarized and stapled with a `xcrun notarytool store-credentials` profile) |
 | Render app/input-source icons only | `scripts/build-macos-icons.sh [DIR]` → `build/macos/icons` by default (ICNS and a 16-point TIFF with 1x/2x representations) |
 | Installer diagnostics (in the installed bundle) | `Shixin -status [BUNDLE]` · `-added` · `-refresh` (System Settings' stale input source list) · `-repair` (stale menu and app caches, once added; refreshes running apps; waits for quit only as fallback) · `-cache-status` (pending app names as JSON) · `-uninstall` |
+| Verify and apply a downloaded release (the settings app runs it; installs for real, **VM only**) | `Shixin -apply-update DMG -update-version V` (in the installed bundle; logs to `shixin.log`) |
 
 ### The Tart VM
 

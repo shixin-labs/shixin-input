@@ -1056,6 +1056,33 @@ appear after restarting the app.
   a separate process and isn't restarted) keeps that window small. Most
   updates only touch the engine helper and use the hot swap (§3.5), so the
   front keeps running.
+- **In-app update (manual).** Settings → 关于 → 检查更新 asks GitHub's
+  latest-release API for the newest published release (unauthenticated; the
+  version from the tag, the release notes, and the `Shixin.dmg` asset's
+  URL, size and `sha256` digest). Nothing checks automatically or in the
+  background: the click is the only network access (privacy, AGENTS.md).
+  `internal/update` (no MyGo) compares dotted numeric versions and
+  downloads into `~/Library/Caches/Shixin/Updates/<version>/`, as
+  `.partial` renamed once the size and the digest match; downloads are
+  untrusted data until verified. Builds with a pre-release suffix or `dev`
+  can check but don't offer to install.
+
+  The settings app then runs the installed front, detached, as
+  `Shixin -apply-update DMG -update-version V`, because the upgrade stops
+  Settings. The front mounts the image read-only (`hdiutil attach
+  -nobrowse -readonly`, always detached afterwards) and fails closed
+  unless: `spctl` accepts the disk image as a notarized, stapled primary
+  signature and `codesign --verify --strict` passes on it; the volume's
+  `Shixin.app` passes `codesign --verify --deep --strict`; its
+  TeamIdentifier equals the installed bundle's (read from the installed
+  bundle, so forks signing with their own team work) and is a real team;
+  its bundle id is ours, its `CFBundleShortVersionString` is the version
+  the release announced and its `CFBundleVersion` is newer than the
+  installed build. An ad hoc installed copy has no team, so it can't update
+  itself. The install is the Update above (staged copy, `Contents` swap,
+  front relaunch), after which the front reopens Settings on 关于 and
+  deletes the download.
+
 - **Bundle metadata:** localized `InfoPlist.strings` for the bundle and
   input mode names (otherwise the raw source ID is shown). The English
   input menu keeps the Chinese brand visible as 拾新 (Shixin); the settings

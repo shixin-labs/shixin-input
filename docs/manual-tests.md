@@ -166,3 +166,25 @@ installing Shixin or running `Shixin -repair`.
 checks general clipboard change count and multiple data flavors across
 repeated marker resets and enabled-state invalidations. It seeds the
 clipboard with test data: VM only.
+
+## In-app update
+
+Needs a signed, notarized build older than the latest published release,
+installed with Shixin.app's double-click installer (an ad hoc or
+development build reports that it can't update itself, which is also worth
+checking once).
+
+1. Open Settings → 关于. The 更新 group must show the current version and
+   do nothing until 检查更新 is clicked (watch the network: nothing leaves
+   the Mac before the click).
+2. Click 检查更新. With no newer release it says 已是最新版本; otherwise
+   it shows the new version and its notes.
+3. Click 下载并安装. A progress bar shows the download; 取消 stops it and
+   leaves the group on the same offer. Try once with the network off for
+   the error and 重试.
+4. After the download Settings closes, and reopens on 关于 showing the new
+   version. No consent dialog appears, 拾新 stays in the input menu, and
+   typing works after switching to it. The download folder under
+   `~/Library/Caches/Shixin/Updates` is gone.
+5. `~/Library/Logs/Shixin/shixin.log` has the `update:` steps. Checking
+   again says 已是最新版本.
