@@ -45,7 +45,6 @@ import (
 )
 
 const (
-	bundleID = "im.shixin.inputmethod.Shixin"
 	// Modern IMK falls back to this name for bundles outside Apple's legacy
 	// connection-name allowlist. Older IMK reads the same name from Info.plist.
 	connName  = bundleID + ".Connection"
