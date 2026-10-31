@@ -184,6 +184,7 @@ func (a *app) about(c *ui.Context) {
 			ui.Text(c, T("s.b.tagline")).FontSize(12.5).TextColor(p.muted)
 		})
 	})
+	a.updateGroup(c)
 	group(c, T("s.b.data"), "", func() {
 		row(c, T("s.d.folder"), tildePath(rimeDir()), func() {
 			ui.Button(c, T("s.open")).OnClick(func() { go mygo.Shell.OpenPath(rimeDir()) })

@@ -9,6 +9,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -27,6 +28,7 @@ import (
 	"shixin/internal/lifecycle"
 	"shixin/internal/settings"
 	"shixin/internal/ui/fonts"
+	shixupdate "shixin/internal/update"
 )
 
 // version is set with -ldflags "-X main.version=...".
@@ -98,6 +100,9 @@ type app struct {
 
 	// 关于
 	confirmReset bool
+	upd          updateState
+	front        string                                                                 // Shixin.app's front, "" outside the bundle
+	checkRelease func(ctx context.Context, current string) (*shixupdate.Release, error) // replaced in tests
 }
 
 func newApp(path string, s settings.Settings) *app {
@@ -105,6 +110,8 @@ func newApp(path string, s settings.Settings) *app {
 	a.fonts = fonts.Families()
 	a.saveFile = func(s settings.Settings) error { return settings.Save(a.path, s) }
 	a.applyEngine = applyEngine
+	a.checkRelease = shixupdate.Check
+	a.front = frontExe()
 	a.refreshModel()
 	return a
 }
@@ -261,11 +268,17 @@ func main() {
 		log.Fatal(err)
 	}
 	welcome := flag.Bool("welcome", false, "open the first-run guide (Shixin.app does after installing)")
+	pageFlag := flag.String("page", "", "open this page (the installer reopens 关于 after an update)")
 	flag.Parse()
 	s, loadErr := settings.Load(path)
 	a := newApp(path, s)
 	if *welcome {
 		a.page = "start"
+	}
+	for _, pg := range pages {
+		if *pageFlag != "" && pg.id == *pageFlag {
+			a.page = pg.id
+		}
 	}
 	if loadErr != nil {
 		a.fail(fmt.Errorf("%s: %w", i18n.T("s.err.repaired"), loadErr), true)

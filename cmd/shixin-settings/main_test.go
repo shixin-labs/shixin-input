@@ -18,6 +18,7 @@ import (
 	"shixin/internal/models"
 	"shixin/internal/rerank"
 	"shixin/internal/settings"
+	shixupdate "shixin/internal/update"
 )
 
 var snapshot = flag.String("snapshot", "", "write every page in Chinese and English, light and dark, to this directory")
@@ -188,6 +189,15 @@ func TestSnapshots(t *testing.T) {
 				}
 				if pg.id == "about" {
 					a.cacheRepairSeen = true
+					// A released, installed build, whatever this test runs as.
+					oldVersion := version
+					version, a.front = "0.1.0", "/Applications/Shixin"
+					for _, st := range aboutStates() {
+						a.upd = st.state
+						a.page = pg.id
+						writeSnapshot(t, a, language.lang, dark, 900, "about-"+st.name)
+					}
+					a.upd, version, a.front = updateState{}, oldVersion, ""
 				}
 				if pg.id == "general" {
 					a.s.Scheme = "double_pinyin"
@@ -211,31 +221,58 @@ func TestSnapshots(t *testing.T) {
 				if pg.id == "perf" {
 					a.stats = sampleStats()
 				}
-				tt := ui.NewTester(a.view, 880, 720)
-				tt.SetDark(dark)
-				tt.Frame()
-				name := pg.id
-				if dark {
-					name += "-dark"
-				}
-				// Preserve existing Chinese filenames for snapshot consumers.
-				if language.lang == i18n.English {
-					name += "-en"
-				}
-				f, err := os.Create(filepath.Join(*snapshot, name+".png"))
-				if err != nil {
-					t.Fatal(err)
-				}
-				encodeErr := png.Encode(f, tt.Image())
-				closeErr := f.Close()
-				if encodeErr != nil {
-					t.Fatalf("%s: %v", name, encodeErr)
-				}
-				if closeErr != nil {
-					t.Fatalf("%s: %v", name, closeErr)
-				}
+				writeSnapshot(t, a, language.lang, dark, 720, pg.id)
 			}
 		}
+	}
+}
+
+// writeSnapshot renders a's current page to DIR/base[-dark][-en].png.
+func writeSnapshot(t *testing.T, a *app, lang i18n.Lang, dark bool, height int, base string) {
+	t.Helper()
+	tt := ui.NewTester(a.view, 880, height)
+	tt.SetDark(dark)
+	tt.Frame()
+	name := base
+	if dark {
+		name += "-dark"
+	}
+	// Preserve existing Chinese filenames for snapshot consumers.
+	if lang == i18n.English {
+		name += "-en"
+	}
+	f, err := os.Create(filepath.Join(*snapshot, name+".png"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	encodeErr := png.Encode(f, tt.Image())
+	closeErr := f.Close()
+	if encodeErr != nil {
+		t.Fatalf("%s: %v", name, encodeErr)
+	}
+	if closeErr != nil {
+		t.Fatalf("%s: %v", name, closeErr)
+	}
+}
+
+// aboutStates are the 更新 group's states, rendered by the snapshot test.
+func aboutStates() []struct {
+	name  string
+	state updateState
+} {
+	rel := &shixupdate.Release{Version: "0.2.0", Newer: true, Size: 60 << 20,
+		Notes: "- 新增：检查并安装更新\n- 修复：候选窗在多显示器上的位置\n- Faster startup after an upgrade"}
+	return []struct {
+		name  string
+		state updateState
+	}{
+		{"upd-idle", updateState{}},
+		{"upd-checking", updateState{phase: updChecking}},
+		{"upd-uptodate", updateState{phase: updUpToDate, rel: &shixupdate.Release{Version: "0.1.0"}}},
+		{"upd-available", updateState{phase: updAvailable, rel: rel}},
+		{"upd-downloading", updateState{phase: updDownloading, rel: rel, done: 24 << 20, total: rel.Size}},
+		{"upd-installing", updateState{phase: updInstalling, rel: rel}},
+		{"upd-failed", updateState{phase: updFailed, rel: rel, err: "update: not installing: the app is signed by team OTHER98765, not the installed ABCDE12345"}},
 	}
 }
 
