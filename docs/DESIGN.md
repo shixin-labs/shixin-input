@@ -987,14 +987,18 @@ appear after restarting the app.
     stay.
   - Selecting the source from another process fails with `-50` (spike
     2).
-  - **Gatekeeper.** `scripts/package-macos.sh` signs every binary and
-    library with a Developer ID and the hardened runtime (no entitlements;
-    typing, the settings app and shixin-ai on Metal verified in the VM),
-    and with `NOTARY_PROFILE` notarizes and staples the app. A notarized
-    download asks once ("Apple checked it for malicious software") and
-    opens; macOS runs it translocated (a read-only copy under
-    `AppTranslocation`), which the installer copies from like any other
-    location (verified in the VM, 2026-10-28). Without notarization a
+  - **Release: a disk image.** `scripts/package-macos.sh` builds
+    `Shixin.dmg`, holding only Shixin.app (no Applications link: opening
+    the app installs it, wherever it runs from) with 拾新's volume icon.
+  - **Gatekeeper.** The script signs every binary and library with a
+    Developer ID and the hardened runtime (no entitlements; typing, the
+    settings app and shixin-ai on Metal verified in the VM), signs the disk
+    image, and with `NOTARY_PROFILE` notarizes and staples the disk image,
+    which notarizes the app inside. Opening the app from a downloaded,
+    notarized disk image asks once ("Apple checked it for malicious
+    software") and installs from the mounted volume (upgrade verified in
+    the VM, 2026-10-31). A copy run translocated (a read-only copy under
+    `AppTranslocation`) installs the same way. Without notarization a
     downloaded copy is blocked at its first opening until Privacy &
     Security → Open Anyway.
 - **Update (no re-registration; verified in spike 2):**

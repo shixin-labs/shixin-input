@@ -12,8 +12,24 @@ app, and type. Nobody edits YAML, and **typing never stalls**: the app you
 type in never waits on the engine, whatever the engine is doing.
 
 **Status:** pre-release. macOS works and is in daily use; Windows and Linux
-are planned ([milestones](docs/DESIGN.md#10-milestones)). There are no
-prebuilt releases yet.
+are planned ([milestones](docs/DESIGN.md#10-milestones)).
+
+## Install (macOS)
+
+Requires macOS 13 or later on Apple silicon.
+
+1. Download `Shixin.dmg` from the
+   [latest release](https://github.com/shixin-labs/shixin-input/releases/latest).
+2. Open it and double-click **Shixin** (拾新). There is nothing to drag:
+   it installs itself into `~/Library/Input Methods`, or upgrades an
+   older copy in place.
+3. Follow the 开始使用 guide that opens: allow 拾新 when macOS asks, add
+   it under System Settings → Keyboard → Input Sources (+ → Chinese,
+   Simplified → 拾新), and switch to it with Control-Space.
+
+安装：从 [Releases](https://github.com/shixin-labs/shixin-input/releases/latest)
+下载 `Shixin.dmg`，打开后双击「拾新」即可安装（无需拖到“应用程序”），再按
+「开始使用」向导在系统设置中添加拾新。
 
 ## Features (macOS)
 
@@ -66,10 +82,10 @@ scripts/build-llama.sh       # optional: llama.cpp for 智能排序
 LIBRIME=$PWD/build/librime/out/lib/librime.1.dylib scripts/bundle-macos.sh
 ```
 
-This produces `build/macos/Shixin.app`. Opening it installs it into
-`~/Library/Input Methods` and shows a short guide for adding 拾新 in
-System Settings → Keyboard → Input Sources (macOS asks you to allow it).
-Opening a newer build later upgrades it in place.
+This produces `build/macos/Shixin.app`. Opening it installs it as above;
+opening a newer build later upgrades it in place. `scripts/package-macos.sh`
+makes the signed and notarized `Shixin.dmg` for a release (see
+[`AGENTS.md`](AGENTS.md)).
 
 ## Contributing
 

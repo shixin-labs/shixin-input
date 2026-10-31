@@ -238,7 +238,7 @@ and tools that touch Rime use scratch user dirs, never the live one.
 | Task | Command |
 |---|---|
 | Build Shixin.app | `scripts/bundle-macos.sh` → `build/macos/Shixin.app` (`LIBRIME=` to bundle our librime; compiles all dictionaries into `rime-prebuilt`; `SIGN_IDENTITY=` signs with a Developer ID and the hardened runtime, else ad hoc) |
-| Package Shixin.zip for sharing (opening it installs or upgrades) | `SIGN_IDENTITY="Developer ID Application: …" [NOTARY_PROFILE=…] scripts/package-macos.sh` → `build/dist/Shixin.zip` (notarized and stapled with a `xcrun notarytool store-credentials` profile) |
+| Package the release disk image (opening the app inside installs or upgrades) | `SIGN_IDENTITY="Developer ID Application: …" [NOTARY_PROFILE=…] VERSION=x.y.z scripts/package-macos.sh` → `build/dist/Shixin.dmg` (notarized and stapled with a `xcrun notarytool store-credentials` profile) |
 | Render app/input-source icons only | `scripts/build-macos-icons.sh [DIR]` → `build/macos/icons` by default (ICNS and a 16-point TIFF with 1x/2x representations) |
 | Installer diagnostics (in the installed bundle) | `Shixin -status [BUNDLE]` · `-added` · `-refresh` (System Settings' stale input source list) · `-repair` (stale menu and app caches, once added) · `-uninstall` |
 
