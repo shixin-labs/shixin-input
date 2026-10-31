@@ -227,13 +227,16 @@ func (a *app) input(c *ui.Context) {
 			names := []string{"[  ]", "-  =", ",  .", T("s.off")}
 			selectID(c, &s.SelectChar, ids, names).Width(120)
 		})
-		row(c, T("s.i.page_keys"), T("s.i.page_keys.desc"), func() {
+		row(c, T("s.i.page_keys"), pageKeysDesc(s), func() {
 			for _, kp := range settings.KeyPairs {
 				on := slices.Contains(s.PageKeys, kp.ID)
 				taken := kp.ID == s.SelectChar
 				name := kp.Name
 				if kp.ID == "tab" {
 					name = "⇥ Tab"
+				}
+				if taken {
+					name += " · " + T("s.i.select_char")
 				}
 				ch := chip(c, "page-"+kp.ID, name, on, taken)
 				if taken {
@@ -379,4 +382,24 @@ func (a *app) shortcut(c *ui.Context, act settings.HotkeyAction) {
 		selectID(c.Key(act.ID), &v, act.Choices, names).Width(130).Label(T("s.k."+act.ID) + " " + keyLabel(v))
 		a.s.Hotkeys[act.ID] = v
 	})
+}
+
+// pageKeysDesc says which keys turn pages, so an empty selection reads as
+// off rather than as four unpicked chips.
+func pageKeysDesc(s *settings.Settings) string {
+	var next, prev []string
+	for _, kp := range settings.KeyPairs {
+		if !slices.Contains(s.PageKeys, kp.ID) || kp.ID == s.SelectChar {
+			continue
+		}
+		p, n, _ := strings.Cut(kp.Name, " ")
+		if kp.ID == "tab" {
+			p, n = "Shift+Tab", "Tab"
+		}
+		prev, next = append(prev, strings.TrimSpace(p)), append(next, strings.TrimSpace(n))
+	}
+	if len(next) == 0 {
+		return T("s.i.page_keys.none")
+	}
+	return fmt.Sprintf(T("s.i.page_keys.on"), strings.Join(next, " "), strings.Join(prev, " "))
 }

@@ -215,6 +215,14 @@ func TestSnapshots(t *testing.T) {
 				if pg.id == "input" {
 					a.s.Rerank = "standard"
 					a.saved, a.seen = clone(a.s), clone(a.s)
+					// No extra page keys, with [ ] taken by 以词定字: the
+					// page must say so, not show four unpicked chips.
+					off := clone(a.s)
+					off.PageKeys, off.SelectChar = []string{}, "brackets"
+					a.s, a.saved, a.seen = off, clone(off), clone(off)
+					writeSnapshot(t, a, language.lang, dark, 1400, "input-no-page-keys")
+					a.s.PageKeys, a.s.SelectChar = []string{"minus_equal"}, "brackets"
+					a.saved, a.seen = clone(a.s), clone(a.s)
 				}
 				if pg.id == "perf" {
 					a.stats = sampleStats()
@@ -389,6 +397,27 @@ func TestDateCodes(t *testing.T) {
 			if !regexp.MustCompile(`(?m)^  ` + k + `: ` + v + `\b`).Match(block) {
 				t.Errorf("%s: date_translator/%s isn't %q", sc.ID, k, v)
 			}
+		}
+	}
+}
+
+func TestPageKeysDesc(t *testing.T) {
+	defer i18n.SetLang(i18n.Current())
+	i18n.SetLang(i18n.Chinese)
+	s := settings.Default()
+	s.SelectChar = "brackets"
+	for _, c := range []struct {
+		keys []string
+		want string
+	}{
+		{nil, "未开启额外翻页键，只能用 Page Up / Page Down 翻页"},
+		{[]string{"brackets"}, "未开启额外翻页键，只能用 Page Up / Page Down 翻页"}, // taken by 以词定字
+		{[]string{"minus_equal"}, "下一页 =，上一页 -；Page Up / Page Down 始终可用"},
+		{[]string{"minus_equal", "comma_period", "tab"}, "下一页 = . Tab，上一页 - , Shift+Tab；Page Up / Page Down 始终可用"},
+	} {
+		s.PageKeys = c.keys
+		if got := pageKeysDesc(&s); got != c.want {
+			t.Errorf("%v: %q, want %q", c.keys, got, c.want)
 		}
 	}
 }
