@@ -134,3 +134,35 @@ https://example.com/shixin-test?q=hello&n=123#check
 The last case guards a fixed bug: Safari consumes Cmd+A before IMK sees
 it, so the front resets auto spacing on unforwarded modifier changes
 (DESIGN §7.1).
+
+### Apps running during input-source cache repair
+
+In the test VM, keep an app with a stale input-source cache open while
+installing Shixin or running `Shixin -repair`.
+
+1. Settings should list the app on every page (Chinese and English), asking
+   to switch input methods. Its two cache files must not be deleted while
+   it runs. The helper invalidates the shared modification-date marker and
+   cached enabled-source state once.
+2. Switch away from and back to Shixin and type. Record whether the app's
+   `.kbdx` now includes Shixin, whether Chinese input works, and whether the
+   app or `pboard` restarted. Cache freshness alone does not pass the typing
+   check. Verify Shixin's own candidate panel and, in debug mode, its key
+   events: PowerPoint may silently switch to another Chinese input method.
+   Select the text to replace before switching sources. Use the actual
+   input menu or Control-Space; a diagnostic TIS selection returning success
+   does not prove that the app accepted the switch. Check that existing
+   clipboard formats remain intact.
+3. For an app that has not refreshed, close Settings and quit that app.
+   Only its two `com.apple.IntlDataCache.le*` files should be removed;
+   unrelated cache files must remain. Repeated repair requests must not
+   leave multiple watcher processes running.
+4. Reopen Settings: the app must no longer be listed. With Settings kept
+   open during repair, it should show “Input-source lists refreshed”.
+5. Reopen the app, select Shixin, type and commit Chinese, then switch to
+   ABC and back. Check that no new crash report appears.
+
+`SHIXIN_TEST_CACHE_REFRESH=1 ./shixin-front.test -test.run TestCacheRefreshPreservesClipboard`
+checks general clipboard change count and multiple data flavors across
+repeated marker resets and enabled-state invalidations. It seeds the
+clipboard with test data: VM only.

@@ -15,6 +15,32 @@ procedure below is for diagnosing what it didn't fix.
 These causes were found on a Mac with macOS 26.7.1 (2026-10-28), where
 recovery was needed without logging out.
 
+Settings lists running apps whose input-source caches lack Shixin. Shixin
+invalidates Carbon's cache modification-date marker and HIToolbox's cached
+enabled-source state, allowing those apps to refresh on their next text-input
+activity. Switch to another input
+method and back to Shixin. This leaves the general clipboard and its service
+alone. If input still fails, save work and quit the affected app; the
+background helper then removes only its two stale input-source cache files.
+It continues after Settings closes. Reopen Settings to check completion;
+`Shixin -cache-status` prints pending app names as JSON.
+
+A stale cache can also cause an app to crash during input-source switching:
+WeCom on macOS 26.7.1 hit `CFRelease(NULL)` in
+`TUINSCursorUIController._selectCurrentInputSource`. Its old cache lacked
+Shixin; rebuilding only the two files below resolved the reported crash.
+The preserved cache already contained Sogou, so Sogou working in that app
+was not a test of the same missing-source condition. See the
+[Sogou registration investigation](spikes/m2-sogou-registration.md) for
+its installer recovery steps and the limits of that comparison. A later
+controlled missing-source test showed Sogou refreshing PowerPoint's cache
+without quitting PowerPoint. Isolating the shared modification-date marker
+then reproduced the disk-cache refresh without restarting `pboard`; Shixin
+now tries this first. PowerPoint also retained a disabled parent-source flag
+in memory after its disk cache rebuilt. Invalidating that enabled-source
+state restored Shixin's own candidates and Chinese commits without quitting
+PowerPoint. Cache freshness alone is not proof of successful typing.
+
 ## The input menu's own list
 
 The input menu keeps its list in a separate named pasteboard,

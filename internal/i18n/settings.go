@@ -3,14 +3,18 @@ package i18n
 // The settings app's strings (DESIGN §6), keyed by page:
 // g 常用, a 外观, i 输入, k 快捷键, d 词库, p 应用, f 性能, b 关于.
 var settingsCatalog = map[string][2]string{
-	"s.page.general":    {"常用", "General"},
-	"s.page.appearance": {"外观", "Appearance"},
-	"s.page.input":      {"输入", "Input"},
-	"s.page.shortcuts":  {"快捷键", "Shortcuts"},
-	"s.page.dictionary": {"词库", "Dictionary"},
-	"s.page.apps":       {"应用", "Apps"},
-	"s.page.perf":       {"性能", "Performance"},
-	"s.page.about":      {"关于", "About"},
+	"s.start.restart":            {"在这些应用中重新选择拾新", "Select Shixin again in these apps"},
+	"s.start.restart.desc":       {"拾新正在刷新输入法列表。请在下列应用中切换到其他输入法，再切回拾新。若仍无法输入，请保存工作并退出应用，等待刷新完成后重新打开。关闭设置不影响修复。", "Shixin is refreshing the input-source lists. Switch to another input method, then back to Shixin in the apps below. If typing still fails, save your work and quit the app, then reopen it after the refresh completes. Repair continues if you close Settings."},
+	"s.start.restart.ready":      {"输入法列表已刷新", "Input-source lists refreshed"},
+	"s.start.restart.ready.desc": {"请重新选择拾新继续输入。如果刚才退出了应用，现在可以重新打开。", "Select Shixin again to continue typing. If you quit an app, you can now reopen it."},
+	"s.page.general":             {"常用", "General"},
+	"s.page.appearance":          {"外观", "Appearance"},
+	"s.page.input":               {"输入", "Input"},
+	"s.page.shortcuts":           {"快捷键", "Shortcuts"},
+	"s.page.dictionary":          {"词库", "Dictionary"},
+	"s.page.apps":                {"应用", "Apps"},
+	"s.page.perf":                {"性能", "Performance"},
+	"s.page.about":               {"关于", "About"},
 
 	"s.status.saved":    {"已生效", "Up to date"},
 	"s.status.pending":  {"即将应用…", "Applying soon…"},

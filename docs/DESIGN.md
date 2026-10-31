@@ -960,14 +960,44 @@ appear after restarting the app.
     (NSPasteboard sees its flavor but returns no data): a property list of
     input sources. If 拾新's mode isn't in it, clear the pasteboard and
     restart `TextInputMenuAgent`, which rebuilds it.
-  - An app's two cache files are removed if they lack 拾新's bundle id,
-    the directory is named after an installed app (LaunchServices), and
-    that app isn't running: a running app would keep its copy. The guide
-    tells the user to quit and reopen an app that keeps switching to ABC.
+  - If a running installed app's cache lacks Shixin, invalidate
+    `AppleIntlFileCacheModificationDatePasteboard`, Carbon's shared cache
+    modification-date marker. Clients can then rebuild their disk caches
+    on their next text-input activity without quitting. Then post HIToolbox's
+    `AppleEnabledInputSourcesChangedNotification` through the distributed
+    notification center. Otherwise an app can keep the parent input method
+    disabled in memory even though its mode is enabled and its disk cache
+    is fresh. The public TIS enabled-source notification alone does not
+    invalidate this state. Explicit `-repair` also posts the invalidation
+    when no disk cache is stale. These operations leave the general
+    clipboard and `pboard` alone. Both names are undocumented; errors are
+    logged and the fallback below remains available.
+  - A detached, per-user locked helper (`-watch-caches`) scans once per
+    second while stale caches remain, even after Settings closes. It
+    invalidates the marker once per run, not on every scan. Installation,
+    repair, and front startup launch it; it exits when no stale
+    installed-app caches remain or Shixin is disabled. All scanning and
+    file removal run outside the input-method UI and key path.
+  - Settings lists affected apps on every page and asks the user to switch
+    away from and back to Shixin. If input still fails, save work and quit
+    the app: the helper then removes only its two stale cache files.
+    `-cache-status` reports pending app names as JSON without changing
+    caches. Removal failures are logged; a remaining stale cache is never
+    reported as refreshed. A fresh cache does not by itself prove that the
+    client's input-method connection or key handling works.
   - Verified in the VM (2026-10-28): `TestMenuListRebuild` clears the list
     and sees it rebuilt with 拾新; a Safari cache rebuilt while 拾新 was
     uninstalled was removed once 拾新 was added, and Safari's next cache
-    listed 拾新. `TestRemoveStaleCaches` covers the choice of files.
+    listed 拾新. `TestRemoveStaleCaches` covers the choice of files and
+    later cleanup after an app quits. The detached watcher was checked in
+    the VM with Calculator: it retained the running app's stale caches,
+    rejected a duplicate watcher, removed only the two cache files after
+    quit, and exited.
+    The marker plus enabled-state invalidation was tested with PowerPoint
+    16.114.3 on macOS 26.6.2: a missing-source cache rebuilt, Shixin displayed
+    its own candidates and committed exact Chinese text without restarting
+    PowerPoint or `pboard`. `TestCacheRefreshPreservesClipboard` checks unchanged clipboard
+    change count and text, HTML, file-URL and binary flavors (VM only).
 
   - **Consent** (macOS 26, verified in the VM, 2026-10-28). Enabling shows
     a consent dialog inside System Settings, which may open behind other

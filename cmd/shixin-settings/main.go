@@ -83,8 +83,9 @@ type app struct {
 	appQuery  string
 
 	// 开始使用
-	startShown atomic.Bool
-	added      bool // 拾新 is in the user's input sources
+	cachePending    []string
+	cacheRepairSeen bool
+	added           bool // 拾新 is in the user's input sources
 
 	// 智能排序 (输入)
 	model modelState

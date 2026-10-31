@@ -63,9 +63,22 @@ Delete an entry when it's fixed, and mention it in the commit.
   request can be out of range and throw inside PowerPoint. Other input
   methods don't make that request.
 - **Next:** reproduce in the test VM (PowerPoint 16.114 is installed there
-  and needs a Microsoft 365 sign-in), read the crash report's stack, and
+  and is now signed in), read the crash report's stack, and
   fix the call, e.g. by validating ranges or not reading Office apps'
   text. Workaround: add PowerPoint to the apps without auto spacing.
+- **Follow-up (2026-10-31):** PowerPoint 16.114.3 on macOS 26.6.2 stayed
+  open while Shixin's stale input-source cache was refreshed through
+  Carbon's modification-date pasteboard. The cache then included Shixin,
+  but typing in the slide still inserted literal ASCII; TextEdit composed
+  Chinese normally. Restarting PowerPoint restored Chinese input with the
+  original Shixin event handler; reopening the document alone did not.
+  No PowerPoint crash occurred in that run. The separate live-registration
+  failure is now fixed: PowerPoint retained a disabled parent-source flag
+  in memory, and repair now invalidates enabled-source state as well as
+  the file cache. Shixin's own candidates and exact Chinese commits were
+  verified without restarting PowerPoint. This does not establish a fix
+  for the original typing crash above
+  ([investigation](spikes/m2-sogou-registration.md)).
 
 ### Other apps not yet tested
 - **Tested so far:** TextEdit, Terminal, and form fields in Safari

@@ -231,7 +231,8 @@ and tools that touch Rime use scratch user dirs, never the live one.
 | Mode bubble lifecycle/allocation tests, tracking cost and all skin/language snapshots | `go test ./cmd/shixin -run TestMode -bench BenchmarkModeIndicator -benchmem` · `go test ./internal/ui/modeview -snapshot DIR` |
 | Render every settings page and shuangpin chart (Chinese/English, light/dark) / every skin to PNGs | `go test ./cmd/shixin-settings -snapshot DIR` · `go test ./internal/ui/candview -snapshot DIR` (English settings PNGs add `-en`; charts also include minimum-window scrolled views) |
 | macOS IMK connection-name agreement with the installed OS (scratch bundle, no registration) | `go test ./cmd/shixin -run TestConnectionName` |
-| Stale input-source cache choice (scratch dir) | `go test ./cmd/shixin -run TestRemoveStaleCaches` |
+| Stale input-source cache choice and cleanup after app exit (scratch dir) | `go test ./cmd/shixin -run TestRemoveStaleCaches` |
+| Cache-marker refresh preserves clipboard types and change count (**VM only**, seeds the clipboard) | `SHIXIN_TEST_CACHE_REFRESH=1 ./shixin-front.test -test.run TestCacheRefreshPreservesClipboard` (`go test -c ./cmd/shixin`) |
 
 ### macOS app, packaging and install
 
@@ -240,7 +241,7 @@ and tools that touch Rime use scratch user dirs, never the live one.
 | Build Shixin.app | `scripts/bundle-macos.sh` → `build/macos/Shixin.app` (`LIBRIME=` to bundle our librime; compiles all dictionaries into `rime-prebuilt`; `SIGN_IDENTITY=` signs with a Developer ID and the hardened runtime, else ad hoc) |
 | Package the release disk image (opening the app inside installs or upgrades) | `SIGN_IDENTITY="Developer ID Application: …" [NOTARY_PROFILE=…] VERSION=x.y.z scripts/package-macos.sh` → `build/dist/Shixin.dmg` (notarized and stapled with a `xcrun notarytool store-credentials` profile) |
 | Render app/input-source icons only | `scripts/build-macos-icons.sh [DIR]` → `build/macos/icons` by default (ICNS and a 16-point TIFF with 1x/2x representations) |
-| Installer diagnostics (in the installed bundle) | `Shixin -status [BUNDLE]` · `-added` · `-refresh` (System Settings' stale input source list) · `-repair` (stale menu and app caches, once added) · `-uninstall` |
+| Installer diagnostics (in the installed bundle) | `Shixin -status [BUNDLE]` · `-added` · `-refresh` (System Settings' stale input source list) · `-repair` (stale menu and app caches, once added; refreshes running apps; waits for quit only as fallback) · `-cache-status` (pending app names as JSON) · `-uninstall` |
 
 ### The Tart VM
 

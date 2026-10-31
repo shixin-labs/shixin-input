@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/egoist/mygo"
@@ -38,7 +41,7 @@ func frontExe() string {
 }
 
 // pollAdded asks the front whether 拾新 is in the user's input sources
-// while the guide shows.
+// and pending cache repairs, including while other pages show.
 func (a *app) pollAdded() {
 	front := frontExe()
 	if front == "" {
@@ -46,16 +49,33 @@ func (a *app) pollAdded() {
 	}
 	was := false
 	for ; ; time.Sleep(2 * time.Second) {
-		if !a.startShown.Load() {
-			continue
-		}
 		added := exec.Command(front, "-added").Run() == nil
 		if added && !was {
 			// Just added: macOS's caches may still lack it (DESIGN §5.5).
 			exec.Command(front, "-repair").Run()
 		}
 		was = added
-		update(a, func() { a.added = added })
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		out, err := exec.CommandContext(ctx, front, "-cache-status").Output()
+		cancel()
+		var pending []string
+		if err == nil {
+			err = json.Unmarshal(out, &pending)
+		}
+		update(a, func() {
+			a.added = added
+			if !added {
+				a.cachePending = nil
+				a.cacheRepairSeen = false
+				return
+			}
+			if err == nil {
+				if len(pending) > 0 {
+					a.cacheRepairSeen = true
+				}
+				a.cachePending = pending
+			}
+		})
 	}
 }
 
@@ -100,4 +120,15 @@ func (a *app) start(c *ui.Context) {
 			ui.Button(c, T("s.start.rerank.open")).OnClick(func() { a.page = "input" })
 		})
 	})
+}
+
+// cacheNotice is visible on every settings page, including after an upgrade.
+func (a *app) cacheNotice(c *ui.Context) {
+	if len(a.cachePending) > 0 {
+		group(c, T("s.start.restart"), T("s.start.restart.desc"), func() {
+			row(c, strings.Join(a.cachePending, "、"), "", nil)
+		})
+	} else if a.cacheRepairSeen {
+		group(c, "", "", func() { row(c, T("s.start.restart.ready"), T("s.start.restart.ready.desc"), nil) })
+	}
 }

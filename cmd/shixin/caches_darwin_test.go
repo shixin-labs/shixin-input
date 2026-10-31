@@ -1,11 +1,17 @@
 package main
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"testing"
 	"time"
+	"unsafe"
+
+	"github.com/ebitengine/purego"
+	"github.com/ebitengine/purego/objc"
 )
 
 // TestRemoveStaleCaches removes only caches that lack 拾新 and belong to
@@ -27,7 +33,7 @@ func TestRemoveStaleCaches(t *testing.T) {
 	write("com.tencent.xinWeChat", stale)                 // stale but running: kept
 	write("com.apple.Keyboard-Settings.extension", stale) // System Settings': kept
 	idle := func(app string) bool { return app != "com.tencent.xinWeChat" }
-	if got := removeStaleCaches(dir, idle); !slices.Equal(got, []string{"com.tinyspeck.slackmacgap"}) {
+	if got, err := removeStaleCaches(dir, idle); err != nil || !slices.Equal(got, []string{"com.tinyspeck.slackmacgap"}) {
 		t.Errorf("removed %q", got)
 	}
 	for app, keep := range map[string]bool{
@@ -39,6 +45,15 @@ func TestRemoveStaleCaches(t *testing.T) {
 				t.Errorf("%s/%s exists %v, want %v", app, f, err == nil, keep)
 			}
 		}
+	}
+	// A later pass after the app quits repairs its cache, retaining fresh ones.
+	got, err := removeStaleCaches(dir, func(string) bool { return true })
+	if err != nil || !slices.Equal(got, []string{"com.tencent.xinWeChat"}) {
+		t.Fatalf("after quit: %v, %v", got, err)
+	}
+	got, err = removeStaleCaches(dir, func(string) bool { return true })
+	if err != nil || len(got) != 0 {
+		t.Fatalf("repeat repair: %v, %v", got, err)
 	}
 }
 
@@ -70,5 +85,90 @@ func TestMenuListRebuild(t *testing.T) {
 			t.Fatal("the menu list wasn't rebuilt with 拾新 in 20 s")
 		}
 		time.Sleep(200 * time.Millisecond)
+	}
+}
+
+// A failed removal must not be reported as a successful repair. Keep the
+// discovery file so a later repair can find the app again.
+func TestRemoveStaleCachesFailure(t *testing.T) {
+	dir := t.TempDir()
+	app := filepath.Join(dir, "com.example.App")
+	cache := filepath.Join(app, "com.apple.IntlDataCache.le")
+	if err := os.MkdirAll(cache, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(cache, "keep"), []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	kbdx := filepath.Join(app, "com.apple.IntlDataCache.le.kbdx")
+	if err := os.WriteFile(kbdx, []byte("stale"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	got, err := removeStaleCaches(dir, func(string) bool { return true })
+	if err == nil || len(got) != 0 {
+		t.Fatalf("failed removal reported as success: %v, %v", got, err)
+	}
+	if _, err := os.Stat(kbdx); err != nil {
+		t.Fatalf("lost retry marker: %v", err)
+	}
+}
+
+// This test refreshes source caches and seeds the general clipboard with test
+// data. Run only in the VM; ordinary unit tests never touch either pasteboard.
+func TestCacheRefreshPreservesClipboard(t *testing.T) {
+	if os.Getenv("SHIXIN_TEST_CACHE_REFRESH") != "1" {
+		t.Skip("changes clipboard and input cache marker; VM only")
+	}
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+	if _, err := purego.Dlopen("/System/Library/Frameworks/AppKit.framework/AppKit", purego.RTLD_NOW|purego.RTLD_GLOBAL); err != nil {
+		t.Fatal(err)
+	}
+	initObjC()
+	pool := objc.ID(objc.GetClass("NSAutoreleasePool")).Send(objc.RegisterName("new"))
+	defer pool.Send(objc.RegisterName("drain"))
+	board := send(uintptr(objc.GetClass("NSPasteboard")), objc.RegisterName("generalPasteboard"))
+	if board == 0 {
+		t.Fatal("general clipboard unavailable")
+	}
+	send(board, objc.RegisterName("clearContents"))
+	flavors := map[string][]byte{
+		"public.utf8-plain-text": []byte("Shixin clipboard regression"),
+		"public.html":            []byte("<b>Shixin clipboard regression</b>"),
+		"public.file-url":        []byte("file:///tmp/shixin-clipboard-fixture"),
+		"im.shixin.test.binary":  {0, 255, 1, 0, 128, 42},
+	}
+	var types []uintptr
+	for flavor := range flavors {
+		types = append(types, uintptr(nsStringOf(flavor)))
+	}
+	array := send(uintptr(objc.GetClass("NSArray")), objc.RegisterName("arrayWithObjects:count:"), uintptr(unsafe.Pointer(&types[0])), uintptr(len(types)))
+	send(board, objc.RegisterName("declareTypes:owner:"), array, 0)
+	for flavor, value := range flavors {
+		data := send(uintptr(objc.GetClass("NSData")), objc.RegisterName("dataWithBytes:length:"), uintptr(unsafe.Pointer(&value[0])), uintptr(len(value)))
+		if send(board, objc.RegisterName("setData:forType:"), data, uintptr(nsStringOf(flavor))) == 0 {
+			t.Fatalf("seed %s", flavor)
+		}
+	}
+	count := send(board, objc.RegisterName("changeCount"))
+	for range 2 {
+		if err := refreshInputSourceCaches(); err != nil {
+			t.Fatal(err)
+		}
+		if got := send(board, objc.RegisterName("changeCount")); got != count {
+			t.Fatalf("general clipboard changed: %d -> %d", count, got)
+		}
+		for flavor, want := range flavors {
+			data := send(board, objc.RegisterName("dataForType:"), uintptr(nsStringOf(flavor)))
+			n := send(data, objc.RegisterName("length"))
+			ptr := send(data, objc.RegisterName("bytes"))
+			if n != uintptr(len(want)) || ptr == 0 {
+				t.Fatalf("lost %s", flavor)
+			}
+			got := unsafe.Slice((*byte)(*(*unsafe.Pointer)(unsafe.Pointer(&ptr))), int(n))
+			if !bytes.Equal(got, want) {
+				t.Fatalf("changed %s", flavor)
+			}
+		}
 	}
 }

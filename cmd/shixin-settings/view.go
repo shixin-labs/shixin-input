@@ -57,7 +57,6 @@ func (a *app) view(c *ui.Context) {
 		ui.Column(c).Grow(1).MinWidth(0).Background(p.pane).Children(func() { a.pane(c) })
 	})
 	a.statsShown.Store(a.page == "perf" || a.page == "input")
-	a.startShown.Store(a.page == "start")
 	a.sync(c)
 }
 
@@ -106,6 +105,7 @@ func (a *app) pane(c *ui.Context) {
 	})
 	ui.Scroll(c).Grow(1).Children(func() {
 		ui.Column(c).Padding(4, 28, 32, 28).Gap(22).MaxWidth(680).FillWidth().Margin(0, ui.Auto).Children(func() {
+			a.cacheNotice(c)
 			pg.build(a, c)
 		})
 	})

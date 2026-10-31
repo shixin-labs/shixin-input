@@ -182,6 +182,13 @@ func TestSnapshots(t *testing.T) {
 			for _, pg := range pages {
 				a, _, _ := testApp(t)
 				a.page = pg.id
+				if pg.id == "start" {
+					a.added = true
+					a.cachePending = []string{"企业微信", "Slack"}
+				}
+				if pg.id == "about" {
+					a.cacheRepairSeen = true
+				}
 				if pg.id == "general" {
 					a.s.Scheme = "double_pinyin"
 					a.s.Punctuation = "english"
@@ -348,5 +355,32 @@ func TestDateCodes(t *testing.T) {
 				t.Errorf("%s: date_translator/%s isn't %q", sc.ID, k, v)
 			}
 		}
+	}
+}
+
+func TestCacheNotice(t *testing.T) {
+	defer i18n.SetLang(i18n.Current())
+	for _, language := range testLanguages {
+		t.Run(language.name, func(t *testing.T) {
+			i18n.SetLang(language.lang)
+			a, _, _ := testApp(t)
+			a.page = "general"
+			tt := ui.NewTester(a.view, 880, 720)
+			tt.Frame()
+			if tt.HasText(T("s.start.restart")) || tt.HasText(T("s.start.restart.ready")) {
+				t.Fatal("unexpected repair notice")
+			}
+			a.cachePending = []string{"企业微信", "Slack"}
+			a.cacheRepairSeen = true
+			tt.Frame()
+			if !tt.HasText(T("s.start.restart")) || !tt.HasText("企业微信、Slack") {
+				t.Fatal("pending apps not shown outside guide")
+			}
+			a.cachePending = nil
+			tt.Frame()
+			if tt.HasText(T("s.start.restart")) || !tt.HasText(T("s.start.restart.ready")) {
+				t.Fatal("repair completion not shown")
+			}
+		})
 	}
 }

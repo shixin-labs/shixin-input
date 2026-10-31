@@ -8,6 +8,8 @@
 //	Shixin -refresh           quit System Settings and refresh its list of input sources
 //	Shixin -forget            drop LaunchServices' records of other copies, then -repair (the installer runs it)
 //	Shixin -repair            once 拾新 is added, clear stale input source caches that lack it
+//	Shixin -cache-status      print pending app names as JSON (read-only)
+//	Shixin -watch-caches      refresh live caches and clean idle app caches (internal helper)
 //	Shixin -status [BUNDLE]   print the state of our (or BUNDLE's) input sources
 //	Shixin -uninstall         turn them off, stop Shixin and remove the installed bundle
 //	Shixin -added             exit 0 if the user has added 拾新 (both sources enabled)
@@ -65,6 +67,8 @@ func main() {
 	status := flag.Bool("status", false, "print the state of our input sources")
 	remove := flag.Bool("uninstall", false, "turn our input sources off, stop Shixin and remove the installed bundle")
 	forget := flag.Bool("forget", false, "after a few seconds, drop LaunchServices' records of every copy of Shixin but the installed one")
+	watchCache := flag.Bool("watch-caches", false, "refresh stale input-source caches and clean closed apps' cache files")
+	cacheStatus := flag.Bool("cache-status", false, "print JSON names of apps awaiting input-source cache repair")
 	repair := flag.Bool("repair", false, "once Shixin is added, clear the input menu's and other apps' caches that lack it")
 	refresh := flag.Bool("refresh", false, "quit System Settings and refresh its Keyboard pane's list of input sources")
 	added := flag.Bool("added", false, "exit 0 if both of our input sources are enabled")
@@ -94,6 +98,14 @@ func main() {
 		if !loadTIS().added(bundleID) {
 			os.Exit(1)
 		}
+		return
+	case *cacheStatus:
+		must(printCacheStatus())
+		return
+	case *watchCache:
+		openLog()
+		watchCaches()
+		logger.Close()
 		return
 	case *refresh:
 		refreshSettingsList()
@@ -175,6 +187,7 @@ func main() {
 		// here at once (the coordinator hot-swaps Rime changes).
 		go settings.Watch(settingsPath, time.Second, nil, func(s settings.Settings) { setLook(&s) })
 		registerIMK()
+		startCacheWatcher()
 		installSpacingResets()
 		if *afterUpgrade {
 			reselectSelf()

@@ -2,16 +2,22 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
+	"syscall"
+	"time"
 	"unsafe"
 
 	"github.com/ebitengine/purego"
 	"github.com/ebitengine/purego/objc"
+
+	"shixin/internal/ipc"
 )
 
 // Stale input source caches (DESIGN §5.5, docs/macos-input-menu-recovery.md).
@@ -31,9 +37,12 @@ func repairCaches() {
 		clearMenuList()
 		logf("input menu: its list lacked 拾新; cleared it")
 	}
-	for _, app := range staleAppCaches() {
-		logf("input source cache of %s lacked 拾新; removed it", app)
+	// A previous repair may already have rebuilt every disk cache while
+	// leaving a client's parent-source enabled flag stale.
+	if err := invalidateEnabledInputSources(); err != nil {
+		logf("input source enabled-state refresh: %v", err)
 	}
+	startCacheWatcher()
 }
 
 // menuPasteboard is the named pasteboard where the input menu keeps its
@@ -141,48 +150,198 @@ func clearMenuList() {
 }
 
 func clearMenuPasteboard() {
-	if p, ok := loadPasteboard(); ok {
-		if ref := p.open(menuPasteboard); ref != 0 {
-			purego.SyscallN(p.clear, ref)
-			purego.SyscallN(p.release, ref)
-		}
+	if err := clearNamedPasteboard(menuPasteboard); err != nil {
+		logf("input menu cache: %v", err)
 	}
+}
+
+// intlCachePasteboard is Carbon's modification-date marker for IntlDataCache.
+// Invalidating this marker makes clients recheck their cached input sources on
+// their next text-input activity. It is separate from the general clipboard.
+const intlCachePasteboard = "AppleIntlFileCacheModificationDatePasteboard"
+
+// This is HIToolbox's internal enable-state invalidation, not the public
+// kTISNotifyEnabledKeyboardInputSourcesChanged notification. The latter only
+// announces a change; it does not discard clients' cached enabled flags.
+const enabledSourcesChangedNotification = "AppleEnabledInputSourcesChangedNotification"
+
+func refreshInputSourceCaches() error {
+	if err := clearNamedPasteboard(intlCachePasteboard); err != nil {
+		return err
+	}
+	return invalidateEnabledInputSources()
+}
+
+func invalidateEnabledInputSources() error {
+	// A rebuilt file cache can still leave an already-running app believing
+	// the parent input method is disabled while its mode is enabled. Ask
+	// HIToolbox to reread that state after invalidating the file-cache marker.
+	// Neither operation changes the user's enabled sources or clipboard.
+	cf, err := purego.Dlopen("/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation", purego.RTLD_NOW|purego.RTLD_GLOBAL)
+	if err != nil {
+		return fmt.Errorf("load cache notification API: %w", err)
+	}
+	defer purego.Dlclose(cf)
+	get, err := purego.Dlsym(cf, "CFNotificationCenterGetDistributedCenter")
+	if err != nil {
+		return err
+	}
+	post, err := purego.Dlsym(cf, "CFNotificationCenterPostNotification")
+	if err != nil {
+		return err
+	}
+	t := loadTIS()
+	name := t.cfstr(enabledSourcesChangedNotification)
+	defer purego.SyscallN(t.cfRelease, name)
+	center, _, _ := purego.SyscallN(get)
+	if center == 0 {
+		return fmt.Errorf("distributed notification center unavailable")
+	}
+	purego.SyscallN(post, center, name, 0, 0, 1)
+	return nil
+}
+
+func clearNamedPasteboard(name string) error {
+	p, ok := loadPasteboard()
+	if !ok {
+		return fmt.Errorf("load Pasteboard Manager")
+	}
+	ref := p.open(name)
+	if ref == 0 {
+		return fmt.Errorf("open %s", name)
+	}
+	defer purego.SyscallN(p.release, ref)
+	if st, _, _ := purego.SyscallN(p.clear, ref); int32(st) != 0 {
+		return fmt.Errorf("clear %s: OSStatus %d", name, int32(st))
+	}
+	return nil
 }
 
 func restartMenuAgent() {
 	exec.Command("/usr/bin/pkill", "-u", strconv.Itoa(os.Getuid()), "-x", "TextInputMenuAgent").Run()
 }
 
-// staleAppCaches removes the input source caches of apps that aren't
-// running and whose cache lacks 拾新, and returns those apps' bundle ids.
-// Each app keeps its own copy in <user cache dir>/<bundle id>/; Slack's,
-// written weeks before 拾新 was installed, survived restarts, and Slack
-// fell back to ABC. A running app's cache is left alone: it would keep its
-// copy. Only directories named after an installed app are considered.
-func staleAppCaches() []string {
+// cacheApps inspects only installed apps with stale input-source caches.
+// It runs in a helper process, never on the front's key or UI thread.
+func cacheApps(repair bool) ([]string, error) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
 	out, err := exec.Command("/usr/bin/getconf", "DARWIN_USER_CACHE_DIR").Output()
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	if _, err := purego.Dlopen("/System/Library/Frameworks/AppKit.framework/AppKit", purego.RTLD_NOW|purego.RTLD_GLOBAL); err != nil {
-		return nil
+		return nil, err
 	}
+	pool := objc.ID(objc.GetClass("NSAutoreleasePool")).Send(objc.RegisterName("new"))
+	defer pool.Send(objc.RegisterName("drain"))
 	workspace := objc.ID(objc.GetClass("NSWorkspace")).Send(objc.RegisterName("sharedWorkspace"))
 	running := objc.ID(objc.GetClass("NSRunningApplication"))
-	selURL := objc.RegisterName("URLForApplicationWithBundleIdentifier:")
-	selRunning := objc.RegisterName("runningApplicationsWithBundleIdentifier:")
-	selCount := objc.RegisterName("count")
-	return removeStaleCaches(strings.TrimSpace(string(out)), func(app string) bool {
+	var pending []string
+	removed, err := removeStaleCaches(strings.TrimSpace(string(out)), func(app string) bool {
 		id := nsStringOf(app)
-		return workspace.Send(selURL, id) != 0 && running.Send(selRunning, id).Send(selCount) == 0
+		url := workspace.Send(objc.RegisterName("URLForApplicationWithBundleIdentifier:"), id)
+		if url == 0 {
+			return false
+		}
+		active := running.Send(objc.RegisterName("runningApplicationsWithBundleIdentifier:"), id).Send(objc.RegisterName("count")) != 0
+		// Include idle caches until the watcher has actually removed them.
+		if active || !repair {
+			name := url.Send(objc.RegisterName("lastPathComponent")).Send(objc.RegisterName("stringByDeletingPathExtension"))
+			label := ""
+			if ptr := name.Send(objc.RegisterName("UTF8String")); ptr != 0 {
+				label = string(cbytes(uintptr(ptr)))
+			}
+			if label == "" {
+				label = app
+			}
+			pending = append(pending, label)
+		}
+		return repair && !active
 	})
+	for _, app := range removed {
+		logf("input source cache of %s lacked 拾新; removed it", app)
+	}
+	return pending, err
+}
+
+func startCacheWatcher() {
+	exe, err := os.Executable()
+	if err != nil {
+		return
+	}
+	cmd := exec.Command(exe, "-watch-caches")
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	if err := cmd.Start(); err != nil {
+		logf("cache watcher: %v", err)
+		return
+	}
+	cmd.Process.Release()
+}
+
+// watchCaches survives Settings closing. A process lock prevents duplicate
+// watchers after repeated repairs; all I/O stays in this disposable helper.
+func watchCaches() {
+	dir, err := ipc.RuntimeDir()
+	if err != nil {
+		logf("cache watcher: %v", err)
+		return
+	}
+	f, err := os.OpenFile(filepath.Join(dir, "cache-repair.lock"), os.O_CREATE|os.O_RDWR, 0o600)
+	if err != nil {
+		logf("cache watcher: %v", err)
+		return
+	}
+	defer f.Close()
+	if syscall.Flock(int(f.Fd()), syscall.LOCK_EX|syscall.LOCK_NB) != nil {
+		return
+	}
+	defer syscall.Flock(int(f.Fd()), syscall.LOCK_UN)
+	refreshed := false
+	for loadTIS().added(bundleID) {
+		pending, err := cacheApps(true)
+		if err != nil {
+			logf("cache watcher: %v", err)
+			return
+		}
+		if len(pending) == 0 {
+			return
+		}
+		if !refreshed {
+			// Running clients may refresh in place; do not ask them to quit
+			// before trying Carbon's marker. Keep watching for clients that
+			// only rebuild on their next key, or eventually quit.
+			if err := refreshInputSourceCaches(); err != nil {
+				logf("input source cache refresh: %v", err)
+			} else {
+				logf("input source caches: invalidated file-cache marker and enabled-source state for running apps")
+			}
+			refreshed = true // never repeatedly invalidate while a client is idle
+		}
+		time.Sleep(time.Second)
+	}
+}
+
+func printCacheStatus() error {
+	var pending []string
+	if loadTIS().added(bundleID) {
+		var err error
+		pending, err = cacheApps(false)
+		if err != nil {
+			return fmt.Errorf("inspect input source caches: %w", err)
+		}
+	}
+	return json.NewEncoder(os.Stdout).Encode(pending)
 }
 
 // removeStaleCaches removes, under cacheDir, the input source caches that
 // lack 拾新 and belong to an app idle reports as installed and not running.
 // It returns those apps' bundle ids.
-func removeStaleCaches(cacheDir string, idle func(app string) bool) []string {
-	caches, _ := filepath.Glob(filepath.Join(cacheDir, "*", "com.apple.IntlDataCache.le.kbdx"))
+func removeStaleCaches(cacheDir string, idle func(app string) bool) ([]string, error) {
+	caches, err := filepath.Glob(filepath.Join(cacheDir, "*", "com.apple.IntlDataCache.le.kbdx"))
+	if err != nil {
+		return nil, err
+	}
 	want := []byte(bundleID)
 	var removed []string
 	for _, kbdx := range caches {
@@ -192,14 +351,23 @@ func removeStaleCaches(cacheDir string, idle func(app string) bool) []string {
 			continue // System Settings' copy is refreshed on its own (refreshSettingsList)
 		}
 		data, err := os.ReadFile(kbdx)
-		if err != nil || bytes.Contains(data, want) || !idle(app) {
+		if os.IsNotExist(err) {
 			continue
 		}
-		os.Remove(filepath.Join(dir, "com.apple.IntlDataCache.le"))
-		os.Remove(kbdx)
+		if err != nil {
+			return removed, fmt.Errorf("read %s: %w", kbdx, err)
+		}
+		if bytes.Contains(data, want) || !idle(app) {
+			continue
+		}
+		for _, path := range []string{filepath.Join(dir, "com.apple.IntlDataCache.le"), kbdx} {
+			if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+				return removed, fmt.Errorf("remove %s: %w", path, err)
+			}
+		}
 		removed = append(removed, app)
 	}
-	return removed
+	return removed, nil
 }
 
 // nsStringOf returns an autoreleased NSString for s, without initObjC (cold
