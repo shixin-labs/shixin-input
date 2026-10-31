@@ -208,7 +208,7 @@ func TestStandbyPreservesLearning(t *testing.T) {
 	if _, err := old.call(lifecycle.OpMigrate); err != nil {
 		t.Fatal(err)
 	}
-	typ, payload, err := cl.reader.Next()
+	typ, payload, err := cl.next()
 	var m ipc.Migrate
 	if err != nil || typ != ipc.TypeMigrate || m.Decode(payload) != nil || string(m.Endpoint) != s.c.socket {
 		t.Fatalf("migrate frame: %v %v", typ, err)
@@ -220,7 +220,7 @@ func TestStandbyPreservesLearning(t *testing.T) {
 		t.Fatal("queued commit lost")
 	}
 	cl.c.CloseWrite()
-	if _, _, err := cl.reader.Next(); err == nil {
+	if _, _, err := cl.next(); err == nil {
 		t.Fatal("old connection did not drain")
 	}
 	start := time.Now()
@@ -410,11 +410,10 @@ func testDial(t *testing.T, socket string) *testClient {
 	if err != nil {
 		t.Fatal(err)
 	}
-	c.SetDeadline(time.Now().Add(15 * time.Second))
 	t.Cleanup(func() { c.Close() })
 	cl := &testClient{t: t, c: c, reader: ipc.NewReader(c, 4096)}
 	cl.send((&ipc.Hello{Version: ipc.Version, Kind: ipc.KindTest}).Append(nil))
-	typ, _, err := cl.reader.Next()
+	typ, _, err := cl.next()
 	if err != nil || typ != ipc.TypeWelcome {
 		t.Fatalf("hello: %v %v", typ, err)
 	}
@@ -423,16 +422,28 @@ func testDial(t *testing.T, socket string) *testClient {
 	return cl
 }
 
+// ioTimeout bounds each exchange, not the connection: tests keep a client
+// open while they build a generation, which takes longer on slow machines.
+const ioTimeout = 15 * time.Second
+
 func (c *testClient) send(b []byte) {
 	c.t.Helper()
+	c.c.SetWriteDeadline(time.Now().Add(ioTimeout))
 	if _, err := c.c.Write(b); err != nil {
 		c.t.Fatal(err)
 	}
 }
+
+// next reads one frame.
+func (c *testClient) next() (ipc.Type, []byte, error) {
+	c.c.SetReadDeadline(time.Now().Add(ioTimeout))
+	return c.reader.Next()
+}
+
 func (c *testClient) result() *ipc.Result {
 	c.t.Helper()
 	for {
-		typ, b, err := c.reader.Next()
+		typ, b, err := c.next()
 		if err != nil {
 			c.t.Fatal(err)
 		}
