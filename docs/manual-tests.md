@@ -194,7 +194,8 @@ checking once).
 Use a disposable Windows snapshot and the matching DLL, host, backend,
 and native libraries described in [Windows development](windows.md).
 These are pending checks, not reported passing results. Registration and
-unregistration must happen only in the VM.
+unregistration must happen only in the VM. For host control and external
+evidence storage, see [Windows VM setup](windows.md#windows-test-vm-on-macos).
 
 1. Register with `Shixin.exe -register`, start `Shixin.exe`, and select
    拾新 in Windows's language/input settings. Confirm registration appears
@@ -226,3 +227,54 @@ unregistration must happen only in the VM.
    Elevated/AppContainer tests remain gated on the documented security work.
    Close test apps and unregister with `Shixin.exe -unregister`; confirm no
    unrelated input sources or user dictionaries changed.
+
+### Windows app matrix and evidence
+
+For each run record the source commit, Windows build, guest architecture,
+application version and architecture, DPI, selected keyboard, and settings.
+Keep screenshots under the external Windows state directory's `shots/`,
+logs under `logs/`, and private setup details under `notes/`. Enable
+[explicit Windows logs](windows.md#collecting-development-logs) before a
+run. Attach evidence
+paths to every result; use **pass**, **fail**, **blocked**, or **not run**.
+A screenshot of registration alone does not pass a typing test.
+
+Repeat the composition checks above in each available target:
+
+| Application | Targets |
+|---|---|
+| Notepad | Fresh document, selected-text replacement, new document, save dialog |
+| WordPad | Fresh document if installed; otherwise record not available |
+| Edge and Chrome | Address bar and an ordinary multiline text field; separate password and PIN checks |
+| Explorer | File rename and search box |
+| Start | Search box; record any low-integrity/AppContainer restriction |
+| Word/Office | Document if installed; otherwise record not available |
+
+In a fresh ordinary field type `nihao`, Space, select all and copy; assert
+exactly `你好`. Reset the document between selection cases, and record the
+visible candidate order before checking digit and numpad selection, arrows,
+mouse clicks and paging. Check Num Lock on and off separately. Press Shift
+alone while composing: record whether the inline code is finalized once and
+the expected Chinese/English mode takes effect; Shift combined with another
+key must preserve the shortcut. Check Shift again while idle.
+
+Leave an uncommitted composition, switch apps and return; check that text
+is finalized in the original field only and no stale panel follows the new
+focus. Repeat with selected text already present, then with an ordinary field
+followed by a password/PIN field. Screenshot candidate placement at the
+screen edges and each tested DPI; list mixed monitors as not run on a
+single-display VM. Confirm clicking the panel preserves keyboard focus.
+
+Open Settings from the tray, inspect its Windows 开始使用 guide, and change
+layout, punctuation and appearance. Confirm the saved setting, live engine
+behavior and host appearance independently. Stop and restart the engine,
+then change a setting requiring a generation rebuild during a typing burst;
+record literal fallback keys and any missing or duplicated commits.
+
+Before and after typing, capture process IDs, CPU time and working sets for
+`Shixin`, `shixin-engine`, `shixin-settings` and the test application hosting
+the TSF DLL. Compare CPU-time deltas over a stated idle interval and during
+a stated burst; a single cumulative CPU reading is not an idle-usage result.
+Preserve the native build/check log and note every skipped dependency,
+application or security scenario. Put reproducible product failures in
+[Known issues](KNOWN-ISSUES.md#windows-validation-and-release-support).

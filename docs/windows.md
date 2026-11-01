@@ -98,6 +98,30 @@ native ARM64 applications; the package strategy for x64 emulated apps,
 which require a matching DLL, still needs validation. The build script does
 not create logon startup entries; start `Shixin.exe` before typing tests.
 
+## Collecting development logs
+
+The default Windows launch does not currently configure persistent logs
+(see [known issues](KNOWN-ISSUES.md#windows-development-logs-are-not-persistent-by-default)).
+For a fresh VM run, explicitly start the engine with a log path before
+starting the host; preserve stderr from both processes as well:
+
+```powershell
+$out = (Resolve-Path ./build/windows-arm64).Path
+$logs = Join-Path $env:LOCALAPPDATA 'Shixin/test-logs'
+New-Item -ItemType Directory -Force $logs | Out-Null
+Start-Process (Join-Path $out 'shixin-engine.exe') -ArgumentList @(
+    '-log', ('"' + (Join-Path $logs 'engine.log') + '"')
+) -RedirectStandardError (Join-Path $logs 'engine-stderr.log')
+Start-Process (Join-Path $out 'Shixin.exe') `
+    -RedirectStandardError (Join-Path $logs 'host-stderr.log')
+```
+
+Use this only when no engine is already running. Record the actual command
+and paths for the run, then copy the files into the external VM state
+`logs/` directory. These are explicit test destinations, not product default
+paths. A later restart by the host's supervisor returns to the default
+logging behavior; record that evidence gap during restart tests.
+
 ## Windows test VM on macOS
 
 Use UTM's QEMU backend for Windows ARM64 on Apple silicon. Keep the VM
