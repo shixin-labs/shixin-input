@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "core.h"
 #include "keys.h"
+#include "recovery.h"
 #include "ring.h"
 #include "scope.h"
 #include "watchdog.h"
-#include "recovery.h"
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -89,7 +89,9 @@ static void golden() {
     if (type == ResultType) {
       Result r;
       CHECK(r.decode(payload));
-      CHECK(r.ctx == 1 && r.seq == 42 && r.flags == 3 && r.policy == 2);
+      CHECK(r.ctx == 1 && r.seq == 42 &&
+            r.flags == (name == "result_auto_space" ? 3 | kAutoSpace : 3) &&
+            r.policy == 2);
       CHECK(r.preedit == "shi xin" && r.count == 2 &&
             r.candidates[0].text == "拾新" && r.candidates[1].comment == "shi");
       for (size_t i = 0; i < payload.size(); ++i) {

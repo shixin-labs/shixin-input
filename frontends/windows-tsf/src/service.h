@@ -2,6 +2,7 @@
 #pragma once
 #include "core.h"
 #include "ids.h"
+#include "spacer.h"
 #include "transport.h"
 #include <inputscope.h>
 #include <memory>
@@ -35,6 +36,8 @@ public:
   uint32_t epoch = 0;
   bool probe = false;
   bool recovery = false;
+  uint32_t spacing_key = 0, spacing_mods = 0;
+  bool spacing_done = false, spacing_inserted = false, cancelled = false;
   bool idle() const { return refs_.load() == 0; }
   void prepare(Service *, ITfContext *, uint32_t, bool);
   HRESULT STDMETHODCALLTYPE QueryInterface(REFIID, void **) override;
@@ -53,6 +56,7 @@ class Service final : public ProcessorEx,
   ITfThreadMgr *manager_ = nullptr;
   ITfContext *context_ = nullptr;
   ITfComposition *composition_ = nullptr;
+  bool composition_spacing_ = true;
   ITfCompartment *disabled_ = nullptr;
   TfClientId client_ = 0;
   DWORD manager_cookie_ = TF_INVALID_COOKIE, text_cookie_ = TF_INVALID_COOKIE;
@@ -62,6 +66,9 @@ class Service final : public ProcessorEx,
        pumping_ = false, focus_pending_ = false, draining_ = false,
        finalize_needed_ = false;
   bool recovering_ = false;
+  Spacer spacer_;
+  bool passed_edit_ = false;
+  ITfRange *passed_selection_ = nullptr;
   std::array<char, 128> fallback_{};
   size_t fallback_size_ = 0;
   unsigned key_depth_ = 0;
@@ -90,7 +97,7 @@ class Service final : public ProcessorEx,
   void edit_pop();
   void edit_clear();
   void receive_result(std::string_view);
-  std::array<wchar_t, 16384> wide_{};
+  std::array<wchar_t, 16385> wide_{};
   LARGE_INTEGER frequency_{};
   HANDLE timer_ = nullptr; // high-resolution deadline for wait_until
   static LRESULT CALLBACK window_proc(HWND, UINT, WPARAM, LPARAM);
@@ -104,6 +111,16 @@ class Service final : public ProcessorEx,
   void schedule();
   bool password(TfEditCookie, ITfContext *);
   bool disabled() const;
+  struct SpacingReader {
+    Service &service;
+    TfEditCookie cookie;
+    ITfRange *range;
+    bool read(uint32_t &);
+    uint64_t now() { return service.now(); }
+  };
+  bool passed_key(uint32_t, uint32_t);
+  bool same_passed_selection(TfEditCookie);
+  static bool matches_character(uint32_t, WPARAM, LPARAM);
   HRESULT apply_text(TfEditCookie, Result &, uint32_t repair);
   HRESULT handle(ITfContext *, WPARAM, LPARAM, bool, BOOL *);
 

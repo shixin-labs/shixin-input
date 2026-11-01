@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "service.h"
-#include "recovery.h"
 #include "keys.h"
+#include "recovery.h"
 #include "scope.h"
 #include <algorithm>
 #include <appmodel.h>
@@ -71,6 +71,8 @@ void Edit::prepare(Service *s, ITfContext *c, uint32_t e, bool p) {
   epoch = e;
   probe = p;
   recovery = false;
+  spacing_key = spacing_mods = 0;
+  spacing_done = spacing_inserted = cancelled = false;
   refs_ = 1;
   owner->AddRef();
   context->AddRef();
@@ -120,6 +122,7 @@ Service::Service() {
 }
 Service::~Service() {
   Deactivate();
+  release(passed_selection_);
   if (timer_)
     CloseHandle(timer_);
   --objects;
@@ -289,6 +292,9 @@ void Service::focus(ITfContext *c) {
   }
   if (c == context_)
     return;
+  spacer_.focus();
+  passed_edit_ = false;
+  release(passed_selection_);
   if (recovering_) {
     recovering_ = false;
     fallback_size_ = 0;
@@ -385,7 +391,8 @@ HRESULT Service::OnCompositionTerminated(TfEditCookie, ITfComposition *c) {
   }
   return S_OK;
 }
-HRESULT Service::OnEndEdit(ITfContext *c, TfEditCookie ec, ITfEditRecord *record) {
+HRESULT Service::OnEndEdit(ITfContext *c, TfEditCookie ec,
+                           ITfEditRecord *record) {
   if (c != context_ || inside_)
     return S_OK;
   inside_ = true;
@@ -395,7 +402,7 @@ HRESULT Service::OnEndEdit(ITfContext *c, TfEditCookie ec, ITfEditRecord *record
     return S_OK;
   if (secure != core_.secure)
     secure_changed(secure);
-  else if (recovering_ || core_.sent != core_.applied) {
+  else if (spacer_.on || recovering_ || core_.sent != core_.applied) {
     // Own write sessions also notify this sink after execute() returns.
     // Ask TSF who owns the lock instead of retaining a callback marker.
     BOOL own = FALSE;
@@ -404,18 +411,52 @@ HRESULT Service::OnEndEdit(ITfContext *c, TfEditCookie ec, ITfEditRecord *record
       IEnumTfRanges *updates = nullptr;
       ITfRange *range = nullptr;
       ULONG count = 0;
-      bool changed = !record ||
-                     FAILED(record->GetSelectionStatus(&selection)) || selection;
-      if (!changed) {
-        changed = FAILED(record->GetTextAndPropertyUpdates(
-                      TF_GTP_INCL_TEXT, nullptr, 0, &updates)) ||
-                  !updates;
-        if (updates)
-          changed = FAILED(updates->Next(1, &range, &count)) || count != 0;
-      }
+      bool unknown = !record || FAILED(record->GetSelectionStatus(&selection));
+      bool changed = unknown || selection;
+      unknown |= !record ||
+                 FAILED(record->GetTextAndPropertyUpdates(
+                     TF_GTP_INCL_TEXT, nullptr, 0, &updates)) ||
+                 !updates;
+      if (updates)
+        unknown |= FAILED(updates->Next(1, &range, &count));
+      changed |= unknown || count != 0;
       release(range);
       release(updates);
-      if (changed) {
+      // A passed printable/Backspace has a known effect. Keep its history
+      // through its own text-edit notification; selection-only changes,
+      // unknown edits and application commands always reset it. Verification
+      // at the next boundary catches autocorrection in that same app edit.
+      bool observed = passed_edit_ && !unknown && count != 0;
+      if (observed && spacer_.on) {
+        // Chromium sends a text edit followed by a separate selection
+        // notification for the SAME caret after Backspace. Remember its
+        // position so that only that redundant notification is ignored.
+        release(passed_selection_);
+        TF_SELECTION selected{};
+        ULONG n = 0;
+        if (SUCCEEDED(
+                c->GetSelection(ec, TF_DEFAULT_SELECTION, 1, &selected, &n)) &&
+            n && selected.range) {
+          BOOL empty = FALSE;
+          if (SUCCEEDED(selected.range->IsEmpty(ec, &empty)) && empty)
+            selected.range->Clone(&passed_selection_);
+          selected.range->Release();
+        }
+      } else if (!unknown && !count && selection && passed_selection_) {
+        observed = same_passed_selection(ec);
+      }
+      if (transport_)
+        transport_->trace("spacing-edit",
+                          (observed ? 1 : 0) | (unknown ? 2 : 0) |
+                              (selection ? 4 : 0) | (passed_edit_ ? 8 : 0),
+                          count, spacer_.count);
+      passed_edit_ = false;
+      if (changed && !observed)
+        spacer_.clear();
+      if (changed && !observed)
+        release(passed_selection_);
+      if (changed && !observed &&
+          (recovering_ || core_.sent != core_.applied)) {
         // The application moved/replaced text while our edit was delayed.
         // Invalidate queued edits and late replies before they can touch its
         // new selection. Already-marked text may only be finalized.
@@ -502,6 +543,9 @@ bool Service::password(TfEditCookie ec, ITfContext *c) {
   return secure;
 }
 void Service::secure_changed(bool secure) {
+  spacer_.focus();
+  passed_edit_ = false;
+  release(passed_selection_);
   if (recovering_) {
     recovering_ = false;
     fallback_size_ = 0;
@@ -598,6 +642,9 @@ bool Service::send(uint32_t ctx, uint32_t seq, uint32_t sym, uint32_t mods,
   return transport_ && transport_->send(scratch_);
 }
 void Service::degraded() {
+  spacer_.focus();
+  passed_edit_ = false;
+  release(passed_selection_);
   if (!recovering_) {
     fallback_size_ =
         core_.secure ? 0 : core_.fallback(fallback_.data(), fallback_.size());
@@ -688,6 +735,7 @@ void Service::pump() {
         break;
       }
       core_.reset();
+      spacer_.focus();
       core_.connected = true;
       core_.focus(context_id(epoch_), core_.secure);
       send_focus();
@@ -809,7 +857,54 @@ HRESULT Service::execute(Edit &edit, TfEditCookie ec) {
     return edit.ending->EndComposition(ec);
   if (!active_ || edit.epoch != epoch_ || edit.context != context_)
     return S_OK;
+  if (edit.spacing_key) {
+    if (edit.cancelled)
+      return S_OK;
+    inside_ = true;
+    bool secure = password(ec, context_);
+    HRESULT hr = S_OK;
+    if (!secure && !focus_pending_) {
+      TF_SELECTION sel{};
+      ULONG count = 0;
+      if (SUCCEEDED(context_->GetSelection(ec, TF_DEFAULT_SELECTION, 1, &sel,
+                                           &count)) &&
+          count && sel.range) {
+        SpacingReader reader{*this, ec, sel.range};
+        edit.spacing_done = true;
+        BOOL empty = TRUE;
+        bool empty_selection =
+            SUCCEEDED(sel.range->IsEmpty(ec, &empty)) && empty;
+        if (!empty_selection)
+          spacer_.clear();
+        if (spacer_.key(edit.spacing_key, edit.spacing_mods, reader,
+                        empty_selection) &&
+            !focus_pending_) {
+          // One insertion makes a single undo step. No engine notification
+          // is added: it already saw this key if its policy requested one.
+          wchar_t text[] = {L' ', wchar_t(edit.spacing_key)};
+          hr = sel.range->SetText(ec, 0, text, 2);
+          if (SUCCEEDED(hr)) {
+            sel.range->Collapse(ec, TF_ANCHOR_END);
+            hr = context_->SetSelection(ec, 1, &sel);
+            // SetText consumed the key even if setting the caret failed.
+            edit.spacing_inserted = true;
+          }
+          if (FAILED(hr))
+            spacer_.clear();
+        }
+        sel.range->Release();
+      }
+    }
+    inside_ = false;
+    if (secure)
+      secure_changed(true);
+    flush_focus();
+    return hr;
+  }
   if (edit.recovery) {
+    // Drained results can carry the previous spacing flag. Literal outage
+    // recovery preserves the accepted keys exactly, without a new prefix.
+    spacer_.focus();
     inside_ = true;
     const bool secure = password(ec, context_);
     HRESULT hr = S_OK;
@@ -873,6 +968,13 @@ HRESULT Service::execute(Edit &edit, TfEditCookie ec) {
   }
   HRESULT hr = S_OK;
   inside_ = true;
+  // Passed keys aren't translated while spacing is disabled. On enabling,
+  // learn the current boundary again rather than trusting another layout's
+  // unverified history. Known text inserted below is tracked normally.
+  if ((result.flags & kAutoSpace) && !spacer_.on)
+    spacer_.clear();
+  spacer_.on = (result.flags & kAutoSpace) != 0;
+  spacer_.tick(now());
   // Notify keys reach the app too, but their results still apply: a Shift
   // tap's commit_code commits the typed letters and ends the composition,
   // as on macOS. A result that changes nothing is a no-op in apply_text,
@@ -923,23 +1025,46 @@ HRESULT Service::apply_text(TfEditCookie ec, Result &result, uint32_t repair) {
     range = sel.range;
   }
   HRESULT hr = S_OK;
-  auto set = [&](std::string_view text) {
-    if (text.size() > wide_.size())
+  bool allow_spacing = !composition_ || composition_spacing_;
+  if (!composition_) {
+    BOOL empty = TRUE;
+    if (FAILED(range->IsEmpty(ec, &empty)) || !empty) {
+      spacer_.clear();
+      allow_spacing = false;
+    }
+  }
+  auto set = [&](std::string_view text, bool commit = false) {
+    if (text.size() >= wide_.size())
       return E_FAIL;
-    int n = text.empty() ? 0
-                         : MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
-                                               text.data(), int(text.size()),
-                                               wide_.data(), int(wide_.size()));
+    SpacingReader reader{*this, ec, range};
+    auto start = text;
+    bool space = allow_spacing && commit && !text.empty() &&
+                 spacer_.prefix(space_class(space_decode(start)), reader);
+    if (focus_pending_)
+      return TF_E_DISCONNECTED;
+    int n = text.empty()
+                ? 0
+                : MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
+                                      text.data(), int(text.size()),
+                                      wide_.data() + (space ? 1 : 0),
+                                      int(wide_.size()) - (space ? 1 : 0));
     if (!text.empty() && !n)
       return E_FAIL;
-    return range->SetText(ec, 0, wide_.data(), n);
+    if (space)
+      wide_[0] = L' ';
+    auto result = range->SetText(ec, 0, wide_.data(), n + (space ? 1 : 0));
+    if (SUCCEEDED(result) && commit && !text.empty())
+      spacer_.inserted(text, space);
+    else if (FAILED(result))
+      spacer_.clear();
+    return result;
   };
   if (!result.commit.empty() || repair) {
-    hr = set(result.commit);
+    hr = set(result.commit, true);
     if (SUCCEEDED(hr) && repair) {
       range->Collapse(ec, TF_ANCHOR_END);
-      wchar_t ch = wchar_t(repair);
-      hr = range->SetText(ec, 0, &ch, 1);
+      char ch = char(repair);
+      hr = set({&ch, 1}, true);
     }
     if (composition_) {
       auto old = composition_;
@@ -948,6 +1073,7 @@ HRESULT Service::apply_text(TfEditCookie ec, Result &result, uint32_t repair) {
       old->Release();
     }
     range->Collapse(ec, TF_ANCHOR_END);
+    allow_spacing = true;
   }
   if (SUCCEEDED(hr) && !result.preedit.empty()) {
     if (!composition_) {
@@ -955,6 +1081,7 @@ HRESULT Service::apply_text(TfEditCookie ec, Result &result, uint32_t repair) {
       hr = context_->QueryInterface(IID_ITfContextComposition,
                                     reinterpret_cast<void **>(&cc));
       if (SUCCEEDED(hr)) {
+        composition_spacing_ = allow_spacing;
         hr = cc->StartComposition(
             ec, range, static_cast<ITfCompositionSink *>(this), &composition_);
         cc->Release();
@@ -996,6 +1123,103 @@ HRESULT Service::apply_text(TfEditCookie ec, Result &result, uint32_t repair) {
   range->Release();
   return hr;
 }
+bool Service::SpacingReader::read(uint32_t &r) {
+  if (!range)
+    return false;
+  // A selection replacement isn't a known boundary. A composition range
+  // is allowed: its start is precisely the character before marked text.
+  BOOL empty = FALSE;
+  if (!service.composition_ &&
+      (FAILED(range->IsEmpty(cookie, &empty)) || !empty))
+    return false;
+  ITfRange *left = nullptr;
+  if (FAILED(range->Clone(&left)) || !left)
+    return false;
+  LONG moved = 0;
+  wchar_t text[2]{};
+  ULONG n = 0;
+  bool ok = SUCCEEDED(left->Collapse(cookie, TF_ANCHOR_START)) &&
+            SUCCEEDED(left->ShiftStart(cookie, -2, &moved, nullptr));
+  if (ok && moved)
+    ok = SUCCEEDED(left->GetText(cookie, 0, text, 2, &n)) && n > 0;
+  left->Release();
+  if (!ok)
+    return false;
+  r = n ? uint32_t(text[n - 1]) : 0;
+  if (r >= 0xdc00 && r <= 0xdfff) {
+    if (n != 2 || text[0] < 0xd800 || text[0] > 0xdbff)
+      return false;
+    r = 0x10000 + (uint32_t(text[0]) - 0xd800) * 1024 + r - 0xdc00;
+  } else if (r >= 0xd800 && r <= 0xdbff)
+    return false;
+  return true;
+}
+bool Service::passed_key(uint32_t sym, uint32_t mods) {
+  if (mods & kRelease)
+    return false;
+  auto epoch = epoch_;
+  bool inserted = false, done = false;
+  const bool drained =
+      core_.applied == core_.sent ||
+      (core_.sent == core_.applied + 1 && core_.received == core_.applied &&
+       core_.pending[core_.sent % core_.pending.size()].notify);
+  // No new barrier or wait: if TSF defers this optional edit, cancel it
+  // before passing the original key. A late callback must insert nothing.
+  if (spacer_.needs_key_read(sym, mods) && edit_.idle() &&
+      edit_read_ == edit_write_ && drained && !composition_) {
+    edit_.prepare(this, context_, epoch_, false);
+    edit_.spacing_key = sym;
+    edit_.spacing_mods = mods;
+    HRESULT result = E_FAIL;
+    context_->RequestEditSession(
+        client_, &edit_, TF_ES_ASYNCDONTCARE | TF_ES_READWRITE, &result);
+    done = edit_.spacing_done;
+    inserted = edit_.spacing_inserted;
+    edit_.cancelled = true;
+    edit_.Release();
+  }
+  if (core_.secure || !context_ || epoch_ != epoch)
+    return inserted;
+  if (!done) {
+    SpacingReader reader{*this, 0, nullptr};
+    spacer_.key(sym, mods, reader, false);
+  }
+  // After an ordering timeout, a passed key must still invalidate older
+  // engine writes. Only drained work (or this key's own notify) is observed.
+  passed_edit_ = drained && !inserted && !(mods & kCommand) &&
+                 ((sym >= 0x20 && sym < 0x7f) || sym == 0xff08 ||
+                  sym == 0xff0d || sym == 0xff8d);
+  if (transport_)
+    transport_->trace("spacing-key", spacer_.count, uint32_t(spacer_.left()),
+                      spacer_.muted);
+  return inserted;
+}
+bool Service::same_passed_selection(TfEditCookie ec) {
+  TF_SELECTION selected{};
+  ULONG count = 0;
+  if (FAILED(context_->GetSelection(ec, TF_DEFAULT_SELECTION, 1, &selected,
+                                    &count)) ||
+      !count || !selected.range)
+    return false;
+  BOOL start = FALSE, end = FALSE;
+  bool same = SUCCEEDED(selected.range->IsEqualStart(
+                  ec, passed_selection_, TF_ANCHOR_START, &start)) &&
+              start &&
+              SUCCEEDED(selected.range->IsEqualEnd(ec, passed_selection_,
+                                                   TF_ANCHOR_END, &end)) &&
+              end;
+  selected.range->Release();
+  return same;
+}
+bool Service::matches_character(uint32_t sym, WPARAM vk, LPARAM lp) {
+  BYTE state[256]{};
+  wchar_t text[4]{};
+  // Flag 4 leaves the keyboard's dead-key state untouched.
+  return GetKeyboardState(state) &&
+         ToUnicodeEx(UINT(vk), UINT(lp >> 16) & 255, state, text, 4, 4,
+                     GetKeyboardLayout(0)) == 1 &&
+         uint32_t(text[0]) == sym;
+}
 HRESULT Service::handle(ITfContext *c, WPARAM vk, LPARAM lp, bool up,
                         BOOL *eaten) {
   if (!eaten)
@@ -1023,14 +1247,19 @@ HRESULT Service::handle(ITfContext *c, WPARAM vk, LPARAM lp, bool up,
     mods |= kRelease;
   auto sym = windows_key(uint32_t(vk), uint32_t(lp >> 16) & 255,
                          (lp & (1u << 24)) != 0, mods);
+  if (!up) {
+    spacer_.tick(now());
+    passed_edit_ = false;
+    release(passed_selection_);
+  }
   if (sym) {
     if (!transport_->online())
       degraded();
     auto recover_key = [&] {
       if (!recovering_ || (mods & kRelease) || sym == 0xffe1 || sym == 0xffe2)
         return;
-      if (append_literal(fallback_.data(), fallback_size_, fallback_.size(), sym,
-                         mods)) {
+      if (append_literal(fallback_.data(), fallback_size_, fallback_.size(),
+                         sym, mods)) {
         *eaten = TRUE;
       } else {
         // Navigation, shortcuts or a full tail must cancel delayed writes
@@ -1048,6 +1277,20 @@ HRESULT Service::handle(ITfContext *c, WPARAM vk, LPARAM lp, bool up,
     --key_depth_;
     if (!*eaten)
       recover_key(); // pump() can discover a disconnect inside this key.
+    if (!*eaten && !recovering_ && !core_.secure && core_.connected &&
+        !core_.migrating) {
+      // Validate passed text before BOTH tracking and inserting it: another
+      // layout's shifted digit may actually be punctuation. Tracking the US
+      // class would invent a boundary in an app without surrounding text.
+      bool same = true;
+      if (spacer_.on && sym >= 0x20 && sym < 0x7f &&
+          !(mods & (kCommand | kRelease)))
+        same = matches_character(sym, vk, lp);
+      if (same)
+        *eaten = passed_key(sym, mods) ? TRUE : FALSE;
+      else
+        spacer_.clear();
+    }
     if (composition_ && c == context_ &&
         finish_before_shortcut(sym, mods, *eaten != FALSE)) {
       // End the marked range before the application handles a focus-moving
@@ -1057,6 +1300,8 @@ HRESULT Service::handle(ITfContext *c, WPARAM vk, LPARAM lp, bool up,
       finalize_needed_ = true;
       schedule();
     }
+  } else if (!up) {
+    spacer_.clear();
   }
   return S_OK;
 }

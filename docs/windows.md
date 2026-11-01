@@ -359,6 +359,14 @@ for normal shutdown, request `Stop-Computer` over SSH and confirm it stopped.
 - The same engine session follows a Windows time-zone change and its
   restoration without restarting. A ten-row vertical menu at the maximum
   supported font size is constrained and scrolls on an 800×600 desktop.
+- Auto spacing passes all 73 shared vectors and native edit-session fixtures
+  on ARM64 and x64 (the latter under emulation). With tracing disabled,
+  Edge passes exact `你好 iPhone 你好` and `你好 3 你好`, selected-text
+  replacement, deleting an inserted space (`你好 a` → two Backspaces →
+  `b` → `你好b`), live disabling (`你好iPhone你好`), and literal password/PIN
+  input. The state/history benchmark allocates nothing; the Windows keyboard
+  translation check is measured separately in the native service test.
+  Broader auto-spacing application coverage remains part of the app matrix.
 
 Debug native callback routing with `-DSHIXIN_TSF_TRACE=ON` in the TSF
 CMake configuration. This opt-in build queues fixed numeric records on the
@@ -468,8 +476,8 @@ and disable execution-speed throttling at startup.
 - Verify registration and real typing in Windows VMs: Notepad, Office,
   Chrome/Electron, Explorer, Start search, and other elevated/AppContainer
   applications. Start search is covered; broader compatibility remains open. Run the checklist in `manual-tests.md`.
-- Implement native auto spacing, composition display attributes and mode
-  indication. Map desktop apps without explicit AppUserModelIDs to the
+- Implement composition display attributes and mode indication. Map
+  desktop apps without explicit AppUserModelIDs to the
   shared picker IDs; packaged/explicit IDs are already reported.
 - Let the front answer `-added` so the 开始使用 guide can show whether 拾新
   is added, and add startup registration. The shared settings app already

@@ -35,7 +35,9 @@ M1 (macOS MVP) is done; M2 (DESIGN §10) is in progress. Built so far:
   Notepad, Explorer search/rename, Edge focus and candidate clicks have
   also been exercised. Start search and registration/unregistration from an
   ordinary shell (with UAC for the machine step) now pass; release packaging
-  remains open. See
+  remains open. Auto spacing uses TSF text ranges and the shared spacing
+  vectors; Edge boundaries, live disabling and Backspace suppression pass.
+  See
   [`docs/windows.md`](docs/windows.md).
 
 - **Input:** full pinyin and seven double-pinyin layouts (including 自然码)
@@ -188,7 +190,7 @@ and tools that touch Rime use scratch user dirs, never the live one.
 | Build an isolated generation (output must not exist; no live user dir argument) | `build/bin/shixin-builder -lib "$SHIXIN_LIBRIME" -data build/rime-data -settings /path/to/snapshot.json -output /tmp/shixin-generation` (`-all` for packaging) |
 | Rebuild with private compiled-resource copies / safe stage diagnostics | Add `-reuse-generation /path/to/warm-only-generation` / `-status-file /path/to/new-private-file` to `shixin-builder`; neither accepts a live user dictionary |
 | Capture offline menus from public codes (warm-only scratch engine, no learning) | `go run ./tools/menu-capture -engine build/bin/shixin-engine -generation /tmp/shixin-generation -data build/rime-data -lib "$SHIXIN_LIBRIME" -profile SHA256 -input codes.jsonl -output menus.jsonl -limit 50` |
-| Portable TSF core tests (Go golden vectors, timeout/focus safety, queues, allocation and parser stress) | `cmake -S frontends/windows-tsf -B build/tsf-tests && cmake --build build/tsf-tests && ctest --test-dir build/tsf-tests --output-on-failure` |
+| Portable TSF core and auto-spacing tests (Go wire/spacing vectors, timeout/focus safety, queues, allocation, latency and parser stress) | `cmake -S frontends/windows-tsf -B build/tsf-tests && cmake --build build/tsf-tests && ctest --test-dir build/tsf-tests --output-on-failure` |
 | Native Windows deferred edit/selection recovery and core/COM tests | `ctest --test-dir build/tsf-arm64 -C Release --output-on-failure` (use the configured native TSF build directory; includes `shixin_service_test`) |
 | Windows capability-free AppContainer input/discovery access, private-pipe and process/token restrictions (native Windows) | `go test -v ./internal/ipc -run TestInputPipeAppContainer` |
 | librime latency spike (needs rime data) | `go run ./spikes/m0-rime` (`-lua` for the Lua comparison) |

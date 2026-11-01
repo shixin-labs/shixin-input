@@ -1537,6 +1537,30 @@ like the policy lookup (§3.3). The rules stay in one table, and
 every client must pass (`noread; key a; click; commit 中文 => a中文`: no
 space after a click when the app can't be read).
 
+The Windows TSF client implements this state machine with fixed history and
+buffers. It consumes the existing `ResultAutoSpace` flag, including live
+global and per-app changes. Commits and misprediction repairs add any prefix
+inside their queued write session; a UTF-16 range reads at most two code
+units before the composition start or caret. Replacing selected text never
+adds a prefix. Secure/read-only fields are checked again before any read or
+insertion. Focus, input-source changes, external edits, navigation,
+shortcuts, disconnects and idle time clear the history. Known passed edits
+retain it; Chromium's separate selection notification after Backspace is
+ignored only when its caret matches the saved range from that edit.
+
+A passed letter/digit at a possible boundary requests the pooled write edit
+with `TF_ES_ASYNCDONTCARE`, without an engine round trip or a new wait. If
+TSF runs it immediately, the DLL can replace the key with one `SetText`
+insertion containing the space and character. If the edit is deferred,
+refused, or another edit is pending, the key passes unchanged and the optional
+space is skipped; a deferred callback is cancelled before the key passes.
+While enabled, the DLL checks passed printable keys with `ToUnicodeEx`
+without changing dead-key state before tracking or taking them, so another
+keyboard layout cannot turn into a US character or a guessed boundary.
+Enabling spacing clears the unverified history from when it was off. The
+portable C++ tests run the shared vectors and allocation/latency checks;
+native TSF fixtures cover delayed edits, selection changes and secure fields.
+
 #### Settings and per-app rules
 
 - `settings.json`: `auto_space` (off by default) and the apps with spacing
@@ -1561,8 +1585,8 @@ space after a click when the app can't be read).
 - `spacer` unit tests: boundaries per class pair, the history with
   Backspace, removing an inserted space, every reset event, the timeout,
   and that the key path doesn't allocate (`testing.AllocsPerRun`).
-- The shared event-sequence vectors, run against the Go core now and the
-  C++ clients later.
+- The shared event-sequence vectors, run against the Go and Windows C++
+  cores; the fcitx5 client must pass them when implemented.
 - VM: the app matrix (TextEdit, Notes, Safari, Chrome, VS Code, Slack,
   Terminal), checking for no space after a click, a window switch, a
   paste and the timeout, plus the verification timings per app.

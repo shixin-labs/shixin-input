@@ -251,6 +251,19 @@ Registration and unregistration must happen only in the VM. See
 
 ### Windows app matrix
 
+With **中英文、数字之间自动加空格** enabled, verify `你好 iPhone 你好`
+by committing `nihao`, tapping Shift, typing `iPhone`, tapping Shift and
+committing `nihao` again. In Chinese mode, committing `nihao`, typing `3`
+and committing `nihao` must produce `你好 3 你好`. In English mode after
+`你好 a`, two Backspaces followed by `b` must produce `你好b`: deleting the
+inserted space suppresses it for the next character. Repeat after clicking
+the caret, replacing a selection, pasting and switching fields. Disable the
+setting live and verify the same boundaries have no inserted spaces; enable
+it again and test an app in **不自动加空格的应用**. Password/PIN input must
+stay literal. Restore the original settings after the checks. A text store
+that defers/refuses the optional passed-key edit may omit the space; it must
+never delay, duplicate or insert the key into a later selection.
+
 For each run record the source commit, Windows build, guest architecture,
 application version and architecture, DPI, selected keyboard, and settings.
 Preserve the [default Windows logs](windows.md#collecting-development-logs)

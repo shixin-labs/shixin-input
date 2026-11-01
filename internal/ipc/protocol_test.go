@@ -72,6 +72,8 @@ func vectors() []struct {
 	name  string
 	frame []byte
 } {
+	autoSpace := sampleResult()
+	autoSpace.Flags |= ResultAutoSpace
 	return []struct {
 		name  string
 		frame []byte
@@ -94,6 +96,7 @@ func vectors() []struct {
 		{"stats", sampleStats().Append(nil)},
 		{"stats_rerank", sampleRerankStats().Append(nil)},
 		{"caret", (&Caret{Ctx: 1, Left: -1920, Top: 100, Right: -1918, Bottom: 124}).Append(nil)},
+		{"result_auto_space", autoSpace.Append(nil)},
 	}
 }
 

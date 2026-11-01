@@ -48,9 +48,9 @@ Delete an entry when it's fixed, and mention it in the commit.
   [Windows status](windows.md#status-2026-11-01).
 - **Missing:** native llama build automation, the front's `-added`
   answer for the 开始使用 guide, startup registration, a signed installer
-  and in-place updates (关于 links to the release page meanwhile), display attributes/mode
-  indicator, and the native auto-spacing implementation. Desktop app IDs
-  without an explicit AppUserModelID still need mapping to the shared
+  and in-place updates (关于 links to the release page meanwhile), and
+  display attributes/mode indicator. Desktop app IDs without an explicit
+  AppUserModelID still need mapping to the shared
   settings app's shell IDs; packaged/explicit IDs are supplied by TSF.
 - **Security and validation:** Authenticode checks are required before release.
   AppContainer transport has capability-free sandbox coverage; Start search
@@ -141,10 +141,10 @@ Delete an entry when it's fixed, and mention it in the commit.
   secure field and reselect 拾新 when an ordinary field of the same app
   gets focus.
 
-### Windows and Linux
-- **What:** only the Go client core has the spacer. The TSF and fcitx5
-  clients must implement it and pass `internal/client/testdata/spacing.txt`,
-  using the text services' own text access where they can.
+### Linux
+- **What:** the fcitx5 client still needs the spacer and must pass
+  `internal/client/testdata/spacing.txt`, using surrounding text where
+  available. The Go and Windows TSF clients implement auto spacing.
 
 ## Native translators
 
