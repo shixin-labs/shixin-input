@@ -76,13 +76,6 @@ Delete an entry when it's fixed, and mention it in the commit.
   activation categories and restricted-token transport before claiming
   support; do not weaken password guards or enable broad pipe access.
 
-### Windows Edge duplicates preedit on Ctrl+L
-- **Repro:** in a fresh Edge textarea with 自然码双拼, type `nihk`, wait
-  for the `ni hao` composition, press Ctrl+L, then Escape. The original
-  textarea contains `ni haoni hao`, rather than one finalized `ni hao`.
-  Full pinyin showed the same duplication. Alt+Tab to another app
-  and back finalized `ni hao` once in the separate tested case.
-
 ### Windows candidate flyout intercepts clicks below its visible panel
 - **Repro:** in Edge, put a textarea above a password input. Compose
   `nihao` in full pinyin, then click the password input below the visible

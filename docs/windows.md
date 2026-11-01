@@ -320,8 +320,10 @@ for normal shutdown, request `Stop-Computer` over SSH and confirm it stopped.
   Start search still falls back to Latin text. Explorer rename with 自然码
   also passed exact `你好.txt` after normalizing the repeat count between
   the shell’s test-key and key-delivery callbacks.
-- Medium-integrity checks reproduced
-  Ctrl+L duplication and click-region failures; registration needed elevation.
+- Edge Ctrl+L now finalizes `ni hao` once: the client ends the marked range
+  with its pooled edit request before passing an unhandled app shortcut and
+  invalidates pending replies. The exact copied text passed with UAC enabled.
+- Candidate click-region failures and registration needing elevation remain.
   See [known issues](KNOWN-ISSUES.md#windows-validation-and-release-support).
 - x64/emulated apps, Office/Chrome, mixed DPI, GPU scoring and packaging remain unverified.
 

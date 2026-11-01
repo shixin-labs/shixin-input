@@ -373,7 +373,7 @@ HRESULT Service::OnCompositionTerminated(TfEditCookie, ITfComposition *c) {
     transport_->trace("terminated", uintptr_t(c), uintptr_t(composition_));
   if (c == composition_) {
     release(composition_);
-    degraded();
+    secure_changed(core_.secure);
   }
   return S_OK;
 }
@@ -933,6 +933,15 @@ HRESULT Service::handle(ITfContext *c, WPARAM vk, LPARAM lp, bool up,
     ++key_depth_;
     *eaten = core_.key(sym, mods, *this) ? TRUE : FALSE;
     --key_depth_;
+    if (composition_ && c == context_ &&
+        finish_before_shortcut(sym, mods, *eaten != FALSE)) {
+      // End the marked range before the application handles a focus-moving
+      // shortcut. Use the pooled, nonwaiting edit request; pending engine
+      // replies belong to the old epoch and must never reinsert its preedit.
+      secure_changed(core_.secure);
+      finalize_needed_ = true;
+      schedule();
+    }
   }
   return S_OK;
 }

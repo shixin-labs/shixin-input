@@ -208,7 +208,11 @@ are sent once per connection; results refer to them by ID.
   posted to the app's TSF thread through a hidden message window, and are
   applied with `RequestEditSession(TF_ES_ASYNCDONTCARE | TF_ES_READWRITE)`.
   The caret rectangle is read inside that edit session and sent to the
-  presentation host, never on the key path. Empty unsupported input-scope
+  presentation host, never on the key path. Before passing an unhandled
+  Control/Alt/Windows shortcut, the client finalizes its existing marked
+  range with a pooled, nonwaiting edit request and invalidates old replies.
+  External composition termination also invalidates the engine context, so
+  a late reply cannot reinsert already-finalized text. Empty unsupported input-scope
   values (including the shell/Notepad `E_FAIL` with `VT_EMPTY`) are ordinary
   fields; explicit secure scopes, native password edits, disabled-keyboard
   compartments, read-only contexts and TSF lock/disconnect errors still

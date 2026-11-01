@@ -600,6 +600,14 @@ static void scopes() {
   CHECK(!absent_input_scope(0, 3));            // malformed type
 }
 static void keymap() {
+  CHECK(finish_before_shortcut('l', kControl, false));
+  CHECK(finish_before_shortcut('v', kControl, false));
+  CHECK(!finish_before_shortcut('a', 0, false));
+  CHECK(!finish_before_shortcut('l', kControl, true));
+  CHECK(!finish_before_shortcut('l', kControl | kRelease, false));
+  CHECK(!finish_before_shortcut(0xffe3, kControl, false));
+  CHECK(!finish_before_shortcut(0xffe1, kShift, false));
+
   CHECK(key_message(0x00310001) == key_message(0x00310000)); // shell rename
   CHECK(key_message(0x00310002) == key_message(0x00310000)); // repeat count
   CHECK(key_message(0xc0310001) == key_message(0xc0310000)); // key up
