@@ -10,6 +10,11 @@ inline uint32_t windows_key(uint32_t vk, uint32_t scan, bool extended,
     constexpr char shifted[] = ")!@#$%^&*(";
     return mods & kShift ? uint32_t(shifted[vk - '0']) : vk;
   }
+  // The keypad sends its characters, as on macOS, so a numpad digit picks
+  // a candidate like the main row's (with Num Lock off Windows reports the
+  // navigation keys instead).
+  if (vk >= 0x60 && vk <= 0x69) // VK_NUMPAD0–9
+    return '0' + (vk - 0x60);
   if (vk >= 0x70 && vk <= 0x87)
     return 0xffbe + (vk - 0x70);
   switch (vk) {
@@ -39,8 +44,20 @@ inline uint32_t windows_key(uint32_t vk, uint32_t scan, bool extended,
     return 0xff53;
   case 40:
     return 0xff54;
+  case 45: // VK_INSERT
+    return 0xff63;
   case 46:
     return 0xffff;
+  case 0x6a: // VK_MULTIPLY
+    return '*';
+  case 0x6b: // VK_ADD
+    return '+';
+  case 0x6d: // VK_SUBTRACT
+    return '-';
+  case 0x6e: // VK_DECIMAL
+    return '.';
+  case 0x6f: // VK_DIVIDE
+    return '/';
   case 16:
     return scan == 0x36 ? 0xffe2 : 0xffe1;
   case 17:

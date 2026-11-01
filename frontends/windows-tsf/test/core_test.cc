@@ -122,7 +122,8 @@ static void golden() {
 struct Fake : Host {
   Core &c;
   uint64_t tick = 0;
-  bool reply = true, full = false, text = true, refocus = false;
+  bool reply = true, full = false, text = true, refocus = false,
+       focus_reply = false;
   uint32_t queued = 0, sym = 0, mods = 0;
   uint8_t flags = 0;
   int failures = 0, sends = 0;
@@ -139,6 +140,14 @@ struct Fake : Host {
     return true;
   }
   void pump() override {
+    if (focus_reply) {
+      focus_reply = false;
+      Result r;
+      r.ctx = c.ctx;
+      r.policy = 1;
+      CHECK(c.result(r).accept);
+      return;
+    }
     if (refocus) {
       refocus = false;
       c.focus(c.ctx + 1, true);
@@ -179,6 +188,27 @@ static void setup(Core &c) {
   c.policies[2].special_default = Ask | 2 << 2;
 }
 static void decisions() {
+  {
+    // The first key in a newly focused field waits for the focus reply's
+    // policy instead of passing through raw.
+    auto f = std::make_unique<Core>();
+    setup(*f);
+    f->focus(2, false);
+    Fake h(*f);
+    h.focus_reply = true;
+    CHECK(f->key('a', 0, h));
+    CHECK(h.sends == 1 && h.tick < Core::kBudget);
+    // Without a reply in time, only that key passes through.
+    f->focus(1, false);
+    Fake g(*f);
+    g.reply = false;
+    auto before = f->timeouts;
+    CHECK(!f->key('a', 0, g));
+    CHECK(g.sends == 0 && f->connected && f->timeouts == before + 1);
+  }
+  // Two engine contexts per connection, alternating with each focus.
+  CHECK(context_id(1) == 2 && context_id(2) == 1 && context_id(3) == 2 &&
+        context_id(0xffffffff) == 2);
   auto c = std::make_unique<Core>();
   {
     setup(*c);
@@ -194,8 +224,12 @@ static void decisions() {
     CHECK(c->policy == 2);
     CHECK(c->key(' ', 0, h));
     CHECK(!c->known);
+    auto before = c->timeouts;
     CHECK(!c->key('b', 0, h));
-    CHECK(h.tick == Core::kBudget && h.failures == 1);
+    // A timeout passes this key through but keeps the connection (macOS
+    // does the same): a slow result must not end the composition.
+    CHECK(h.tick == Core::kBudget && h.failures == 0 && c->connected &&
+          c->timeouts == before + 1);
   }
   {
     setup(*c);
@@ -209,8 +243,9 @@ static void decisions() {
     Fake h(*c);
     c->policy = 2;
     h.reply = false;
+    auto before = c->timeouts;
     CHECK(!c->key(0xff0d, 0, h));
-    CHECK(h.tick == Core::kBudget && !c->connected);
+    CHECK(h.tick == Core::kBudget && c->connected && c->timeouts == before + 1);
   }
   {
     setup(*c);
@@ -220,7 +255,7 @@ static void decisions() {
     h.reply = true;
     h.text = false;
     CHECK(!c->key('v', kControl, h));
-    CHECK(h.tick == Core::kBudget && h.failures == 1);
+    CHECK(h.tick == Core::kBudget && h.failures == 0 && c->connected);
   }
   {
     setup(*c);
@@ -384,6 +419,16 @@ static void keymap() {
   CHECK(windows_key('A', 0, false, kShift) == 'A');
   CHECK(windows_key('A', 0, false, kShift | kLock) == 'a');
   CHECK(windows_key('1', 0, false, kShift) == '!');
+  // Keypad digits and operators send their characters; Shift doesn't
+  // change them (Windows already reports navigation keys without Num Lock).
+  CHECK(windows_key(0x61, 0, false, 0) == '1' &&
+        windows_key(0x69, 0, false, kShift) == '9');
+  CHECK(windows_key(0x6a, 0, false, 0) == '*' &&
+        windows_key(0x6b, 0, false, 0) == '+' &&
+        windows_key(0x6d, 0, false, 0) == '-' &&
+        windows_key(0x6e, 0, false, 0) == '.' &&
+        windows_key(0x6f, 0, true, 0) == '/');
+  CHECK(windows_key(0x2d, 0, true, 0) == 0xff63);
   CHECK(windows_key(0x10, 0x36, false, 0) == 0xffe2);
   CHECK(windows_key(0x11, 0, true, 0) == 0xffe4);
   CHECK(windows_key(13, 0, true, 0) == 0xff8d);

@@ -231,6 +231,10 @@ void Transport::run() {
     PostMessageW(window_, kWake, 0, 0);
     return true;
   };
+  // Reconnects back off while connections keep ending quickly (an engine
+  // migration refusing new clients, a full or mismatched candidate host):
+  // 20 ms doubling to 2 s, reset by a connection that lasted 2 s.
+  DWORD backoff = 20;
   while (WaitForSingleObject(stop_, 0) != WAIT_OBJECT_0) {
     // Discard keys from the previous connection before opening a new one.
     while (outgoing_.front())
@@ -260,6 +264,7 @@ void Transport::run() {
     read.hEvent = read_event.value;
     write.hEvent = write_event.value;
     online_.store(true);
+    ULONGLONG opened = GetTickCount64();
     Frame input, initial, eof;
     hello(initial, 2, GetCurrentProcessId(), utf8(directory_));
     Frame *output = &initial;
@@ -388,6 +393,10 @@ void Transport::run() {
     disconnected.begin(kDisconnected);
     disconnected.end();
     publish(disconnected);
+    if (GetTickCount64() - opened >= 2000)
+      backoff = 20;
+    WaitForSingleObject(stop_, backoff);
+    backoff = backoff < 1000 ? backoff * 2 : 2000;
   }
 }
 } // namespace shixin

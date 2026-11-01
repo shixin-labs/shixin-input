@@ -94,6 +94,7 @@ class Service final : public ProcessorEx,
   size_t edit_read_ = 0, edit_write_ = 0;
   std::array<wchar_t, 32768> wide_{};
   LARGE_INTEGER frequency_{};
+  HANDLE timer_ = nullptr; // high-resolution deadline for wait_until
   static LRESULT CALLBACK window_proc(HWND, UINT, WPARAM, LPARAM);
   void focus(ITfContext *);
   bool flush_focus();

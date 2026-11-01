@@ -13,6 +13,12 @@ struct Host {
   virtual void wait_until(uint64_t deadline) = 0;
   virtual void degraded() = 0;
 };
+// context_id is the engine context for a focus epoch. The engine keeps a
+// Rime session per context until the connection closes, so a new id per
+// focus would leak one session per focus change in long-running apps.
+// Alternating two ids bounds that to two, while replies to the previous
+// focus still carry the other id and are dropped (Core::result).
+inline uint32_t context_id(uint32_t epoch) { return 1 + (epoch & 1); }
 struct Completion {
   bool accept = false, notify = false;
   uint32_t repair = 0;
@@ -97,30 +103,61 @@ struct Core {
     h.degraded();
     return false;
   }
+  // barrier waits until results for every sent key have arrived (and, with
+  // text, been applied), up to deadline. A timeout passes only the current
+  // key through, as on macOS: the connection stays, and late results are
+  // applied when they arrive. A slow result (智能排序 holds one for up to
+  // 16 ms) must not drop the connection and end the composition.
   bool barrier(Host &h, uint64_t deadline, bool text) {
     auto context = ctx;
     auto connection = cycle;
     while (connected && (received < sent || (text && applied < sent))) {
       if (h.now() >= deadline)
-        return fail(h);
+        return timeout();
       h.pump();
       if (ctx != context || cycle != connection || secure || migrating)
         return false;
-      if (h.now() > deadline)
-        return fail(h);
       if (received >= sent && (!text || applied >= sent))
         return true;
       if (h.now() >= deadline)
-        return fail(h);
+        return timeout();
       h.wait_until(deadline);
     }
     return connected;
+  }
+  // await_known waits, within the key's budget, for the policy to become
+  // known: after a focus change it comes in the focus reply, which has no
+  // sequence number, so barrier alone would return at once and the first
+  // key typed into a new field would pass through raw.
+  bool await_known(Host &h, uint64_t deadline) {
+    auto context = ctx;
+    auto connection = cycle;
+    if (!barrier(h, deadline, false))
+      return false;
+    while (connected && !known) {
+      if (h.now() >= deadline)
+        return timeout();
+      h.pump();
+      if (ctx != context || cycle != connection || secure || migrating)
+        return false;
+      if (known)
+        return true;
+      if (h.now() >= deadline)
+        return timeout();
+      h.wait_until(deadline);
+    }
+    return known;
+  }
+  uint32_t timeouts = 0;
+  bool timeout() {
+    ++timeouts;
+    return false;
   }
   bool key(uint32_t sym, uint32_t mods, Host &h) {
     if (secure || !connected || migrating)
       return false;
     uint64_t deadline = h.now() + kBudget;
-    if (!known && (!barrier(h, deadline, false) || !known))
+    if (!known && !await_known(h, deadline))
       return false;
     auto a = policies[policy].lookup(sym, mods);
     auto disposition = Disposition(a & 3);

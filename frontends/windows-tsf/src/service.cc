@@ -103,13 +103,21 @@ ULONG Edit::Release() {
 HRESULT Edit::DoEditSession(TfEditCookie ec) {
   return owner->execute(*this, ec);
 }
+#ifndef CREATE_WAITABLE_TIMER_HIGH_RESOLUTION
+#define CREATE_WAITABLE_TIMER_HIGH_RESOLUTION 0x00000002
+#endif
 Service::Service() {
   ++objects;
   QueryPerformanceFrequency(&frequency_);
+  timer_ = CreateWaitableTimerExW(nullptr, nullptr,
+                                  CREATE_WAITABLE_TIMER_HIGH_RESOLUTION,
+                                  TIMER_ALL_ACCESS);
   edit_.owner = this;
 }
 Service::~Service() {
   Deactivate();
+  if (timer_)
+    CloseHandle(timer_);
   --objects;
 }
 HRESULT Service::QueryInterface(REFIID iid, void **p) {
@@ -297,7 +305,7 @@ void Service::focus(ITfContext *c) {
   ++epoch_;
   if (!epoch_)
     ++epoch_;
-  core_.focus(epoch_, true);
+  core_.focus(context_id(epoch_), true);
   ui_focus(true);
   probe_needed_ = c != nullptr;
   edit_read_ = edit_write_ = 0;
@@ -438,7 +446,7 @@ void Service::secure_changed(bool secure) {
   ++epoch_;
   if (!epoch_)
     ++epoch_;
-  core_.focus(epoch_, secure);
+  core_.focus(context_id(epoch_), secure);
   ui_focus(secure);
   edit_read_ = edit_write_ = 0;
   if (secure && context_)
@@ -537,9 +545,28 @@ uint64_t Service::now() {
          uint64_t(t.QuadPart % frequency_.QuadPart) * 1000000000ull /
              uint64_t(frequency_.QuadPart);
 }
+// wait_until waits for a result or the deadline, whichever comes first.
+// A plain millisecond timeout rounds up to the system tick (~15.6 ms by
+// default), twice the 8 ms budget, so the deadline is a high-resolution
+// waitable timer when Windows has them (10 1803+).
 void Service::wait_until(uint64_t deadline) {
-  if (transport_ && now() < deadline)
-    WaitForSingleObject(transport_->arrived(), 1);
+  if (!transport_)
+    return;
+  uint64_t t = now();
+  if (t >= deadline)
+    return;
+  uint64_t left = deadline - t;
+  if (timer_) {
+    LARGE_INTEGER due;
+    due.QuadPart = -LONGLONG((left + 99) / 100); // relative, in 100 ns
+    if (SetWaitableTimer(timer_, &due, 0, nullptr, nullptr, FALSE)) {
+      HANDLE both[2] = {transport_->arrived(), timer_};
+      WaitForMultipleObjects(2, both, FALSE, INFINITE);
+      CancelWaitableTimer(timer_);
+      return;
+    }
+  }
+  WaitForSingleObject(transport_->arrived(), DWORD((left + 999999) / 1000000));
 }
 void Service::pump() {
   if (!transport_ || pumping_)
@@ -579,7 +606,7 @@ void Service::pump() {
       }
       core_.reset();
       core_.connected = true;
-      core_.focus(epoch_, core_.secure);
+      core_.focus(context_id(epoch_), core_.secure);
       send_focus();
       break;
     }
@@ -707,17 +734,19 @@ HRESULT Service::execute(Edit &edit, TfEditCookie ec) {
   }
   HRESULT hr = S_OK;
   inside_ = true;
-  if (!pending.notify) {
-    if (ui_) {
-      if (result.count)
-        caret(ec);
-      display(scratch_, result);
-      ui_->send(scratch_);
-    }
-    hr = apply_text(ec, result, pending.repair);
-    if (SUCCEEDED(hr) && result.count)
+  // Notify keys reach the app too, but their results still apply: a Shift
+  // tap's commit_code commits the typed letters and ends the composition,
+  // as on macOS. A result that changes nothing is a no-op in apply_text,
+  // and only eaten keys carry a repair.
+  if (ui_) {
+    if (result.count)
       caret(ec);
+    display(scratch_, result);
+    ui_->send(scratch_);
   }
+  hr = apply_text(ec, result, pending.notify ? 0 : pending.repair);
+  if (SUCCEEDED(hr) && result.count)
+    caret(ec);
   inside_ = false;
   if (flush_focus())
     return hr;
