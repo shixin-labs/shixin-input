@@ -204,7 +204,9 @@ Registration and unregistration must happen only in the VM. See
 2. In Notepad, type `nihao` and Space; copy and assert exactly `你好`.
    Exercise digits, candidate clicks, arrows, Backspace, Escape, Enter,
    paging, Shift tap, Shift shortcuts and Ctrl shortcuts during composition.
-   A key tested by TSF and then delivered must be sent once, not twice.
+   A key tested by TSF and then delivered must be sent once, including
+   Explorer rename where the delivered repeat count may be zero. With 自然码,
+   type `nihk` once, Space and Enter; assert the exact filename `你好.txt`.
 3. Open the tray's settings app. Confirm the same settings pages, controls,
    skins and translations as macOS; change pinyin layout, punctuation and
    appearance and confirm the live engine/host changes.

@@ -76,14 +76,6 @@ Delete an entry when it's fixed, and mention it in the commit.
   activation categories and restricted-token transport before claiming
   support; do not weaken password guards or enable broad pipe access.
 
-### Windows Explorer rename produces the wrong composition
-- **Repro:** select 自然码双拼, select a scratch text file in Explorer,
-  press F2, type `nihk` once, then Space and Enter. The observed preedit
-  was `nin chi hang kao` and the file became `您吃行靠.txt`; the same
-  four keys in Edge produced `ni hao` and committed `你好`.
-- This resembles doubled key delivery, but the cause is not confirmed.
-  Do not infer correctness from the portable or COM smoke tests.
-
 ### Windows Edge duplicates preedit on Ctrl+L
 - **Repro:** in a fresh Edge textarea with 自然码双拼, type `nihk`, wait
   for the `ni hao` composition, press Ctrl+L, then Escape. The original

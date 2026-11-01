@@ -317,8 +317,10 @@ for normal shutdown, request `Stop-Computer` over SSH and confirm it stopped.
   Settings rendered; live layout/theme/punctuation changes and worker recovery passed.
 - A subsequent medium-integrity check with UAC enabled verified exact `你好`
   in Notepad and Explorer search after fixing empty input-scope handling.
-  Start search still falls back to Latin text.
-- Medium-integrity checks reproduced Explorer rename,
+  Start search still falls back to Latin text. Explorer rename with 自然码
+  also passed exact `你好.txt` after normalizing the repeat count between
+  the shell’s test-key and key-delivery callbacks.
+- Medium-integrity checks reproduced
   Ctrl+L duplication and click-region failures; registration needed elevation.
   See [known issues](KNOWN-ISSUES.md#windows-validation-and-release-support).
 - x64/emulated apps, Office/Chrome, mixed DPI, GPU scoring and packaging remain unverified.

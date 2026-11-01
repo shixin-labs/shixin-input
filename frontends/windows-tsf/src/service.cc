@@ -944,7 +944,7 @@ HRESULT Service::OnTestKeyDown(ITfContext *c, WPARAM vk, LPARAM lp,
   tested_ = eaten && *eaten;
   test_up_ = false;
   test_vk_ = vk;
-  test_lparam_ = lp;
+  test_lparam_ = key_message(uint32_t(lp));
   test_eaten_ = tested_;
   test_epoch_ = epoch_;
   return hr;
@@ -956,7 +956,7 @@ HRESULT Service::OnTestKeyUp(ITfContext *c, WPARAM vk, LPARAM lp, BOOL *eaten) {
   tested_ = eaten && *eaten;
   test_up_ = true;
   test_vk_ = vk;
-  test_lparam_ = lp;
+  test_lparam_ = key_message(uint32_t(lp));
   test_eaten_ = tested_;
   test_epoch_ = epoch_;
   return hr;
@@ -966,7 +966,8 @@ HRESULT Service::OnKeyDown(ITfContext *c, WPARAM vk, LPARAM lp, BOOL *eaten) {
     transport_->trace("key-down", vk, lp, tested_);
   if (!eaten)
     return E_POINTER;
-  if (tested_ && !test_up_ && test_vk_ == vk && test_lparam_ == lp) {
+  if (tested_ && !test_up_ && test_vk_ == vk &&
+      test_lparam_ == key_message(uint32_t(lp))) {
     tested_ = false;
     *eaten =
         test_epoch_ == epoch_ && c == context_ && !core_.secure && !disabled()
@@ -979,7 +980,8 @@ HRESULT Service::OnKeyDown(ITfContext *c, WPARAM vk, LPARAM lp, BOOL *eaten) {
 HRESULT Service::OnKeyUp(ITfContext *c, WPARAM vk, LPARAM lp, BOOL *eaten) {
   if (!eaten)
     return E_POINTER;
-  if (tested_ && test_up_ && test_vk_ == vk && test_lparam_ == lp) {
+  if (tested_ && test_up_ && test_vk_ == vk &&
+      test_lparam_ == key_message(uint32_t(lp))) {
     tested_ = false;
     *eaten =
         test_epoch_ == epoch_ && c == context_ && !core_.secure && !disabled()

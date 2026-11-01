@@ -600,6 +600,13 @@ static void scopes() {
   CHECK(!absent_input_scope(0, 3));            // malformed type
 }
 static void keymap() {
+  CHECK(key_message(0x00310001) == key_message(0x00310000)); // shell rename
+  CHECK(key_message(0x00310002) == key_message(0x00310000)); // repeat count
+  CHECK(key_message(0xc0310001) == key_message(0xc0310000)); // key up
+  CHECK(key_message(0x00310001) != key_message(0x40310001)); // prior-down flag
+  CHECK(key_message(0x00310001) != key_message(0x01310001)); // extended key
+  CHECK(key_message(0x00310001) != key_message(0x00170001)); // another scan
+
   CHECK(windows_key('A', 0, false, 0) == 'a');
   CHECK(windows_key('A', 0, false, kShift) == 'A');
   CHECK(windows_key('A', 0, false, kShift | kLock) == 'a');

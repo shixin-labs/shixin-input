@@ -2,6 +2,10 @@
 #pragma once
 #include "wire.h"
 namespace shixin {
+// IMM-backed controls can zero the repeat count between testing and delivery.
+// Scan/extended/transition bits identify the message; the count does not.
+inline uint32_t key_message(uint32_t lparam) { return lparam & 0xffff0000u; }
+
 inline uint32_t windows_key(uint32_t vk, uint32_t scan, bool extended,
                             uint32_t mods) {
   if (vk >= 'A' && vk <= 'Z')
