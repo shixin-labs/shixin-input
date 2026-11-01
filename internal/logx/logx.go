@@ -10,13 +10,26 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
+	"sync"
 	"sync/atomic"
 	"time"
 )
 
-// Dir returns Shixin's log directory, ~/Library/Logs/Shixin on macOS, or
-// "" where there is none: on Linux, stderr goes to the systemd journal.
+// Dir returns the platform log directory: ~/Library/Logs/Shixin on macOS,
+// %LOCALAPPDATA%\Shixin\Logs on Windows, or "" on other platforms where
+// stderr goes to the service manager's journal.
 func Dir() string {
+	if runtime.GOOS == "windows" {
+		cache, err := os.UserCacheDir()
+		if err != nil {
+			return ""
+		}
+		return filepath.Join(cache, "Shixin", "Logs")
+	}
+	if runtime.GOOS != "darwin" {
+		return ""
+	}
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return ""
@@ -41,15 +54,30 @@ type Logger struct {
 	ch      chan string
 	dropped atomic.Uint64
 	done    chan struct{}
+	stop    chan struct{}
+	closed  atomic.Bool
+	once    sync.Once
 }
 
 // New starts a logger writing to w.
 func New(w io.Writer) *Logger {
-	l := &Logger{ch: make(chan string, 1024), done: make(chan struct{})}
+	l := &Logger{ch: make(chan string, 1024), done: make(chan struct{}), stop: make(chan struct{})}
 	go func() {
 		defer close(l.done)
-		for s := range l.ch {
-			io.WriteString(w, s)
+		for {
+			select {
+			case s := <-l.ch:
+				io.WriteString(w, s)
+			case <-l.stop:
+				for {
+					select {
+					case s := <-l.ch:
+						io.WriteString(w, s)
+					default:
+						return
+					}
+				}
+			}
 		}
 	}()
 	return l
@@ -78,6 +106,10 @@ func (l *Logger) Printf(format string, args ...any) {
 	if l == nil {
 		return
 	}
+	if l.closed.Load() {
+		l.dropped.Add(1)
+		return
+	}
 	s := time.Now().Format("2006-01-02 15:04:05.000 ") + fmt.Sprintf(format, args...) + "\n"
 	select {
 	case l.ch <- s:
@@ -89,8 +121,12 @@ func (l *Logger) Printf(format string, args ...any) {
 // Dropped returns the number of lines dropped because the queue was full.
 func (l *Logger) Dropped() uint64 { return l.dropped.Load() }
 
-// Close flushes queued lines and stops the writer.
+// Close flushes queued lines and stops the writer. It is safe to call more
+// than once. Concurrent or later logging may be discarded, but never panics.
 func (l *Logger) Close() {
-	close(l.ch)
+	l.once.Do(func() {
+		l.closed.Store(true)
+		close(l.stop)
+	})
 	<-l.done
 }

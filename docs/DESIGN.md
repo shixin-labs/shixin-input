@@ -237,7 +237,11 @@ are sent once per connection; results refer to them by ID.
   used. Status is read after each key, and maintenance state is polled off
   the hot path. This avoids Go callbacks on foreign threads entirely.
 - **Logging.** librime's `min_log_level = 2` (errors only) in release builds.
-  Our logs go to an in-memory ring buffer, flushed by a background goroutine.
+  Our logs go to a bounded in-memory queue, flushed by a background goroutine.
+On Windows the host and its supervisor-started engine append to
+`%LOCALAPPDATA%\Shixin\Logs\{shixin,engine}.log`, including startup
+failures and automatic restarts. Files are opened before serving input, and
+logger shutdown flushes queued diagnostics without racing background callers.
   No fsync anywhere.
 - **Warm-up before ready.** The engine accepts clients only after it has:
   1. Pre-faulted the compiled dictionaries (`madvise(WILLNEED)` + touching

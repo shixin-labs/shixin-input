@@ -149,25 +149,19 @@ named API/HRESULT diagnostics described in
 
 ## Collecting development logs
 
-The default Windows launch does not currently configure persistent logs
-(see [known issues](KNOWN-ISSUES.md#windows-development-logs-are-not-persistent-by-default)).
-For a fresh VM run, explicitly start the engine with a log path before
-starting the host; preserve stderr from both processes as well:
+A normal `Shixin.exe` launch appends bounded background diagnostics to
+`%LOCALAPPDATA%\Shixin\Logs\shixin.log`. Its supervisor-started engine
+uses `engine.log` in the same directory, including after automatic restarts.
+The files are opened at startup and writes run in the logger goroutine;
+key callbacks do no file I/O. Startup errors are flushed before the host
+exits. If the platform directory cannot be opened, logging falls back to stderr.
+The engine's `-log PATH` and `-log -` still override the default.
 
-```powershell
-$out = (Resolve-Path ./build/windows-arm64).Path
-$logs = Join-Path $env:LOCALAPPDATA 'Shixin/test-logs'
-New-Item -ItemType Directory -Force $logs | Out-Null
-Start-Process (Join-Path $out 'shixin-engine.exe') -ArgumentList @(
-    '-log', ('"' + (Join-Path $logs 'engine.log') + '"')
-) -RedirectStandardError (Join-Path $logs 'engine-stderr.log')
-Start-Process (Join-Path $out 'Shixin.exe') `
-    -RedirectStandardError (Join-Path $logs 'host-stderr.log')
-```
-
-Use this only when no engine is already running. These are explicit test
-destinations. A later restart by the host's supervisor returns to the
-default logging behavior; account for that gap during restart tests.
+To collect diagnostics, preserve both files before restarting the fixture.
+A medium-integrity VM launch with no `-log` argument was verified by
+making librime temporarily unavailable: `engine.log` retained the DLL load
+failure, `shixin.log` retained supervisor retries, and both retained recovery
+when librime was restored. Never log typed text or candidates in normal builds.
 
 ## Windows test VM on macOS
 

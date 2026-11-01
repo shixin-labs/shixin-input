@@ -7,7 +7,6 @@ import (
 	"flag"
 	"fmt"
 	"image/png"
-	"log"
 	"net"
 	"os"
 	"os/exec"
@@ -24,6 +23,7 @@ import (
 
 	"shixin/internal/i18n"
 	"shixin/internal/ipc"
+	"shixin/internal/logx"
 	"shixin/internal/settings"
 	"shixin/internal/ui/brand"
 	"shixin/internal/ui/candview"
@@ -71,47 +71,70 @@ func foregroundPID() uint32 {
 	return pid
 }
 func main() {
+	var logger *logx.Logger
+	if path := logx.DefaultPath("shixin.log"); path != "-" {
+		logger, _ = logx.Open(path)
+	}
+	if logger == nil {
+		logger = logx.New(os.Stderr)
+	}
+	err := runWindows(logger.Printf)
+	if err != nil {
+		logger.Printf("host: %v", err)
+		fmt.Fprintln(os.Stderr, err)
+	}
+	logger.Close()
+	if err != nil {
+		os.Exit(1)
+	}
+}
+
+func runWindows(logf func(string, ...any)) error {
 	register := flag.Bool("register", false, "register the adjacent TSF DLL (Windows test VM only)")
 	unregister := flag.Bool("unregister", false, "unregister the adjacent TSF DLL (Windows test VM only)")
 	flag.Parse()
 	if *register || *unregister {
 		if *register && *unregister {
-			log.Fatal("choose register or unregister")
+			return fmt.Errorf("choose register or unregister")
 		}
 		if err := registerWindows(*unregister); err != nil {
-			log.Fatal(err)
+			return err
 		}
-		return
+		return nil
 	}
 
+	logf("host starting (version %s)", version)
 	dir, err := ipc.RuntimeDir()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	listener, err := ipc.Listen(filepath.Join(dir, "ui.sock"))
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer listener.Close()
 	path, err := settings.Path()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	prefs, _ := settings.Load(path)
 	exe, err := os.Executable()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	supervisor := newSupervisor(filepath.Join(filepath.Dir(exe), "shixin-engine.exe"), log.Printf)
+	supervisor := newSupervisor(filepath.Join(filepath.Dir(exe), "shixin-engine.exe"), logf)
 	supervisor.ensure(nil)
 	host := &windowsHost{prefs: prefs, listener: listener, sessions: make(map[uint64]*windowsSession)}
 	host.display.init()
 	mygo.App.SetName(i18n.T("app.name"))
 	mygo.App.OnWindowAllClosed(func() {})
+	var startupErr error
 	mygo.App.WhenReady(func() {
 		var icon bytes.Buffer
 		if err := png.Encode(&icon, brand.Icon(32)); err != nil {
-			log.Fatal(err)
+			startupErr = err
+			mygo.App.Quit()
+			return
 		}
 		tray, err := mygo.NewTray(mygo.TrayOptions{ID: "shixin", Icon: icon.Bytes(), ToolTip: i18n.T("app.name"), Menu: mygo.NewMenu([]*mygo.MenuItem{
 			{Label: i18n.T("menu.settings"), Click: func(*mygo.MenuItem, *mygo.Window) {
@@ -123,7 +146,9 @@ func main() {
 			{Role: mygo.RoleQuit},
 		})})
 		if err != nil {
-			log.Fatal(err)
+			startupErr = err
+			mygo.App.Quit()
+			return
 		}
 		fonts.Warm(prefs.FontFamily, float32(prefs.FontSize))
 		host.window = mygo.NewFlyout(mygo.FlyoutOptions{Tray: tray, Hidden: true, Width: 1400, Height: 560, Shadow: false, Content: ui.View(host.view)})
@@ -151,8 +176,9 @@ func main() {
 		}()
 	})
 	if err := mygo.App.Run(); err != nil {
-		log.Fatal(err)
+		return err
 	}
+	return startupErr
 }
 func (h *windowsHost) refresh() {
 	if !h.queued.CompareAndSwap(false, true) {

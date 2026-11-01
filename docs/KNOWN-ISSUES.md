@@ -110,22 +110,6 @@ Delete an entry when it's fixed, and mention it in the commit.
   This is not per-user uninstall support; the registration model above still
   needs a supported solution. See [TSF cleanup semantics](https://learn.microsoft.com/en-us/windows/win32/tsf/text-service-registration).
 
-### Windows development logs are not persistent by default
-- **Source-inspected; not VM-reproduced:** `internal/logx.Dir` recognizes
-  `~/Library/Logs/Shixin` only when a home `Library` directory exists.
-  On an ordinary Windows account it returns no directory, so the engine
-  falls back to stderr. The Windows host uses the standard stderr logger,
-  and its supervisor starts the engine without redirecting stderr.
-- **Repro to verify in the VM:** start `Shixin.exe` normally on a fresh
-  account without a home `Library` directory, trigger an engine startup
-  failure, and look for a persistent host/engine diagnostic file. The
-  detached engine's stderr currently has no configured destination.
-- **Test workaround:** start the engine explicitly with `-log` before
-  starting the host, and redirect the host's stderr to a test file; see
-  [Windows logging](windows.md#collecting-development-logs).
-- **Later:** choose a Windows log directory and connect the host and
-  supervisor to the bounded background logger without adding key-path I/O.
-
 ### Oversized candidate panels
 - **What:** normal horizontal and vertical panels are measured and clamped
   to the caret screen's work area. A panel larger than that work area is

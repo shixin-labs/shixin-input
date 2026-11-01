@@ -32,7 +32,8 @@ M1 (macOS MVP) is done; M2 (DESIGN §10) is in progress. Built so far:
   registration exports; a Go candidate/tray/supervisor host uses the shared
   settings app and candidate views. x64/ARM64 builds and native tests are
   configured in CI. ARM64 VM builds and Edge typing have been exercised;
-  app compatibility failures and release packaging remain open. See
+  Notepad, Explorer search/rename, Edge focus and candidate clicks have
+  also been exercised; Start search, per-user registration and release packaging remain open. See
   [`docs/windows.md`](docs/windows.md).
 
 - **Input:** full pinyin and seven double-pinyin layouts (including 自然码)
@@ -264,6 +265,7 @@ See [Windows development](docs/windows.md#windows-test-vm-on-macos).
 Set `SHIXIN_VMROOT` (default `~/shixin-vm`) to an existing directory.
 `scripts/windows-qemu.sh` controls QEMU/HVF; `scripts/windows-vm.sh` adds
 SSH, transfers and paced input. Windows state stays separate from Tart VMs.
+Windows host/engine logs default to `%LOCALAPPDATA%\Shixin\Logs\{shixin,engine}.log`.
 Both source `scripts/windows-env.sh`. `SHIXIN_WINDOWS_VM` selects the name
 and state directories (default `shixin-win11`). Resource, port, ISO, firmware
 and VNC-client overrides are listed in the [variables table](docs/windows.md#windows-test-vm-on-macos).
