@@ -185,6 +185,12 @@ func TestSnapshots(t *testing.T) {
 				a.page = pg.id
 				if pg.id == "start" {
 					a.added = true
+					// The same page as Windows shows it: no consent step,
+					// no added status, its own steps.
+					mac := plat
+					plat.added, plat.consent, plat.guide = false, false, windowsGuide
+					writeSnapshot(t, a, language.lang, dark, 720, "start-windows")
+					plat = mac
 				}
 				if pg.id == "about" {
 					// A released, installed build, whatever this test runs as.

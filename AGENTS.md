@@ -339,7 +339,10 @@ shared into the guest read-only.
   on/off option is a row with a switch, a choice is a pop-up or a
   segmented control, and a long set of options goes in a details sheet
   (`ui.Modal`, like 模糊音's). Color marks only what needs attention
-  (warnings, errors, progress); settled states are muted. A new setting needs: the
+  (warnings, errors, progress); settled states are muted. macOS and
+  Windows share every page; what differs (the front's path, the guide's
+  steps, updates) is in `platform_darwin.go` / `platform_windows.go`, and
+  `-snapshot` renders the Windows guide too. A new setting needs: the
   field in `settings.Settings` (with its default and validation), the
   compiler output if it reaches Rime (golden YAML plus a check in
   `TestRimeIceOptions`), and a control. Look at a change with `-snapshot`

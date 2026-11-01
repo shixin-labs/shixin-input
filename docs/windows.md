@@ -169,7 +169,10 @@ and disable execution-speed throttling at startup.
 - Implement native auto spacing, composition display attributes and mode
   indication. Map desktop apps without explicit AppUserModelIDs to the
   shared picker IDs; packaged/explicit IDs are already reported.
-- Adapt first-run, startup and updates within the shared settings app.
+- Let the front answer `-added` so the 开始使用 guide can show whether 拾新
+  is added, and add startup registration. The shared settings app already
+  shows Windows' guide steps and links 关于's updates to the release page
+  (`cmd/shixin-settings/platform_windows.go`).
 - Automate native librime/llama builds, validate both architecture packages
   including emulation, and produce signed installers.
 - Complete signature/AppContainer checks and measure actual Windows key,

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
 
 	shixupdate "shixin/internal/update"
@@ -42,7 +43,7 @@ type updateState struct {
 
 // canInstall reports whether this build may install the release found.
 func (a *app) canInstall() bool {
-	return shixupdate.CanInstall(a.upd.rel, version) && a.front != ""
+	return plat.selfUpdate && shixupdate.CanInstall(a.upd.rel, version) && a.front != ""
 }
 
 // checkUpdate asks GitHub for the latest release.
@@ -158,7 +159,7 @@ func (a *app) updateGroup(c *ui.Context) {
 			switch {
 			case shixupdate.IsDevelopment(version):
 				desc += " · " + T("s.u.dev")
-			case u.phase == updAvailable && a.front == "":
+			case u.phase == updAvailable && a.front == "" && plat.selfUpdate:
 				desc += " · " + T("s.u.nofront")
 			}
 		}
@@ -167,8 +168,12 @@ func (a *app) updateGroup(c *ui.Context) {
 			case updChecking:
 				ui.Button(c, T("s.u.checking")).Disabled(true)
 			case updAvailable:
-				if canInstall {
+				switch {
+				case canInstall:
 					ui.PrimaryButton(c, T("s.u.install")).OnClick(a.installUpdate)
+				case !plat.selfUpdate:
+					// No in-place update here yet: the release page has it.
+					ui.Button(c, T("s.u.download")).OnClick(func() { go mygo.Shell.OpenExternal(releasesPage) })
 				}
 			case updDownloading:
 				pct := 0

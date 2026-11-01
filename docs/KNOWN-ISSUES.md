@@ -38,8 +38,9 @@ Delete an entry when it's fixed, and mention it in the commit.
   host, per-user registration exports, and backend/settings builds for
   x64/ARM64. Native CI jobs include the COM factory smoke test; portable
   client tests run on Linux and under sanitizers locally.
-- **Missing:** native library build automation, Windows onboarding, startup
-  registration, signed installer and update flow, display attributes/mode
+- **Missing:** native library build automation, the front's `-added`
+  answer for the 开始使用 guide, startup registration, a signed installer
+  and in-place updates (关于 links to the release page meanwhile), display attributes/mode
   indicator, and the native auto-spacing implementation. Desktop app IDs
   without an explicit AppUserModelID still need mapping to the shared
   settings app's shell IDs; packaged/explicit IDs are supplied by TSF.

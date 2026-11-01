@@ -112,7 +112,7 @@ func newApp(path string, s settings.Settings) *app {
 	a.saveFile = func(s settings.Settings) error { return settings.Save(a.path, s) }
 	a.applyEngine = applyEngine
 	a.checkRelease = shixupdate.Check
-	a.front = frontExe()
+	a.front = plat.front()
 	a.refreshModel()
 	return a
 }

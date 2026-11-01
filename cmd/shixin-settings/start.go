@@ -1,9 +1,7 @@
 package main
 
 import (
-	"os"
 	"os/exec"
-	"path/filepath"
 	"time"
 
 	"github.com/egoist/mygo"
@@ -19,29 +17,11 @@ import (
 
 var iconStart = icon(`<circle cx="12" cy="12" r="10"/><path d="m10 8 6 4-6 4z"/>`)
 
-// inputSources opens System Settings' input source editor, with + one
-// click away.
-const inputSources = "x-apple.systempreferences:com.apple.Keyboard-Settings.extension?InputSources"
-
-// frontExe is Shixin.app's front, seen from the settings app in
-// Contents/Helpers; "" outside the bundle.
-func frontExe() string {
-	exe, err := os.Executable()
-	if err != nil {
-		return ""
-	}
-	p := filepath.Join(filepath.Dir(exe), "..", "..", "..", "..", "MacOS", "Shixin")
-	if _, err := os.Stat(p); err != nil {
-		return ""
-	}
-	return filepath.Clean(p)
-}
-
 // pollAdded asks the front whether 拾新 is in the user's input sources,
 // but only while the guide shows: nothing else displays the answer.
 func (a *app) pollAdded() {
-	front := frontExe()
-	if front == "" {
+	front := plat.front()
+	if front == "" || !plat.added {
 		return
 	}
 	was := false
@@ -62,40 +42,45 @@ func (a *app) pollAdded() {
 func (a *app) start(c *ui.Context) {
 	t := c.Theme()
 	p := colors(c)
-	front := frontExe()
+	front := plat.front()
+	g := plat.guide
 	ui.Row(c).Gap(16).AlignItems(ui.Center).Padding(8, 4).Children(func() {
 		ui.Image(c, appIcon).Size(56, 56).Shrink(0)
 		ui.Column(c).Gap(4).Grow(1).Children(func() {
 			ui.Text(c, T("s.start.title")).FontSize(18).FontWeight(700)
-			ui.Text(c, T("s.start.subtitle")).FontSize(12.5).TextColor(p.muted)
+			ui.Text(c, T(g.subtitle)).FontSize(12.5).TextColor(p.muted)
 		})
-		if a.added {
+		switch {
+		case !plat.added:
+		case a.added:
 			quiet(c, T("s.start.added"), iconCheck)
-		} else {
+		default:
 			pill(c, T("s.start.not_added"), t.Warning, iconAlert)
 		}
 	})
-	// macOS asks once: a later request shows the dialog again, but Allow
-	// then adds nothing, so there's no "ask again" (DESIGN §5.5).
-	group(c, T("s.start.step1"), "", func() {
-		row(c, T("s.start.allow"), T("s.start.allow.desc"), nil)
-	})
-	group(c, T("s.start.step2"), "", func() {
-		row(c, T("s.start.add"), T("s.start.add.desc"), func() {
-			ui.Button(c, T("s.start.add.open")).OnClick(func() {
+	if plat.consent {
+		// macOS asks once: a later request shows the dialog again, but
+		// Allow then adds nothing, so there's no "ask again" (DESIGN §5.5).
+		group(c, T("s.start.step1"), "", func() {
+			row(c, T("s.start.allow"), T("s.start.allow.desc"), nil)
+		})
+	}
+	group(c, T(g.addStep), "", func() {
+		row(c, T(g.add), T(g.addDesc), func() {
+			ui.Button(c, T(g.addOpen)).OnClick(func() {
 				go func() {
 					// System Settings may list input sources from a stale
 					// cache that lacks 拾新: refresh it first.
-					if front != "" {
+					if front != "" && plat.refresh {
 						exec.Command(front, "-refresh").Run()
 					}
-					mygo.Shell.OpenExternal(inputSources)
+					mygo.Shell.OpenExternal(plat.inputSettings)
 				}()
 			})
 		})
 	})
-	group(c, T("s.start.step3"), "", func() {
-		row(c, T("s.start.type"), T("s.start.type.desc"), nil)
+	group(c, T(g.typeStep), "", func() {
+		row(c, T("s.start.type"), T(g.typeDesc), nil)
 		row(c, T("s.i.rerank"), T("s.start.rerank.desc"), func() {
 			ui.Button(c, T("s.start.rerank.open")).OnClick(func() { a.page = "rerank" })
 		})
