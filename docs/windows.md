@@ -140,10 +140,12 @@ Close apps using the DLL before deleting its files. An ARM64 DLL supports
 native ARM64 applications; the package strategy for x64 emulated apps,
 which require a matching DLL, still needs validation. The build script does
 not create logon startup entries; start `Shixin.exe` before typing tests.
-The tested unregistration returned an error; its machine TIP was removed
-only by an elevated attempt. Verify both user and machine state and preserve
-diagnostics as described
-in [known issues](KNOWN-ISSUES.md#windows-unregistration-returns-failure-after-removing-registration).
+Elevated unregistration now returns success: the profile API removes its
+categories too, so no redundant category removal follows it. At medium
+integrity that API still fails against a machine TIP; the COM class is
+preserved on failure. Verify both user and machine state and preserve the
+named API/HRESULT diagnostics described in
+[known issues](KNOWN-ISSUES.md#windows-per-user-unregistration-remains-unavailable).
 
 ## Collecting development logs
 

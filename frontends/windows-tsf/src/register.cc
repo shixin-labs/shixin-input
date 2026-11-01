@@ -1,8 +1,23 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "service.h"
+#include <cstdio>
 namespace shixin {
 namespace {
 constexpr LANGID kLanguage = 0x0804;
+HRESULT step(const char *name, HRESULT hr) {
+#ifndef SHIXIN_TSF_TRACE
+  if (SUCCEEDED(hr))
+    return hr;
+#endif
+  char line[192];
+  int n = std::snprintf(line, sizeof(line), "TSF %s: HRESULT 0x%08lx\n", name,
+                        static_cast<unsigned long>(hr));
+  DWORD written = 0;
+  if (n > 0 && n < int(sizeof(line)))
+    WriteFile(GetStdHandle(STD_ERROR_HANDLE), line, DWORD(n), &written,
+              nullptr);
+  return hr;
+}
 std::wstring class_key() {
   wchar_t guid[40]{};
   StringFromGUID2(kClass, guid, 40);
@@ -73,21 +88,27 @@ STDAPI DllRegisterServer() {
                           CLSCTX_INPROC_SERVER, IID_ITfInputProcessorProfiles,
                           reinterpret_cast<void **>(&profiles));
   if (SUCCEEDED(hr))
-    hr = profiles->Register(kClass);
+    hr =
+        step("ITfInputProcessorProfiles::Register", profiles->Register(kClass));
   if (SUCCEEDED(hr)) {
     constexpr wchar_t name[] = L"拾新输入法";
-    hr = profiles->AddLanguageProfile(kClass, kLanguage, kProfile, name,
-                                      UINT(std::size(name) - 1), path.data(), n,
-                                      0);
+    hr = step("ITfInputProcessorProfiles::AddLanguageProfile",
+              profiles->AddLanguageProfile(kClass, kLanguage, kProfile, name,
+                                           UINT(std::size(name) - 1),
+                                           path.data(), n, 0));
   }
   if (SUCCEEDED(hr))
-    hr = profiles->EnableLanguageProfile(kClass, kLanguage, kProfile, TRUE);
+    hr = step(
+        "ITfInputProcessorProfiles::EnableLanguageProfile",
+        profiles->EnableLanguageProfile(kClass, kLanguage, kProfile, TRUE));
   if (SUCCEEDED(hr))
     hr = CoCreateInstance(CLSID_TF_CategoryMgr, nullptr, CLSCTX_INPROC_SERVER,
                           IID_ITfCategoryMgr,
                           reinterpret_cast<void **>(&categories));
   if (SUCCEEDED(hr))
-    hr = categories->RegisterCategory(kClass, GUID_TFCAT_TIP_KEYBOARD, kClass);
+    hr = step(
+        "ITfCategoryMgr::RegisterCategory",
+        categories->RegisterCategory(kClass, GUID_TFCAT_TIP_KEYBOARD, kClass));
   if (FAILED(hr) && !existing) {
     if (categories)
       categories->UnregisterCategory(kClass, GUID_TFCAT_TIP_KEYBOARD, kClass);
@@ -108,32 +129,23 @@ STDAPI DllUnregisterServer() {
   Com com;
   if (!com.good())
     return com.status;
-  HRESULT result = S_OK;
   ITfInputProcessorProfiles *profiles = nullptr;
-  ITfCategoryMgr *categories = nullptr;
   auto hr = CoCreateInstance(
       CLSID_TF_InputProcessorProfiles, nullptr, CLSCTX_INPROC_SERVER,
       IID_ITfInputProcessorProfiles, reinterpret_cast<void **>(&profiles));
   if (SUCCEEDED(hr)) {
-    profiles->RemoveLanguageProfile(kClass, kLanguage, kProfile);
-    hr = profiles->Unregister(kClass);
+    // Unregister removes every language profile and category. Removing the
+    // category afterwards returns E_FAIL even after a successful uninstall.
+    hr = step("ITfInputProcessorProfiles::Unregister",
+              profiles->Unregister(kClass));
     profiles->Release();
   }
+  // Keep the COM class usable if TSF removal failed (for example because the
+  // machine TIP needs elevation). Never leave a registered TIP without its DLL.
   if (FAILED(hr))
-    result = hr;
-  hr = CoCreateInstance(CLSID_TF_CategoryMgr, nullptr, CLSCTX_INPROC_SERVER,
-                        IID_ITfCategoryMgr,
-                        reinterpret_cast<void **>(&categories));
-  if (SUCCEEDED(hr)) {
-    hr =
-        categories->UnregisterCategory(kClass, GUID_TFCAT_TIP_KEYBOARD, kClass);
-    categories->Release();
-  }
-  if (FAILED(hr) && SUCCEEDED(result))
-    result = hr;
+    return hr;
   auto status = RegDeleteTreeW(HKEY_CURRENT_USER, class_key().c_str());
-  if (status != ERROR_SUCCESS && status != ERROR_FILE_NOT_FOUND &&
-      SUCCEEDED(result))
-    result = HRESULT_FROM_WIN32(status);
-  return result;
+  if (status != ERROR_SUCCESS && status != ERROR_FILE_NOT_FOUND)
+    return HRESULT_FROM_WIN32(status);
+  return S_OK;
 }

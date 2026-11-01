@@ -231,7 +231,10 @@ Registration and unregistration must happen only in the VM. See
 8. Repeat in Word/Office, Chrome/Electron, Explorer and Start search.
    Elevated/AppContainer tests remain gated on the documented security work.
    Close test apps and unregister with `Shixin.exe -unregister`; confirm no
-   unrelated input sources or user dictionaries changed.
+   unrelated input sources or user dictionaries changed. Record the integrity
+   level and named TSF API when registration fails. A failed uninstall must
+   preserve the user COM class; a successful uninstall must remove the service
+   and categories without a subsequent spurious category-removal failure.
 
 ### Windows app matrix
 

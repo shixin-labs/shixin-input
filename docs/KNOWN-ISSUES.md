@@ -88,26 +88,27 @@ Delete an entry when it's fixed, and mention it in the commit.
   observations do not measure the real application's 8 ms ASK budget.
 
 ### Windows keyboard registration needs elevation
-- **Repro:** on a normal desktop with UAC enabled, run the ARM64
-  `Shixin.exe -register` at medium integrity. It exits 1 with
-  `DllRegisterServer failed: HRESULT 0x80004005`. The same command succeeds
-  elevated. The successful command creates a TIP under
-  `HKLM\Software\Microsoft\CTF\TIP`, although the COM class is under HKCU;
-  this is not a working per-user-only registration flow.
-- The exact failing TSF/category call is not isolated. The command does not
-  elevate itself, and a successful administrator test must not be reported
-  as ordinary-user registration support.
+- **Isolated in the VM:** at ordinary medium integrity with UAC enabled,
+  `ITfInputProcessorProfiles::Register` itself returns `0x80004005`, before
+  `AddLanguageProfile`, `EnableLanguageProfile` or category registration.
+  The same APIs succeed elevated and create the machine TIP. The COM class
+  remains under HKCU. Registration now names the failing API on stderr.
+- A working per-user-only TSF registration flow remains unresolved.
+  Writing a user COM class is insufficient; do not claim ordinary-user
+  support from an elevated installation. Windows documents the native TIP
+  registration under [HKLM](https://learn.microsoft.com/en-us/windows/win32/tsf/64-bit-platform-considerations).
 
-### Windows unregistration returns failure after removing registration
-- **Repro:** register the ARM64 development DLL, add its Chinese keyboard
-  profile, close the test apps, and run `Shixin.exe -unregister` at medium
-  integrity. It exits 1 with `0x80004005`, removes the user COM class, and
-  leaves the machine TIP registered. Elevated unregistration also returns
-  this error, but removes the machine TIP. Restoring the original language
-  list then removes the remaining user TIP cache.
-- The exact failing TSF/category call is not isolated. Check both machine
-  and user registration state and preserve the output. The error occurred
-  with UAC both enabled and disabled.
+### Windows per-user unregistration remains unavailable
+- **Fixed:** elevated unregistration previously removed the service, then
+  redundantly called `ITfCategoryMgr::UnregisterCategory`, which returned
+  `E_FAIL` because `ITfInputProcessorProfiles::Unregister` already removes
+  every profile and category. It now returns success and removes the machine
+  TIP and user COM class. Actual API behavior was verified in the VM.
+- **Remaining:** at medium integrity, `ITfInputProcessorProfiles::Unregister`
+  returns `0x80004005` against the machine TIP. Its failure now preserves the
+  user COM class so that a failed uninstall leaves the input method usable.
+  This is not per-user uninstall support; the registration model above still
+  needs a supported solution. See [TSF cleanup semantics](https://learn.microsoft.com/en-us/windows/win32/tsf/text-service-registration).
 
 ### Windows development logs are not persistent by default
 - **Source-inspected; not VM-reproduced:** `internal/logx.Dir` recognizes
