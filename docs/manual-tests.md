@@ -228,27 +228,57 @@ evidence storage, see [Windows VM setup](windows.md#windows-test-vm-on-macos).
    Close test apps and unregister with `Shixin.exe -unregister`; confirm no
    unrelated input sources or user dictionaries changed.
 
-### Windows VM preparation attempt (2026-10-31)
+### Windows QEMU setup (2026-10-31)
 
-Status: **blocked before Windows installation**. UTM 5.0.8 launched, but
-`utmctl list` did not return and an AppleScript `get UTM version` request
-ended with `AppleEvent timed out (-1712)`. Host screen capture also failed
-with `could not create image from display`; no screenshot was produced.
-The operator must inspect UTM's startup UI and handle any pending macOS
-Automation prompt before retrying. The specific cause is not confirmed.
+Status: **blocked during OOBE; no product typing checks run**. QEMU/HVF
+booted Windows 11 Pro ARM64 build `26300.9457` from the NVMe disk with
+2048 MiB RAM and four cores. UTM was abandoned after scripting timeouts;
+the helper now delegates to the external `qemu/shixin-win11/run.sh`.
+No UTM or AppleScript commands are needed.
 
-The external Windows state directory has a dedicated SSH key and vncdotool
-venv, setup notes, and `logs/utm-startup.log`. The official guest-tools ISO
-is staged under `iso/`, with a locally recorded SHA-256 in
-`notes/guest-tools.sha256`. The storage README describes the Windows folders.
-The VM helper passed Bash syntax, ShellCheck and mocked UUID routing,
-literal PowerShell encoding, transfer-path and screenshot-name checks;
-`notes/helper-check/checks.log` records those host-only checks.
+Observed setup steps and evidence, relative to the external VM root:
 
-No VM bundle was created and no Windows installation, ARM64 native build,
-TSF registration, settings UI or app typing check ran. Those checklist items
-remain **not run**, including librime's Windows ARM64 build and CPU/memory
-measurements. The existing macOS VMs were left alone.
+- **Pass:** Windows installation progressed through 94% and entered OOBE.
+  Evidence: `shixin/shixin-win11/shots/disk-reboot.png`.
+- **Recovered setup failure:** first-run preparation showed “Why did my PC
+  restart?” and requested network access. Shift+F10 opened an administrator
+  command prompt. On this run the guest-tools CD was `E:`; running
+  `pnputil /add-driver E:\Drivers\*.inf /subdirs /install` accepted 153 of
+  296 packages. Older packages reported catalog or trust errors. This is
+  not a claim that every guest device driver works.
+- **Pass:** `ipconfig` showed the Ethernet adapter at `10.0.2.15`, with
+  gateway `10.0.2.2`. Evidence:
+  `shixin/shixin-win11/shots/network-driver.png`. Returning to the recovery
+  screen and choosing Next reached the normal country/region OOBE page:
+  `shots/network-recovery-stage.png` in the same state directory.
+- **Pass:** choosing United States, US keyboard and skipping a second
+  layout reached normal OOBE. `start ms-cxh:localonly` then opened the
+  local-account form. The same command had returned “Class not registered”
+  on the earlier recovery screen. If the console appears inactive, click
+  its client area before typing. Evidence: `shots/localonly-open.png`.
+- **Blocked:** QEMU exited while the account form was open, then exited
+  again within 30 seconds of a restart through the controller. `qemu.log`
+  was empty and no new macOS QEMU crash report explained these exits.
+  The external `logs/qemu-exit-system.log` contains repeated kernel
+  `EXC_GUARD` messages for both VM process IDs (`type=0x5`, `flavor=0x1`,
+  `subcode=0x4000000`). The installed SDK names this virtual-memory flavor
+  `kGUARD_EXC_DEALLOC_GAP`; these messages alone do not prove the exit cause.
+  No account completion or SSH login was verified.
+
+The helper's `type` now sends explicit Shift chords for US punctuation:
+raw VNC typing had changed `:` to `;`, `_` to `-`, `+` to `=` and `*` to `8`.
+Actual `start ms-cxh:localonly` and quoted PowerShell commands verified the
+colon and quote handling. Bash syntax, ShellCheck, all shifted-symbol
+mapping checks against a mock controller, rejected non-ASCII/control
+characters and power delegation passed; external
+`notes/helper-qemu-check/checks.log` records the mock checks.
+
+Native ARM64 builds, librime, TSF registration, settings UI, application
+input and CPU/memory measurements remain **not run**. The existing macOS
+VMs were left alone. Continue by completing the account/security questions,
+declining optional telemetry, enabling OpenSSH and verifying key login;
+then run the build and app matrix below. Credentials remain only in private
+external notes.
 
 ### Windows app matrix and evidence
 
