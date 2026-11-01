@@ -261,13 +261,15 @@ and tools that touch Rime use scratch user dirs, never the live one.
 ### Windows QEMU VM
 
 See [Windows development](docs/windows.md#windows-test-vm-on-macos).
-All Windows VM state stays on an external volume, separate from the Tart VMs.
-The helper wraps `qemu/shixin-win11/run.sh`; it never invokes UTM or AppleScript.
+Set `SHIXIN_VMROOT` (default `~/shixin-vm`) to an existing directory.
+`scripts/windows-qemu.sh` controls QEMU/HVF; `scripts/windows-vm.sh` adds
+SSH, transfers and paced input. Windows state stays separate from Tart VMs.
 
 | Task | Command |
 |---|---|
-| Initialize external SSH key and evidence directories | `scripts/windows-vm.sh init-state` |
-| Start / request shutdown / inspect the Windows VM | `scripts/windows-vm.sh boot\|stop\|status` |
+| Initialize SSH key and test state directories | `scripts/windows-vm.sh init-state` |
+| Create/start QEMU / request shutdown / inspect the Windows VM | `scripts/windows-qemu.sh start\|stop\|status` |
+| Start / request shutdown / inspect through the SSH helper | `scripts/windows-vm.sh boot\|stop\|status` |
 | Run literal PowerShell in the guest / transfer a file | `scripts/windows-vm.sh exec 'COMMAND'` · `put LOCAL GUEST` · `get GUEST LOCAL` |
 | Guest screenshot / VNC input | `scripts/windows-vm.sh shot NAME` · `keys KEY...` · `type TEXT` · `click X Y` |
 

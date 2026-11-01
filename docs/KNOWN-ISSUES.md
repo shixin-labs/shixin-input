@@ -40,11 +40,12 @@ Delete an entry when it's fixed, and mention it in the commit.
   client tests run on Linux and under sanitizers locally.
 - **ARM64 VM run (2026-10-31):** QEMU/HVF, Windows 11 Pro, native builds,
   librime without Lua, registration, and Edge typing were exercised.
-  The shared Settings app and its Windows guide render; layout, theme and
-  punctuation changes can apply live. Compatibility failures below prevent
+  Application versions: Notepad 11.2607.14.0, Edge 156.0.4314.58,
+  Explorer 10.0.26100.8117 and SearchHost 2608.25008.200.0 on Windows
+  build 26300.9457. Settings and its Windows guide render; layout, theme
+  and punctuation changes can apply live. Compatibility failures below prevent
   treating the port as ready. See the
-  [build results](manual-tests.md#windows-arm64-native-build-checks-2026-10-31)
-  and [GUI results](manual-tests.md#windows-arm64-gui-results-2026-10-31).
+  [Windows status](windows.md#status-2026-10-31).
 - **Missing:** native llama build automation, the front's `-added`
   answer for the 开始使用 guide, startup registration, a signed installer
   and in-place updates (关于 links to the release page meanwhile), display attributes/mode
@@ -65,14 +66,10 @@ Delete an entry when it's fixed, and mention it in the commit.
   loaded. Edge 156.0.4314.58 on the same account commits `你好`.
 - Repeated with UAC enabled and medium-integrity Notepad: 自然码 `nihk`
   plus Space produces literal `nihk `. The Explorer, Ctrl+L and candidate-click
-  failures below were also reproduced on the normal desktop; see `shots/normal-*.png` and
-  `logs/normal/normal-integrity.txt` in the external Windows state.
+  failures below were also reproduced at medium integrity with UAC enabled.
 - Explorer search and Start search also passed `nihk` through without
   candidates when 自然码双拼 was selected. The cause is not isolated;
   these results do not establish AppContainer or secure-scope support.
-- **Evidence:** external Windows state `shots/notepad-slow-nihao.png`,
-  `shots/explorer-search-nihk.png`, `shots/start-search-nihk.png`, and
-  `logs/gui-cases.jsonl`.
 
 ### Windows Explorer rename produces the wrong composition
 - **Repro:** select 自然码双拼, select a scratch text file in Explorer,
@@ -81,18 +78,13 @@ Delete an entry when it's fixed, and mention it in the commit.
   four keys in Edge produced `ni hao` and committed `你好`.
 - This resembles doubled key delivery, but the cause is not confirmed.
   Do not infer correctness from the portable or COM smoke tests.
-- **Evidence:** `shots/explorer-shuangpin-fresh.png`,
-  `shots/edge-shuangpin-nihk.png`, and `logs/explorer-result.json`.
 
 ### Windows Edge duplicates preedit on Ctrl+L
 - **Repro:** in a fresh Edge textarea with 自然码双拼, type `nihk`, wait
   for the `ni hao` composition, press Ctrl+L, then Escape. The original
   textarea contains `ni haoni hao`, rather than one finalized `ni hao`.
-  A fixture readout copied through the guest clipboard confirms the exact
-  value. Full pinyin showed the same duplication. Alt+Tab to another app
+  Full pinyin showed the same duplication. Alt+Tab to another app
   and back finalized `ni hao` once in the separate tested case.
-- **Evidence:** `shots/edge-ctrl-l-before.png`,
-  `shots/edge-ctrl-l-after.png`, and `logs/gui-cases.jsonl`.
 
 ### Windows candidate flyout intercepts clicks below its visible panel
 - **Repro:** in Edge, put a textarea above a password input. Compose
@@ -102,23 +94,17 @@ Delete an entry when it's fixed, and mention it in the commit.
   field when no menu is visible passes literal input correctly.
 - Candidate clicks themselves select a word and preserve typing focus.
   The transparent flyout's input region needs investigation.
-- **Evidence:** `shots/edge-password-click-after-six-seconds.png`,
-  `shots/edge-candidate-click-after.png`, and `logs/gui-cases.jsonl`.
 
 ### Windows low-memory lifecycle validation remains incomplete
 - At 2048 MiB, the first live layout rebuild returned `builder failed:
   exit status 1`; the old engine stayed usable. The builder's diagnostics
   are deliberately discarded by the coordinator, so the underlying failure
-  was not captured. Standalone builds and a later instrumented retry passed;
-  the original builder executable was restored afterward. This is an
-  observed intermittent failure, not an isolated cause or reliable repro.
+  was not captured. Standalone builds and a later instrumented retry passed.
+  This is an intermittent failure, not an isolated cause or reliable repro.
 - Suspending the active worker left printable input pending until resume;
   it did not immediately appear as literal fallback. Killing the worker
   did recover automatically and subsequent exact typing passed. These GUI
   observations do not measure the real application's 8 ms ASK budget.
-- **Evidence:** `shots/settings-apply-error.png`,
-  `shots/engine-hang-fallback.png`, `shots/engine-hang-after-resume.png`,
-  `logs/engine.log`, and `logs/builder-probe.log`.
 
 ### Windows keyboard registration needs elevation
 - **Repro:** on a normal desktop with UAC enabled, run the ARM64
@@ -130,9 +116,6 @@ Delete an entry when it's fixed, and mention it in the commit.
 - The exact failing TSF/category call is not isolated. The command does not
   elevate itself, and a successful administrator test must not be reported
   as ordinary-user registration support.
-- **Evidence:** `logs/normal/normal-registration-token.txt`,
-  `logs/normal/normal-register.{log,json}` and `normal-registry.json` in that
-  same directory.
 
 ### Windows unregistration returns failure after removing registration
 - **Repro:** register the ARM64 development DLL, add its Chinese keyboard
@@ -142,11 +125,8 @@ Delete an entry when it's fixed, and mention it in the commit.
   this error, but removes the machine TIP. Restoring the original language
   list then removes the remaining user TIP cache.
 - The exact failing TSF/category call is not isolated. Check both machine
-  and user registration state and preserve the output. This result was also
-  observed during the earlier UAC-disabled run.
-- **Evidence:** `logs/normal/normal-{unregister,elevated-unregister}.{log,json}`,
-  `normal-after-limited-unregister.json`, `normal-after-elevated-unregister.json`
-  and `normal-cleanup.json` in the same directory.
+  and user registration state and preserve the output. The error occurred
+  with UAC both enabled and disabled.
 
 ### Windows development logs are not persistent by default
 - **Source-inspected; not VM-reproduced:** `internal/logx.Dir` recognizes

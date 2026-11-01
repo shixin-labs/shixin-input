@@ -5,7 +5,7 @@ host, the shared engine and settings GUI, and offline tools. Both x64
 (`amd64`) and ARM64 (`arm64`) are build targets. This is an experimental
 front: ARM64 native builds, librime, registration and Edge typing have been
 tested in a Windows VM, with substantial app compatibility failures. See
-the [GUI results](manual-tests.md#windows-arm64-gui-results-2026-10-31) and
+the [status summary](#status-2026-10-31) and
 [known issues](KNOWN-ISSUES.md#windows-validation-and-release-support).
 There is no signed Windows installer or updater yet.
 
@@ -79,7 +79,7 @@ recovery tests. Its C++ development executables link
 [`binmode.obj`](https://learn.microsoft.com/en-us/cpp/c-runtime-library/fmode?view=msvc-170)
 so test fixtures write exact LF metadata. This fixes Windows test linkage
 and line-ending behavior through build configuration. The pinned fork is
-not edited. ARM64 builds and all C++ test targets passed in the VM.
+not edited.
 
 Put any additional same-architecture native DLL dependencies beside the
 executables, shared Rime data under `data/`, and optional compiled
@@ -157,99 +157,138 @@ Start-Process (Join-Path $out 'Shixin.exe') `
     -RedirectStandardError (Join-Path $logs 'host-stderr.log')
 ```
 
-Use this only when no engine is already running. Record the actual command
-and paths for the run, then copy the files into the external VM state
-`logs/` directory. These are explicit test destinations, not product default
-paths. A later restart by the host's supervisor returns to the default
-logging behavior; record that evidence gap during restart tests.
+Use this only when no engine is already running. These are explicit test
+destinations. A later restart by the host's supervisor returns to the
+default logging behavior; account for that gap during restart tests.
 
 ## Windows test VM on macOS
 
-Use QEMU directly with HVF and an external-volume controller at
-`qemu/shixin-win11/run.sh`. The repository helper delegates VM power and
-VNC input to that controller; it does not invoke UTM or AppleScript.
-Keep disks, installation media, downloads, credentials and evidence on an
-external volume. Set `SHIXIN_WINDOWS_VMROOT` (or `SHIXIN_VMROOT`) to an
-existing `/Volumes/<disk>/vm` directory. It never runs Tart.
+On Apple Silicon, use `scripts/windows-qemu.sh` for QEMU/HVF power and
+VNC control, and `scripts/windows-vm.sh` for SSH, transfers and paced input.
+Both use `SHIXIN_VMROOT` (default `~/shixin-vm`), which must already exist;
+neither creates the root. Choose storage with room for a 64 GiB guest disk.
+The Windows VM is separate from the Tart VMs.
 
 | Path relative to the VM root | Contents |
 |---|---|
 | `iso/` | Windows ARM64 ISO and guest-tools ISO |
-| `qemu/shixin-win11/` | `run.sh`, `disk.qcow2`, `efivars.fd`, monitor socket, PID file, QEMU log and raw screenshots |
-| `shixin/shixin-win11/` | SSH key, `known_hosts`, separate `venv/`, `shots/`, `logs/`, `notes/`, `downloads/` |
+| `qemu/shixin-win11/` | `disk.qcow2`, `efivars.fd`, monitor socket, PID file, QEMU log and screenshots |
+| `shixin/shixin-win11/` | SSH key, `known_hosts`, `venv/`, screenshots, logs and private setup notes |
 
-The controller must support `start`, `stop`, `status`, `shot NAME`,
-`keys KEY...`, `type TEXT` and `click X Y`. `shot` writes
-`qemu/shixin-win11/shots/NAME.png`; the helper also copies it to the evidence
-`shots/` directory. Use aarch64 `virt`, HVF, UEFI pflash, four cores, a
-64 GiB NVMe disk, ramfb display and USB keyboard/tablet. Bind VNC to
-**127.0.0.1:5907**, and forward **127.0.0.1:2222** to guest SSH port 22.
-The guest uses 2048 MiB RAM normally. After a clean guest shutdown,
-`MEM=6144 scripts/windows-vm.sh boot` gives heavy native builds more memory.
-
-QEMU 11.1's TPM device failed under HVF with `HV_BAD_ARGUMENT` in this
-setup. The disposable test guest uses Windows Setup's
-`HKLM\SYSTEM\Setup\LabConfig` values `BypassTPMCheck`,
-`BypassSecureBootCheck`, `BypassRAMCheck` and `BypassCPUCheck` (DWORD 1).
-It does not validate supported production Windows hardware. Leave the
-installer's “Press any key” prompt alone on reboot so the NVMe installation
-boots. An installation ISO can remain attached alongside the guest-tools CD.
-
-Finish setup with a local `shixin` account. On the network page,
-Shift+F10 and `start ms-cxh:localonly` opens the local account route on
-builds that support it. Decline optional telemetry and advertising. Install
-ARM64 virtio network drivers from the guest-tools CD before expecting NAT
-to work. Keep the account password only in the external private `notes/`.
-Initialize host state with:
+Install Homebrew QEMU and prepare the state and VNC client:
 
 ```sh
+brew install qemu
+export SHIXIN_VMROOT="$HOME/shixin-vm"
+mkdir -p "$SHIXIN_VMROOT/iso"
 scripts/windows-vm.sh init-state
-S="$SHIXIN_WINDOWS_VMROOT/shixin/shixin-win11"
+S="$SHIXIN_VMROOT/shixin/shixin-win11"
 python3 -m venv "$S/venv"
-mkdir -p "$S/tmp"
-TMPDIR="$S/tmp" PIP_CACHE_DIR="$S/downloads/pip-cache" \
-  "$S/venv/bin/python" -m pip install vncdotool
+"$S/venv/bin/python" -m pip install vncdotool
 ```
 
-Enable Windows OpenSSH Server, its firewall rule and automatic `sshd`
-startup in the guest. Authorize the external state's `id_ed25519.pub`.
-Administrator accounts use
-`C:\ProgramData\ssh\administrators_authorized_keys`, with inheritance
-removed and access limited to Administrators and SYSTEM; see Microsoft's
-[key setup instructions](https://learn.microsoft.com/en-us/windows-server/administration/openssh/openssh_keymanagement).
+Place a Windows 11 ARM64 installation ISO named `Windows11_ARM64.iso` and a
+virtio guest-tools ISO named `utm-guest-tools.iso` in `iso/`. Override their
+filenames with `SHIXIN_WINDOWS_ISO` and `SHIXIN_WINDOWS_TOOLS_ISO`.
+The controller uses firmware from
+`$(brew --prefix qemu)/share/qemu/edk2-aarch64-code.fd`. On first start it
+creates the NVMe disk and writable UEFI variables. It uses aarch64 `virt`,
+HVF, four cores, ramfb and a USB keyboard/tablet. VNC binds to
+**127.0.0.1:5907**; **127.0.0.1:2222** forwards to guest SSH port 22.
+RAM defaults to 2048 MiB; after a clean shutdown, use
+`MEM=6144 scripts/windows-vm.sh boot` for heavy native builds.
 
 ```sh
-scripts/windows-vm.sh boot
+scripts/windows-qemu.sh start
+scripts/windows-qemu.sh status
+scripts/windows-qemu.sh shot setup
+```
+
+If UEFI opens its shell instead of Setup, run `fs0:` followed by
+`\efi\boot\bootaa64.efi`. QEMU 11.1's `tpm-tis-device` fails under HVF with
+`HV_BAD_ARGUMENT`, so this test VM omits TPM. In Setup, press Shift+F10 and
+set the bypass values before continuing:
+
+```bat
+for %v in (BypassTPMCheck BypassSecureBootCheck BypassRAMCheck BypassCPUCheck) do reg add HKLM\SYSTEM\Setup\LabConfig /v %v /t REG_DWORD /d 1 /f
+```
+
+This guest does not validate supported production Windows hardware. On
+reboot, leave the installer's “Press any key” prompt alone to boot NVMe.
+If first-run preparation requests network recovery, install the virtio
+network drivers from the guest-tools CD in a Shift+F10 console:
+
+```bat
+pnputil /add-driver E:\Drivers\*.inf /subdirs /install
+```
+
+Replace `E:` with the guest-tools drive letter. Some bundled driver versions
+may be rejected; verify the network adapter with `ipconfig`, then continue
+setup. At the normal OOBE network page, `start ms-cxh:localonly` opens the
+local-account route on builds that support it; the recovery screen may
+return “Class not registered”. Create a local `shixin` account and keep
+credentials private.
+
+Enable OpenSSH Server in an administrator PowerShell console in the guest:
+
+```powershell
+Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+Set-Service sshd -StartupType Automatic
+Start-Service sshd
+Set-NetFirewallRule -Name OpenSSH-Server-In-TCP -Enabled True -Profile Any
+```
+
+Authorize the state's `id_ed25519.pub`. Administrator accounts use
+`%ProgramData%\ssh\administrators_authorized_keys`, with inheritance removed
+and access limited to Administrators and SYSTEM; see Microsoft's
+[key setup instructions](https://learn.microsoft.com/en-us/windows-server/administration/openssh/openssh_keymanagement).
+Confirm the firewall rule covers the guest NAT network's profile.
+
+```sh
 scripts/windows-vm.sh status
 scripts/windows-vm.sh exec '$PSVersionTable; Get-ComputerInfo -Property WindowsVersion,OsBuildNumber'
-scripts/windows-vm.sh put scripts/build-windows.ps1 C:/Users/shixin/build-windows.ps1
-scripts/windows-vm.sh get C:/Users/shixin/build.log "$S/logs/build.log"
+scripts/windows-vm.sh put scripts/build-windows.ps1 build-windows.ps1
+scripts/windows-vm.sh get build.log "$S/logs/build.log"
 scripts/windows-vm.sh shot windows-desktop
 scripts/windows-vm.sh keys super-r
 scripts/windows-vm.sh type notepad
 scripts/windows-vm.sh keys enter
 scripts/windows-vm.sh click 400 300
-scripts/windows-vm.sh stop
+scripts/windows-vm.sh exec 'Stop-Computer'
+scripts/windows-vm.sh status
 ```
 
-`exec` encodes one literal PowerShell string as UTF-16LE and requests UTF-8
-output, preserving Chinese text through OpenSSH. `put` and `get`
-use SFTP; guest evidence must be saved under the external Windows state
+`exec` encodes literal PowerShell as UTF-16LE and requests UTF-8 output.
+`put` and `get` use SFTP; save collected files under the Windows state
 directory. `SHIXIN_WINDOWS_USER` and `SHIXIN_WINDOWS_SSH_PORT` override the
-account and SSH port. SSH uses a dedicated `known_hosts`, accepts first-use
-keys and rejects changed keys. The controller owns VNC configuration.
+account and forwarded SSH port. SSH uses a dedicated `known_hosts`, accepts
+first-use keys and rejects changed keys. Launch GUI tests in the interactive
+desktop session; SSH commands run in a separate noninteractive session.
 
-QEMU maps raw shifted punctuation keysyms to their base keys (for example
-`_` becomes `-` and `:` becomes `;`). The helper’s `type` command splits
-printable US ASCII into ordinary text and explicit Shift chords. Use `keys`
-for Enter and Tab. Input is paced at 50 ms per key by default
-(`SHIXIN_WINDOWS_KEY_DELAY` overrides milliseconds); fast long bursts can
-overrun the guest USB keyboard and leave keys repeating. Keep VNC commands
-short and prefer SSH once it works. After guest-tools installation, check
-Caps Lock; the guest’s on-screen keyboard can clear a stale lock state. The external controller's current `stop`
-requests ACPI shutdown, waits up to 60 seconds and then terminates QEMU;
-request guest shutdown over SSH and confirm it completed before relying on
-that command for normal shutdown.
+QEMU maps raw shifted punctuation keysyms to their base keys. The helper's
+`type` sends printable US ASCII with explicit Shift chords; use `keys` for
+Enter and Tab. Input defaults to 50 ms per key
+(`SHIXIN_WINDOWS_KEY_DELAY` overrides milliseconds). Fast long bursts can
+leave keys repeating; prefer SSH for scripts. After guest-tools installation,
+use the on-screen keyboard to clear a stale Caps Lock state if needed.
+`shot` saves a screenshot under both VM and helper state directories.
+`stop` requests ACPI shutdown, waits up to 60 seconds, then terminates QEMU;
+for normal shutdown, request `Stop-Computer` over SSH and confirm it stopped.
+
+## Status (2026-10-31)
+
+- Windows 11 Pro ARM64 build 26300.9457 ran under QEMU/HVF with four cores;
+  native builds used 6144 MiB, GUI checks used 2048 MiB.
+- ARM64 `build-windows.ps1 -Check`, vet and short Go tests passed.
+  Native librime/Shixin tests (106 upstream cases) and serial short Go
+  tests against the DLL passed, including dictionary lock preservation.
+- Edge 156.0.4314.58 passed exact commits, selection, paging, Shift mode
+  switching, directly focused password/PIN guards and basic placement.
+  Settings rendered; live layout/theme/punctuation changes and worker recovery passed.
+- Medium-integrity checks reproduced Notepad/search fallback, Explorer rename,
+  Ctrl+L duplication and click-region failures; registration needed elevation.
+  See [known issues](KNOWN-ISSUES.md#windows-validation-and-release-support).
+- x64/emulated apps, Office/Chrome, mixed DPI, GPU scoring and packaging remain unverified.
 
 ## Client and presentation architecture
 
