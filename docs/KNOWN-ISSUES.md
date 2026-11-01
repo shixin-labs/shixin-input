@@ -67,8 +67,9 @@ Delete an entry when it's fixed, and mention it in the commit.
   edits, disabled compartments and read-only contexts remain guarded.
   Both fields passed exact copied `你好` at medium integrity with UAC on.
 - **Remaining:** Start search still passes `nihao ` through. In the same
-  Windows 11 ARM64 VM, SearchHost runs at low integrity (`0x1000`) and does
-  not load the development DLL after a fresh process start. Notepad's trace
+  Windows 11 ARM64 VM, SearchHost runs at low integrity (`0x1000`); module
+  inspection after a fresh start did not show the development DLL, and no
+  callback trace was produced. Notepad's trace
   rules out activation, key-sink registration and edit-session lock failure
   for its former fallback; these conclusions do not establish Start support.
   The current profile advertises only the keyboard category, and the pipe

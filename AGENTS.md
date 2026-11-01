@@ -265,10 +265,10 @@ See [Windows development](docs/windows.md#windows-test-vm-on-macos).
 Set `SHIXIN_VMROOT` (default `~/shixin-vm`) to an existing directory.
 `scripts/windows-qemu.sh` controls QEMU/HVF; `scripts/windows-vm.sh` adds
 SSH, transfers and paced input. Windows state stays separate from Tart VMs.
-Windows host/engine logs default to `%LOCALAPPDATA%\Shixin\Logs\{shixin,engine}.log`.
-Both source `scripts/windows-env.sh`. `SHIXIN_WINDOWS_VM` selects the name
+Both helpers source `scripts/windows-env.sh`. `SHIXIN_WINDOWS_VM` selects the name
 and state directories (default `shixin-win11`). Resource, port, ISO, firmware
 and VNC-client overrides are listed in the [variables table](docs/windows.md#windows-test-vm-on-macos).
+Windows host/engine logs default to `%LOCALAPPDATA%\Shixin\Logs\{shixin,engine}.log`.
 
 | Task | Command |
 |---|---|

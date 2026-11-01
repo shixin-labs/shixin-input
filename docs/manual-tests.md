@@ -240,8 +240,8 @@ Registration and unregistration must happen only in the VM. See
 
 For each run record the source commit, Windows build, guest architecture,
 application version and architecture, DPI, selected keyboard, and settings.
-Enable [explicit Windows logs](windows.md#collecting-development-logs)
-before a run. Record each check as **pass**, **fail**, **blocked**, or
+Preserve the [default Windows logs](windows.md#collecting-development-logs)
+for each run. Record each check as **pass**, **fail**, **blocked**, or
 **not run**, with enough diagnostics to reproduce failures.
 A screenshot of registration alone does not pass a typing test.
 

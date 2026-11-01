@@ -322,6 +322,11 @@ for normal shutdown, request `Stop-Computer` over SSH and confirm it stopped.
 - The candidate flyout clips its native region to the measured rounded card.
   With a visible menu, clicking the password field below it passes literal
   input; clicking the first candidate still commits exact `你好`.
+- The compatibility checks above were repeated with tracing disabled in the
+  native ARM64 build at 2048 MiB, with UAC enabled and medium-integrity apps.
+  These final checks used Windows build 26300.9711 and Edge 156.0.4314.58.
+  Default host/engine logs also retained startup failures and recovery without
+  explicit log arguments.
 - Registration needing elevation remains.
   See [known issues](KNOWN-ISSUES.md#windows-validation-and-release-support).
 - x64/emulated apps, Office/Chrome, mixed DPI, GPU scoring and packaging remain unverified.

@@ -212,8 +212,8 @@ are sent once per connection; results refer to them by ID.
   Control/Alt/Windows shortcut, the client finalizes its existing marked
   range with a pooled, nonwaiting edit request and invalidates old replies.
   External composition termination also invalidates the engine context, so
-  a late reply cannot reinsert already-finalized text. Empty unsupported input-scope
-  values (including the shell/Notepad `E_FAIL` with `VT_EMPTY`) are ordinary
+  a late reply cannot reinsert already-finalized text. Empty unsupported
+  input-scope values (including the shell/Notepad `E_FAIL` with `VT_EMPTY`) are ordinary
   fields; explicit secure scopes, native password edits, disabled-keyboard
   compartments, read-only contexts and TSF lock/disconnect errors still
   guard input.
@@ -238,10 +238,10 @@ are sent once per connection; results refer to them by ID.
   the hot path. This avoids Go callbacks on foreign threads entirely.
 - **Logging.** librime's `min_log_level = 2` (errors only) in release builds.
   Our logs go to a bounded in-memory queue, flushed by a background goroutine.
-On Windows the host and its supervisor-started engine append to
-`%LOCALAPPDATA%\Shixin\Logs\{shixin,engine}.log`, including startup
-failures and automatic restarts. Files are opened before serving input, and
-logger shutdown flushes queued diagnostics without racing background callers.
+  On Windows the host and its supervisor-started engine append to
+  `%LOCALAPPDATA%\Shixin\Logs\{shixin,engine}.log`, including startup
+  failures and automatic restarts. Files are opened before serving input, and
+  logger shutdown flushes queued diagnostics without racing background callers.
   No fsync anywhere.
 - **Warm-up before ready.** The engine accepts clients only after it has:
   1. Pre-faulted the compiled dictionaries (`madvise(WILLNEED)` + touching

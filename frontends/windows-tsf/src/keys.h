@@ -2,12 +2,13 @@
 #pragma once
 #include "wire.h"
 namespace shixin {
-// IMM-backed controls can zero the repeat count between testing and delivery.
-// Scan/extended/transition bits identify the message; the count does not.
+// Passing an app shortcut finalizes code; a modifier press alone does not.
 inline bool finish_before_shortcut(uint32_t sym, uint32_t mods, bool eaten) {
   return !eaten && !(mods & kRelease) && (mods & (kControl | kAlt | kSuper)) &&
          !(sym >= 0xffe1 && sym <= 0xffee);
 }
+// IMM-backed controls can zero the repeat count between testing and delivery.
+// Scan/extended/transition bits identify the message; the count does not.
 inline uint32_t key_message(uint32_t lparam) { return lparam & 0xffff0000u; }
 
 inline uint32_t windows_key(uint32_t vk, uint32_t scan, bool extended,
