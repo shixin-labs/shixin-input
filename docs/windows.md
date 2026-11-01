@@ -200,7 +200,11 @@ keys and rejects changed keys. The controller owns VNC configuration.
 QEMU maps raw shifted punctuation keysyms to their base keys (for example
 `_` becomes `-` and `:` becomes `;`). The helper’s `type` command splits
 printable US ASCII into ordinary text and explicit Shift chords. Use `keys`
-for Enter and Tab, and prefer SSH once it works. The external controller's current `stop`
+for Enter and Tab. Input is paced at 50 ms per key by default
+(`SHIXIN_WINDOWS_KEY_DELAY` overrides milliseconds); fast long bursts can
+overrun the guest USB keyboard and leave keys repeating. Keep VNC commands
+short and prefer SSH once it works. After guest-tools installation, check
+Caps Lock; the guest’s on-screen keyboard can clear a stale lock state. The external controller's current `stop`
 requests ACPI shutdown, waits up to 60 seconds and then terminates QEMU;
 request guest shutdown over SSH and confirm it completed before relying on
 that command for normal shutdown.

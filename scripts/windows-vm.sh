@@ -21,11 +21,13 @@ KEY="$S/id_ed25519"
 SSH_PORT="${SHIXIN_WINDOWS_SSH_PORT:-2222}"
 GUEST_USER="${SHIXIN_WINDOWS_USER:-shixin}"
 ssh_options=(-o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=10
-  -o StrictHostKeyChecking=accept-new -o "UserKnownHostsFile=$S/known_hosts"
+  -o StrictHostKeyChecking=accept-new -o "UserKnownHostsFile=\"$S/known_hosts\""
   -i "$KEY")
 run_vm() {
   [[ -x "$RUN" ]] || fail "QEMU controller missing: $RUN (see docs/windows.md)"
-  "$RUN" "$@"
+  # A long burst can overrun the guest USB keyboard's report queue and
+  # leave a key repeating. Keep setup input paced even on the 2 GiB guest.
+  VNCDOTOOL_DELAY="${SHIXIN_WINDOWS_KEY_DELAY:-50}" "$RUN" "$@"
 }
 need_ssh() { [[ -f "$KEY" ]] || fail 'run init-state and configure guest OpenSSH key authentication first'; }
 type_text() {
