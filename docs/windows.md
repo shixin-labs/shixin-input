@@ -347,6 +347,18 @@ for normal shutdown, request `Stop-Computer` over SSH and confirm it stopped.
 - ARM64 and x64 core/COM tests pass; the x64 tests also ran under emulation.
   Actual typing in x64/emulated applications, Office/Chrome, mixed DPI, GPU
   scoring and packaging remain unverified.
+- Runtime follow-up at 2048 MiB: five layout rebuilds passed with peak
+  builder private commit around 22 MB, versus 909–983 MB without compiled
+  resource reuse. A 256 MB process limit rejects a full build but permits
+  the reused build. The original intermittent exit had no captured cause;
+  new failures retain safe build-stage and exit/timeout diagnostics.
+- Suspending the active worker now produces exact literal `nihao ` before
+  resume; resuming neither duplicates nor replaces it, and subsequent
+  Chinese input commits exact `你好`. Native deferred-edit tests cover
+  selection/focus changes, ordered literal recovery and queue exhaustion.
+- The same engine session follows a Windows time-zone change and its
+  restoration without restarting. A ten-row vertical menu at the maximum
+  supported font size is constrained and scrolls on an 800×600 desktop.
 
 Debug native callback routing with `-DSHIXIN_TSF_TRACE=ON` in the TSF
 CMake configuration. This opt-in build queues fixed numeric records on the
@@ -365,9 +377,15 @@ dispatch window, preallocates queues, and starts background pipe workers.
 The DLL contains no Go runtime, Rime, candidate UI, file watcher or model.
 A disconnected client passes keys. The client implements Go-compatible
 policy lookup and speculation with one 8 ms budget for an ASK or ordering
-barrier. A queue overflow, malformed peer, deadline or failure degrades to
+barrier. A queue overflow, malformed peer, stalled reply or failure degrades to
 passthrough and requests a background reconnect. Existing inline code is finalized by
 a queued edit after a failed key decision, preserving it as ordinary text.
+The I/O thread closes a connection after 100 ms without accepted-key result
+progress. Received edits drain, then unreplied eaten printable keys become
+literal text through the pooled edit session. External edits, focus/security
+changes and navigation invalidate delayed recovery rather than writing to
+a later selection. New printable keys stay behind the recovery tail until
+it is applied. Reconnection does not replay requests from the old pipe.
 Common client decisions
 allocate no heap memory. Pipe connection and cancellation run off the app
 thread; deactivation requests stop without joining a worker there. Worker

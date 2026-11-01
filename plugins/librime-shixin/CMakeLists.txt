@@ -19,8 +19,8 @@ set(plugin_modules "shixin" PARENT_SCOPE)
 
 if(BUILD_TEST AND GTEST_FOUND)
   # The pure parts (no librime headers) are tested on their own.
-  set(shixin_pure src/calc.cc src/dates.cc src/numerals.cc src/rerank_slot.cc)
-  add_executable(shixin_test test/utf8_test.cc test/numerals_test.cc test/dates_test.cc
+  set(shixin_pure src/calc.cc src/dates.cc src/date_clock.cc src/numerals.cc src/rerank_slot.cc)
+  add_executable(shixin_test test/utf8_test.cc test/numerals_test.cc test/dates_test.cc test/date_clock_test.cc
     test/calc_test.cc test/codepoint_test.cc test/rerank_slot_test.cc ${shixin_pure})
   target_include_directories(shixin_test PRIVATE src)
   target_compile_features(shixin_test PRIVATE cxx_std_17)

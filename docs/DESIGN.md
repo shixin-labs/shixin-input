@@ -217,6 +217,14 @@ are sent once per connection; results refer to them by ID.
   fields; explicit secure scopes, native password edits, disabled-keyboard
   compartments, read-only contexts and TSF lock/disconnect errors still
   guard input.
+  A background reply watchdog disconnects after 100 ms without progress on
+  accepted keys; it adds no wait to the app thread or the 8 ms ASK budget.
+  Received edits drain first, existing marked text is finalized, and eaten
+  printable keys without replies are inserted as literal text. Later plain
+  printable keys join that bounded local tail until its edit runs. Focus,
+  security, external selection/text changes, navigation and tail exhaustion
+  invalidate delayed writes, so recovery cannot replace a later selection.
+  Reconnecting never replays old requests.
 - **Linux:** the socket fd is registered in fcitx5's event loop
   (`addIOEvent`). Results update the `InputPanel` on fcitx5's thread.
 
@@ -281,6 +289,13 @@ The coordinator also watches settings.json, so edits outside Settings work.
    contain the generated patches and read-only references to shared data.
    It calls only deployer APIs, never `create_session`, maintenance, sync,
    or user-dictionary APIs. Failed generations are discarded.
+   For a live rebuild it privately copies static `.bin` resources from the
+   validated warm-only active generation. The compiler checks checksums and
+   rebuilds changed resources; files are never hard-linked to an engine's
+   mapped dictionaries. This avoids rebuilding unchanged dictionary tables
+   and their large temporary memory footprint. Failures retain a bounded,
+   allowlisted stage name and exit/timeout status; native diagnostics may
+   contain private configuration text and are not copied into product logs.
 2. The builder emits real compiled schemas plus warm variants. Every
    script/table translator namespace in a warm variant explicitly disables
    its user dictionary; `default.yaml` lists **only** warm variants. No
@@ -589,6 +604,10 @@ are a syllable there. Date candidates have quality 100 and come first, as
 in rime-ice. The pure parts (calculator, numerals, date formats, code
 points) have no librime dependency; they are unit-tested on their own and
 fuzzed (`test/parsers_fuzz.cc`).
+On Windows the date clock converts the current OS instant with
+`FileTimeToLocalFileTime`, so time-zone changes take effect in existing
+sessions without refreshing the CRT's cached zone or reading files on the
+key path. Linux's zone-change notification support remains deferred.
 
 ## 4. Key flow per platform
 
@@ -1262,6 +1281,11 @@ the candidate window draw the same view (`internal/ui/candview`, skins in
 `go test ./cmd/shixin-settings -snapshot DIR` renders every page in Chinese
 and English, light and dark. Chinese filenames stay unchanged; English
 filenames add `-en` (for example, `general-en.png`, `general-dark-en.png`).
+On Windows the candidate card is bounded by the caret monitor's work area
+and the prewarmed 1400×560-DIP canvas, including shadow margins. Oversized
+content scrolls in both directions; a changed highlight is revealed while
+manual scrolling remains available between engine updates. The native hit
+region follows the visible card. This requires no flyout resize on a key path.
 For each double-pinyin layout, 常用 offers a reference keyboard chart with
 initials, finals (including the semicolon key) and vowel-only syllable
 examples. Its content scrolls in a small window while the close button

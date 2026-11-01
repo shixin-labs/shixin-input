@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "transport.h"
+#include "watchdog.h"
 #include <algorithm>
 #include <bcrypt.h>
 #include <cstdio>
@@ -328,6 +329,7 @@ void Transport::run() {
     bool initial_write = true, reading = false, writing = false, failed = false,
          half_closed = false, eof_write = false;
     size_t have = 0, need = 4;
+    ReplyWatchdog watchdog;
     auto received = [&](DWORD n) {
       if (!n) {
         failed = true;
@@ -350,6 +352,11 @@ void Transport::run() {
         std::memcpy(slot, header, 4);
       }
       if (slot && have == need) {
+        if (!presentation_ && frame_type({slot, need}) == ResultType) {
+          Result result;
+          if (result.decode(frame_payload({slot, need})))
+            watchdog.result(result.ctx, result.seq, GetTickCount64());
+        }
         incoming_.publish(need);
         arrived();
         slot = nullptr;
@@ -399,6 +406,13 @@ void Transport::run() {
           half_closed = true;
         }
         if (has_output) {
+          if (!presentation_ && (frame_type({output, output_size}) == Key ||
+                                 frame_type({output, output_size}) == Select)) {
+            Reader r(frame_payload({output, output_size}));
+            const auto ctx = r.u32(), seq = r.u32();
+            if (r.good)
+              watchdog.request(ctx, seq, GetTickCount64());
+          }
           ResetEvent(write.hEvent);
           DWORD n = 0;
           if (WriteFile(pipe.value, output, DWORD(output_size), &n, &write)) {
@@ -421,6 +435,14 @@ void Transport::run() {
         break;
       if (progress)
         continue;
+      if (!presentation_ && !drain_.load() &&
+          watchdog.expired(GetTickCount64())) {
+        // Closing this pipe also isolates any result produced after resume.
+        // The apartment recovers accepted printable keys through its pooled
+        // edit session, then passes subsequent keys while reconnecting.
+        failed = true;
+        break;
+      }
       // Completion events remain signaled until the next operation starts.
       HANDLE events[] = {stop_, wake_, read.hEvent, write.hEvent};
       DWORD which = WaitForMultipleObjects(4, events, FALSE, 50);

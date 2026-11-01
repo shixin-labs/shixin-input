@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "service.h"
+#include "recovery.h"
 #include "keys.h"
 #include "scope.h"
 #include <algorithm>
@@ -69,6 +70,7 @@ void Edit::prepare(Service *s, ITfContext *c, uint32_t e, bool p) {
   context = c;
   epoch = e;
   probe = p;
+  recovery = false;
   refs_ = 1;
   owner->AddRef();
   context->AddRef();
@@ -287,6 +289,12 @@ void Service::focus(ITfContext *c) {
   }
   if (c == context_)
     return;
+  if (recovering_) {
+    recovering_ = false;
+    fallback_size_ = 0;
+    fallback_.fill(0);
+    core_.reset();
+  }
   if (context_) {
     if (transport_ && core_.connected) {
       focus_out(scratch_, core_.ctx);
@@ -377,7 +385,7 @@ HRESULT Service::OnCompositionTerminated(TfEditCookie, ITfComposition *c) {
   }
   return S_OK;
 }
-HRESULT Service::OnEndEdit(ITfContext *c, TfEditCookie ec, ITfEditRecord *) {
+HRESULT Service::OnEndEdit(ITfContext *c, TfEditCookie ec, ITfEditRecord *record) {
   if (c != context_ || inside_)
     return S_OK;
   inside_ = true;
@@ -387,6 +395,35 @@ HRESULT Service::OnEndEdit(ITfContext *c, TfEditCookie ec, ITfEditRecord *) {
     return S_OK;
   if (secure != core_.secure)
     secure_changed(secure);
+  else if (recovering_ || core_.sent != core_.applied) {
+    // Own write sessions also notify this sink after execute() returns.
+    // Ask TSF who owns the lock instead of retaining a callback marker.
+    BOOL own = FALSE;
+    if (FAILED(c->InWriteSession(client_, &own)) || !own) {
+      BOOL selection = TRUE;
+      IEnumTfRanges *updates = nullptr;
+      ITfRange *range = nullptr;
+      ULONG count = 0;
+      bool changed = !record ||
+                     FAILED(record->GetSelectionStatus(&selection)) || selection;
+      if (!changed) {
+        changed = FAILED(record->GetTextAndPropertyUpdates(
+                      TF_GTP_INCL_TEXT, nullptr, 0, &updates)) ||
+                  !updates;
+        if (updates)
+          changed = FAILED(updates->Next(1, &range, &count)) || count != 0;
+      }
+      release(range);
+      release(updates);
+      if (changed) {
+        // The application moved/replaced text while our edit was delayed.
+        // Invalidate queued edits and late replies before they can touch its
+        // new selection. Already-marked text may only be finalized.
+        secure_changed(secure);
+        finalize_needed_ = composition_ != nullptr;
+      }
+    }
+  }
   return S_OK;
 }
 bool Service::disabled() const {
@@ -465,6 +502,12 @@ bool Service::password(TfEditCookie ec, ITfContext *c) {
   return secure;
 }
 void Service::secure_changed(bool secure) {
+  if (recovering_) {
+    recovering_ = false;
+    fallback_size_ = 0;
+    fallback_.fill(0);
+    core_.reset();
+  }
   if (transport_ && core_.connected) {
     focus_out(scratch_, core_.ctx);
     transport_->send(scratch_);
@@ -555,11 +598,23 @@ bool Service::send(uint32_t ctx, uint32_t seq, uint32_t sym, uint32_t mods,
   return transport_ && transport_->send(scratch_);
 }
 void Service::degraded() {
-  finalize_needed_ = true;
+  if (!recovering_) {
+    fallback_size_ =
+        core_.secure ? 0 : core_.fallback(fallback_.data(), fallback_.size());
+    recovering_ = fallback_size_ || edit_read_ != edit_write_ || composition_;
+  }
+  if (recovering_) {
+    // Retain already-received replies until their edit sessions finish.
+    // New keys pass, and the transport's later replies are discarded.
+    core_.migrating = true;
+    if (edit_read_ != edit_write_)
+      core_.connected = true;
+  } else {
+    core_.reset();
+  }
   if (window_)
     PostMessageW(window_, kWake, 0, 0);
   ui_focus(true);
-  core_.connected = false;
   core_.known = false;
   if (transport_)
     transport_->disconnect();
@@ -621,6 +676,8 @@ void Service::pump() {
     auto frame = transport_->front();
     if (frame.empty())
       break;
+    if (recovering_ && frame_type(frame) == Welcome)
+      break; // Finish the local tail before adopting a new connection.
     switch (frame_type(frame)) {
     case Welcome: {
       Reader r(frame_payload(frame));
@@ -641,28 +698,9 @@ void Service::pump() {
         degraded();
       break;
     case ResultType: {
-      Result result;
-      if (!result.decode(frame_payload(frame))) {
-        degraded();
+      if (recovering_)
         break;
-      }
-      auto complete = core_.result(result);
-      if (!complete.accept)
-        break;
-      auto slot = edit_write_ - edit_read_ == kEditSlots
-                      ? nullptr
-                      : edit_frames_.reserve(frame.size());
-      if (!slot) {
-        degraded();
-        break;
-      }
-      std::memcpy(slot, frame.data(), frame.size());
-      edit_frames_.publish(frame.size());
-      auto &edit = edit_meta_[edit_write_ % kEditSlots];
-      edit.epoch = epoch_;
-      edit.repair = complete.repair;
-      edit.notify = complete.notify;
-      ++edit_write_;
+      receive_result(frame);
       break;
     }
     case Migrate:
@@ -672,18 +710,15 @@ void Service::pump() {
       break;
     case kDisconnected:
       ui_focus(true);
-      if (core_.migrating)
+      if (recovering_) {
+        break;
+      } else if (core_.migrating && core_.received == core_.sent)
         draining_ = true;
-      else {
-        core_.reset();
-        finalize_needed_ = true;
-      }
+      else
+        degraded();
       break;
     case Unavailable:
-      finalize_needed_ = true;
-      ui_focus(true);
-      core_.reset();
-      transport_->disconnect();
+      degraded();
       break;
     default:
       break;
@@ -693,20 +728,47 @@ void Service::pump() {
   schedule();
   pumping_ = false;
 }
+void Service::receive_result(std::string_view frame) {
+  Result result;
+  if (!result.decode(frame_payload(frame))) {
+    degraded();
+    return;
+  }
+  auto slot = edit_write_ - edit_read_ == kEditSlots
+                  ? nullptr
+                  : edit_frames_.reserve(frame.size());
+  if (!slot) {
+    degraded();
+    return;
+  }
+  // Advance received only after retaining room for this reply's edit.
+  auto complete = core_.result(result);
+  if (!complete.accept)
+    return;
+  std::memcpy(slot, frame.data(), frame.size());
+  edit_frames_.publish(frame.size());
+  auto &edit = edit_meta_[edit_write_ % kEditSlots];
+  edit.epoch = epoch_;
+  edit.repair = complete.repair;
+  edit.notify = complete.notify;
+  ++edit_write_;
+}
 void Service::schedule() {
   if (!context_ || !active_ || !edit_.idle())
     return;
   if (finalize_needed_ && !composition_)
     finalize_needed_ = false;
-  if (finalize_needed_ && key_depth_)
+  if ((finalize_needed_ || recovering_) && key_depth_)
     return;
-  bool finishing = finalize_needed_;
-  if (!finishing && !probe_needed_ && edit_read_ == edit_write_)
+  bool finishing = finalize_needed_ && !recovering_;
+  const bool recovery = recovering_ && edit_read_ == edit_write_;
+  if (!finishing && !recovery && !probe_needed_ && edit_read_ == edit_write_)
     return;
-  bool probe = !finishing && probe_needed_;
+  bool probe = !finishing && !recovering_ && probe_needed_;
   if (probe)
     probe_needed_ = false;
   edit_.prepare(this, context_, epoch_, probe);
+  edit_.recovery = recovery;
   if (finishing) {
     edit_.ending = composition_;
     composition_ = nullptr;
@@ -722,7 +784,17 @@ void Service::schedule() {
     edit_clear();
     probe_needed_ = false;
     core_.secure = true;
-    degraded();
+    if (recovering_) {
+      // An app refusing the recovery edit must not create an unbounded
+      // retry loop on its apartment. Secure/focus guards discard the tail.
+      recovering_ = false;
+      fallback_size_ = 0;
+      fallback_.fill(0);
+      core_.reset();
+      transport_->disconnect();
+    } else {
+      degraded();
+    }
   }
   edit_.Release();
 }
@@ -737,6 +809,32 @@ HRESULT Service::execute(Edit &edit, TfEditCookie ec) {
     return edit.ending->EndComposition(ec);
   if (!active_ || edit.epoch != epoch_ || edit.context != context_)
     return S_OK;
+  if (edit.recovery) {
+    inside_ = true;
+    const bool secure = password(ec, context_);
+    HRESULT hr = S_OK;
+    if (composition_) {
+      auto old = composition_;
+      composition_ = nullptr;
+      hr = old->EndComposition(ec);
+      old->Release();
+    }
+    if (SUCCEEDED(hr) && !secure && fallback_size_) {
+      Result literal;
+      literal.commit = {fallback_.data(), fallback_size_};
+      hr = apply_text(ec, literal, 0);
+    }
+    fallback_size_ = 0;
+    fallback_.fill(0);
+    recovering_ = false;
+    finalize_needed_ = false;
+    probe_needed_ = false;
+    core_.reset();
+    core_.secure = secure;
+    inside_ = false;
+    flush_focus();
+    return hr;
+  }
   inside_ = true;
   bool secure = password(ec, context_);
   if (transport_)
@@ -910,10 +1008,6 @@ HRESULT Service::handle(ITfContext *c, WPARAM vk, LPARAM lp, bool up,
   if (inside_ || c != context_ || !active_ || !transport_ || core_.secure ||
       disabled())
     return S_OK;
-  if (!transport_->online()) {
-    degraded();
-    return S_OK;
-  }
   uint32_t mods = 0;
   if (GetKeyState(VK_SHIFT) & 0x8000)
     mods |= kShift;
@@ -930,9 +1024,30 @@ HRESULT Service::handle(ITfContext *c, WPARAM vk, LPARAM lp, bool up,
   auto sym = windows_key(uint32_t(vk), uint32_t(lp >> 16) & 255,
                          (lp & (1u << 24)) != 0, mods);
   if (sym) {
+    if (!transport_->online())
+      degraded();
+    auto recover_key = [&] {
+      if (!recovering_ || (mods & kRelease) || sym == 0xffe1 || sym == 0xffe2)
+        return;
+      if (append_literal(fallback_.data(), fallback_size_, fallback_.size(), sym,
+                         mods)) {
+        *eaten = TRUE;
+      } else {
+        // Navigation, shortcuts or a full tail must cancel delayed writes
+        // before the application receives the key and changes selection.
+        secure_changed(core_.secure);
+        finalize_needed_ = composition_ != nullptr;
+      }
+    };
+    if (recovering_) {
+      recover_key();
+      return S_OK;
+    }
     ++key_depth_;
     *eaten = core_.key(sym, mods, *this) ? TRUE : FALSE;
     --key_depth_;
+    if (!*eaten)
+      recover_key(); // pump() can discover a disconnect inside this key.
     if (composition_ && c == context_ &&
         finish_before_shortcut(sym, mods, *eaten != FALSE)) {
       // End the marked range before the application handles a focus-moving

@@ -171,13 +171,42 @@ func (s *coordinator) build(snapshot settings.Settings) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, s.c.builder, "-lib", s.c.lib, "-data", s.c.data, "-prebuilt", s.c.prebuilt, "-settings", path, "-output", temp)
+	status := temp + ".status"
+	defer os.Remove(status)
+	cmd.Args = append(cmd.Args, "-status-file", status)
+	if s.active != nil {
+		cmd.Args = append(cmd.Args, "-reuse-generation", s.active.dir)
+	}
 	// librime diagnostics may quote source YAML. Keep them off the product
 	// log; a failed step surfaces as a bounded lifecycle error in Settings.
 	if err := cmd.Run(); err != nil {
 		os.RemoveAll(temp)
-		return "", fmt.Errorf("builder failed: %w", err)
+		if ctx.Err() != nil {
+			err = ctx.Err()
+		}
+		return "", fmt.Errorf("builder failed at %s: %w", buildStage(status), err)
 	}
 	return temp, nil
+}
+
+// Read only the builder's fixed stage vocabulary. Native stderr can contain
+// custom phrases or YAML and must never be copied into product logs.
+func buildStage(path string) string {
+	f, err := os.Open(path)
+	if err != nil {
+		return "unknown stage"
+	}
+	defer f.Close()
+	var b [32]byte
+	n, err := f.Read(b[:])
+	if err != nil && err != io.EOF {
+		return "unknown stage"
+	}
+	switch stage := string(b[:n]); stage {
+	case "settings", "prepare", "reuse", "initialize", "defaults", "dictionaries", "validate":
+		return stage
+	}
+	return "unknown stage"
 }
 
 func (s *coordinator) activate(p *child) error {

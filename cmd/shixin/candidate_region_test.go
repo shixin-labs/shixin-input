@@ -2,6 +2,20 @@ package main
 
 import "testing"
 
+func TestCandidateViewport(t *testing.T) {
+	for _, dpi := range []uint32{96, 144, 192} {
+		w, h := candidateViewport(800, 600, dpi)
+		scale := float32(dpi) / 96
+		if (w+24)*scale > 800.01 || (h+24)*scale > 600.01 || w > 1376 || h > 536 {
+			t.Fatalf("dpi %d: viewport %v x %v exceeds screen or warm canvas", dpi, w, h)
+		}
+	}
+	w, h := candidateViewport(8000, 4000, 96)
+	if w != 1376 || h != 536 {
+		t.Fatal("viewport grew beyond the warmed window")
+	}
+}
+
 func TestCandidateInputRegion(t *testing.T) {
 	for _, dpi := range []uint32{96, 144, 192} {
 		r := candidatePanelRegion(300, 80, 20, dpi)

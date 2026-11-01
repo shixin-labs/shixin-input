@@ -19,10 +19,22 @@ func main() {
 	flag.StringVar(&o.Lib, "lib", defaultLibrary(), "librime shared library")
 	flag.StringVar(&o.Data, "data", "build/rime-data", "shared Rime data (read-only)")
 	flag.StringVar(&o.Prebuilt, "prebuilt", "", "prebuilt dictionaries (optional)")
+	flag.StringVar(&o.ReuseGeneration, "reuse-generation", "", "copy compiled resources from a validated warm-only generation")
 	flag.StringVar(&o.Dir, "output", "", "new generation directory (must not exist)")
 	path := flag.String("settings", "", "settings snapshot (empty: defaults)")
+	status := flag.String("status-file", "", "private file for safe build-stage diagnostics")
 	flag.BoolVar(&o.All, "all", false, "compile every supported schema for packaging")
 	flag.Parse()
+	if *status != "" {
+		f, err := os.OpenFile(*status, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "shixin-builder: cannot create status file")
+			os.Exit(1)
+		}
+		defer f.Close()
+		o.Progress = func(stage string) { f.Truncate(0); f.Seek(0, 0); f.WriteString(stage) }
+		o.Progress("settings")
+	}
 	if o.Dir == "" {
 		fmt.Fprintln(os.Stderr, "shixin-builder: -output is required")
 		os.Exit(2)

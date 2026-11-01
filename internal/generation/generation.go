@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -46,8 +47,10 @@ func MatchesSettings(dir string, s settings.Settings) (bool, error) {
 // Options configures an offline build into a new, empty directory.
 type Options struct {
 	Lib, Data, Prebuilt, Dir string
+	ReuseGeneration          string // validated warm-only generation; copies compiled data, never user dictionaries
 	Settings                 settings.Settings
-	All                      bool // compile every supported schema for packaging
+	All                      bool         // compile every supported schema for packaging
+	Progress                 func(string) // optional builder-only stage reporting; never includes source/config text
 }
 
 // Build compiles config and dictionaries using only deployer APIs. Run it
@@ -55,9 +58,20 @@ type Options struct {
 func Build(o Options) error {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
+	report := func(stage string) {
+		if o.Progress != nil {
+			o.Progress(stage)
+		}
+	}
+	report("prepare")
 	dir, err := filepath.Abs(o.Dir)
 	if err != nil {
 		return err
+	}
+	if o.ReuseGeneration != "" {
+		if err := Validate(o.ReuseGeneration); err != nil {
+			return fmt.Errorf("generation: reuse source is not warm-only: %w", err)
+		}
 	}
 	// librime takes an up-to-date compiled config from the prebuilt dir
 	// instead of writing it to staging, where Build edits it.
@@ -80,6 +94,13 @@ func Build(o Options) error {
 	if err := settings.Save(filepath.Join(dir, "settings.json"), o.Settings); err != nil {
 		return err
 	}
+	if o.ReuseGeneration != "" {
+		report("reuse")
+		if err := seedCompiled(o.ReuseGeneration, filepath.Join(dir, "build")); err != nil {
+			return err
+		}
+	}
+	report("initialize")
 	lib, err := rime.Load(o.Lib)
 	if err != nil {
 		return err
@@ -88,6 +109,7 @@ func Build(o Options) error {
 		LogDir: "", MinLogLevel: 2, AppName: "rime.shixin.builder", Modules: []string{"deployer"}})
 	lib.InitializeDeployer()
 	defer lib.Finalize()
+	report("defaults")
 	if !lib.DeployConfig("default.yaml", "config_version") {
 		return errors.New("generation: deploy default failed")
 	}
@@ -99,6 +121,7 @@ func Build(o Options) error {
 		}
 	}
 	seen := map[string]bool{}
+	report("dictionaries")
 	for _, id := range ids {
 		if err := deploySchema(lib, dir, input, id, seen); err != nil {
 			return err
@@ -112,7 +135,55 @@ func Build(o Options) error {
 	if err := listWarmSchemas(dir, ids); err != nil {
 		return err
 	}
+	report("validate")
 	return Validate(dir)
+}
+
+// seedCompiled gives the compiler private copies of the previous generation's
+// static dictionary/prism files. Never hard-link: a compiler can truncate or
+// rewrite its destination, while the active engine still maps the source.
+// librime checks source checksums and rebuilds only the affected resources.
+func seedCompiled(generation, output string) error {
+	source, err := os.OpenRoot(filepath.Join(generation, "build"))
+	if err != nil {
+		return fmt.Errorf("generation: open reusable data: %w", err)
+	}
+	defer source.Close()
+	entries, err := os.ReadDir(filepath.Join(generation, "build"))
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(output, 0700); err != nil {
+		return err
+	}
+	buffer := make([]byte, 128<<10)
+	for _, entry := range entries {
+		if !strings.HasSuffix(entry.Name(), ".bin") {
+			continue
+		}
+		if !entry.Type().IsRegular() {
+			return fmt.Errorf("generation: reusable resource is not a regular file")
+		}
+		in, err := source.Open(entry.Name())
+		if err != nil {
+			return err
+		}
+		out, err := os.OpenFile(filepath.Join(output, entry.Name()), os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
+		if err != nil {
+			in.Close()
+			return err
+		}
+		_, err = io.CopyBuffer(out, in, buffer)
+		in.Close()
+		closeErr := out.Close()
+		if err != nil {
+			return fmt.Errorf("generation: copy reusable data: %w", err)
+		}
+		if closeErr != nil {
+			return closeErr
+		}
+	}
+	return nil
 }
 
 // deploySchema compiles schema id and the schemas it depends on, once

@@ -61,18 +61,7 @@ Delete an entry when it's fixed, and mention it in the commit.
   packaging must also address x64 emulated applications, which need a
   matching DLL. See [Windows development](windows.md).
 
-### Windows low-memory lifecycle validation remains incomplete
-- At 2048 MiB, the first live layout rebuild returned `builder failed:
-  exit status 1`; the old engine stayed usable. The builder's diagnostics
-  are deliberately discarded by the coordinator, so the underlying failure
-  was not captured. Standalone builds and a later instrumented retry passed.
-  This is an intermittent failure, not an isolated cause or reliable repro.
-- Suspending the active worker left printable input pending until resume;
-  it did not immediately appear as literal fallback. Killing the worker
-  did recover automatically and subsequent exact typing passed. These GUI
-  observations do not measure the real application's 8 ms ASK budget.
-
-### Oversized candidate panels
+### Oversized candidate panels on macOS
 - **What:** normal horizontal and vertical panels are measured and clamped
   to the caret screen's work area. A panel larger than that work area is
   pinned to its origin; it cannot fit in full. The pre-created transparent
@@ -185,10 +174,10 @@ Delete an entry when it's fixed, and mention it in the commit.
 
 ## Native translators
 
-### Time zone changes on Linux and Windows
+### Time zone changes on Linux
 - **What:** `shixin_date_translator` loads the time zone once (`tzset` at
-  construction). macOS's libc notices zone changes itself; glibc and the
-  Windows CRT don't, so after travelling `sj` shows the old zone's time
+  construction). macOS's libc notices zone changes itself; glibc doesn't,
+  so after travelling `sj` shows the old zone's time
   until the engine restarts.
 - **Fix (M3/M4):** re-run `tzset` on the OS's time-zone-changed
   notification, off the key path (on glibc it may read files).

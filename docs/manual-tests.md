@@ -292,6 +292,27 @@ behavior and host appearance independently. Stop and restart the engine,
 then change a setting requiring a generation rebuild during a typing burst;
 record literal fallback keys and any missing or duplicated commits.
 
+Suspend the active worker (not the coordinator) while an ordinary field
+has focus. Type `nihao ` and confirm literal text appears before resuming
+the worker. Resume it and verify the text stays unchanged, then clear the
+field and verify a fresh `nihao` + Space commits `你好`. Repeat with an
+existing inline composition. Change focus or select other text while a
+recovery edit is delayed; late replies must never replace that selection.
+
+At 2048 MiB, cycle through full pinyin and several double-pinyin layouts
+while idle. Record build stage on failure and peak builder private commit;
+the old engine must remain usable if a build fails. Change the Windows time
+zone with a composition/session already initialized, request the native
+time candidate again, and compare with the OS clock without restarting the
+engine. Restore the original zone and verify once more. Trigger codes are
+schema-dependent (`sj` or `time`).
+
+Set ten candidates per page and font size 28 on a small screen. In both
+horizontal and vertical layouts, highlight the last candidate, scroll to
+earlier ones and click one. The highlight must be visible after keyboard
+movement; all candidates must remain reachable and selectable. Click a field
+outside the visible card to verify that the transparent canvas passes clicks.
+
 Before and after typing, capture process IDs, CPU time and working sets for
 `Shixin`, `shixin-engine`, `shixin-settings` and the test application hosting
 the TSF DLL. Compare CPU-time deltas over a stated idle interval and during

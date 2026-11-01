@@ -37,15 +37,15 @@ func TestGenerationCleanupPreservesData(t *testing.T) {
 	user := t.TempDir()
 	dir := filepath.Join(user, "generations")
 	keep := []string{
-		"gen-1/build/schema.yaml", "gen-1.json",
+		"gen-1/build/schema.yaml", "gen-1.json", "gen-1.status",
 		"gen-2/build/schema.yaml", "gen-2.json",
 		"notes/data", "gen-manual/data", "gen-/data", "gen-3x/data",
-		"gen-7", "gen-8.json/data", "gen-9.json.backup",
+		"gen-7", "gen-8.json/data", "gen-9.json.backup", "gen-8.status/data", "gen-9.status.backup",
 	}
 	for _, name := range keep {
 		cleanupFile(t, filepath.Join(dir, name))
 	}
-	remove := []string{"gen-3", "gen-4", "gen-5", "gen-3.json", "gen-4.json", "gen-6.json"}
+	remove := []string{"gen-3", "gen-4", "gen-5", "gen-3.json", "gen-4.json", "gen-6.json", "gen-3.status", "gen-6.status"}
 	cleanupFile(t, filepath.Join(dir, "gen-3/build/schema.yaml"))
 	cleanupFile(t, filepath.Join(dir, "gen-4/input/partial.yaml"))
 	if err := os.Mkdir(filepath.Join(dir, "gen-5"), 0o700); err != nil {

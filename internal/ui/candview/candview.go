@@ -24,6 +24,8 @@ type State struct {
 	strings      *stringCache
 	clicks       []func()
 	onSelect     func(int)
+	reveal       bool
+	viewportSeen bool
 }
 
 // Measurements are retained across pages and font changes, with the same
@@ -79,11 +81,12 @@ func (st *State) measure(c *ui.Context, item Item, size float32, font string, ro
 
 // Style is how the panel looks.
 type Style struct {
-	Skin       *skin.Skin
-	Dark       bool
-	FontFamily string  // empty inherits the system UI font
-	FontSize   float32 // candidate text, in points
-	Vertical   bool
+	Skin                *skin.Skin
+	Dark                bool
+	FontFamily          string  // empty inherits the system UI font
+	FontSize            float32 // candidate text, in points
+	Vertical            bool
+	MaxWidth, MaxHeight float32 // optional card bounds, in DIPs; overflow scrolls
 }
 
 // Labels are the default select-key labels.
@@ -91,7 +94,7 @@ var Labels = [10]string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "0"}
 
 // Measure returns the visible card's size, excluding its shadow. Text uses
 // retained font-aware measurement, with the same sizes, gaps and padding as Draw.
-func Measure(c *ui.Context, st *State, style *Style) (width, height float32) {
+func naturalSize(c *ui.Context, st *State, style *Style) (width, height float32) {
 	size := max(style.FontSize, 10)
 	small, pad := size*0.76, size*0.35
 	for i := range st.Items {
@@ -124,6 +127,18 @@ func Measure(c *ui.Context, st *State, style *Style) (width, height float32) {
 	return width + 2*(pad+2) + 2, height + 2*(pad+1) + 2
 }
 
+// Measure returns the visible card size, bounded by the available viewport.
+func Measure(c *ui.Context, st *State, style *Style) (width, height float32) {
+	width, height = naturalSize(c, st, style)
+	if style.MaxWidth > 0 {
+		width = min(width, style.MaxWidth)
+	}
+	if style.MaxHeight > 0 {
+		height = min(height, style.MaxHeight)
+	}
+	return
+}
+
 // Draw builds the panel into c: a rounded card sized to its content, at
 // the top left of its parent. onSelect, if not nil, is called with the
 // index of a clicked candidate.
@@ -133,12 +148,22 @@ func Draw(c *ui.Context, st *State, style *Style, onSelect func(int)) ui.Element
 	size := max(style.FontSize, 10)
 	small := size * 0.76
 	pad := size * 0.35
+	naturalW, naturalH := naturalSize(c, st, style)
+	w, h := naturalW, naturalH
+	if style.MaxWidth > 0 {
+		w = min(w, style.MaxWidth)
+	}
+	if style.MaxHeight > 0 {
+		h = min(h, style.MaxHeight)
+	}
+	overflow := w < naturalW || h < naturalH
+	reveal := st.reveal || !st.viewportSeen
 	card := ui.Column(c).AlignSelf(ui.Start).Background(p.Background).Radius(size*0.6).Border(1, p.Border).
 		Shadow(0, 4, 16, 0, ui.RGBA(0, 0, 0, 0.16)).Padding(pad+1, pad+2).Gap(pad * 0.6)
 	if style.FontFamily != "" {
 		card.Font(style.FontFamily)
 	}
-	card.Children(func() {
+	content := func() {
 		if st.Preedit != "" {
 			ui.Text(c, st.Preedit).FontSize(small).TextColor(p.Muted).NoWrap().Padding(0, pad)
 		}
@@ -168,8 +193,21 @@ func Draw(c *ui.Context, st *State, style *Style, onSelect func(int)) ui.Element
 				if onSelect != nil {
 					row.OnClick(st.selectionHandler(i))
 				}
+				if overflow && hl && reveal {
+					row.ScrollIntoView()
+				}
 			}
 		})
-	})
+	}
+	if overflow {
+		card.Size(w, h).Children(func() {
+			ui.ScrollBoth(c).Size(max(1, w-2*(pad+2)-2), max(1, h-2*(pad+1)-2)).Children(func() {
+				ui.Column(c).Width(naturalW - 2*(pad+2) - 2).Gap(pad * 0.6).Children(content)
+			})
+		})
+	} else {
+		card.Children(content)
+	}
+	st.reveal, st.viewportSeen = false, true
 	return card
 }

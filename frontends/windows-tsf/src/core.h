@@ -100,6 +100,22 @@ struct Core {
     if (seq > applied && seq <= received)
       applied = seq;
   }
+  // Recover only eaten printable keys whose replies never arrived. Notify
+  // and ASK keys already passed to the application; accepted replies are
+  // drained by the apartment before this literal tail is inserted.
+  size_t fallback(char *out, size_t capacity) const {
+    if (secure)
+      return 0;
+    size_t n = 0;
+    for (uint32_t i = 0; i < sent - received && i < pending.size(); ++i) {
+      const auto seq = received + 1 + i;
+      const auto &p = pending[seq % pending.size()];
+      if (p.seq == seq && p.eaten && !p.notify && p.sym >= 0x20 &&
+          p.sym <= 0x7e && n < capacity)
+        out[n++] = char(p.sym);
+    }
+    return n;
+  }
   bool fail(Host &h) {
     connected = false;
     known = false;

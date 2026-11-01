@@ -71,6 +71,9 @@ func planGenerationCleanup(user string, keep ...string) (*generationCleanup, err
 	for _, entry := range entries {
 		name := entry.Name()
 		base, snapshot := strings.CutSuffix(name, ".json")
+		if !snapshot {
+			base, snapshot = strings.CutSuffix(name, ".status")
+		}
 		if snapshot && entry.Type().IsRegular() && generationName(base) && !protected[base] {
 			p.names = append(p.names, name)
 		}

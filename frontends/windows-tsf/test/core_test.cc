@@ -3,6 +3,8 @@
 #include "keys.h"
 #include "ring.h"
 #include "scope.h"
+#include "watchdog.h"
+#include "recovery.h"
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -635,7 +637,60 @@ static void keymap() {
   CHECK(windows_key(0xde, 0, false, kShift) == '"');
   CHECK(windows_key(0xff, 0, false, 0) == 0);
 }
+static void stalled_engine() {
+  const auto before = allocations.load();
+  ReplyWatchdog watch;
+  watch.request(1, 1, 0);
+  CHECK(!watch.expired(16)); // legitimate reranking hold
+  CHECK(!watch.expired(99));
+  CHECK(watch.expired(100));
+  watch.result(1, 1, 101);
+  CHECK(!watch.expired(10000));
+  watch.request(1, 2, 10000);
+  watch.request(1, 3, 10010);
+  watch.result(1, 2, 10016);
+  watch.result(2, 3, 10100); // old/future contexts cannot keep it alive
+  watch.result(1, 4, 10100);
+  watch.result(1, 2, 10100); // duplicate result is not progress
+  CHECK(!watch.expired(10115));
+  CHECK(watch.expired(10116));
+  watch.result(1, 3, 10117);
+  CHECK(!watch.expired(20000));
+  Core c;
+  c.secure = false;
+  c.received = 1;
+  c.sent = 6;
+  c.pending[1] = {1, 'x', false,
+                  true}; // reply already received: don't duplicate
+  c.pending[2] = {2, 'n', false, true};
+  c.pending[3] = {3, 'i', false, true};
+  c.pending[4] = {4, '!', true, false};  // already passed
+  c.pending[5] = {5, 'h', false, false}; // ASK already passed after its budget
+  c.pending[6] = {6, 0xff0d, false, true}; // never invent a literal special key
+  std::array<char, 128> text{};
+  CHECK(c.fallback(text.data(), text.size()) == 2);
+  CHECK(std::string_view(text.data(), 2) == "ni");
+  CHECK(c.fallback(text.data(), 1) == 1);
+  size_t size = c.fallback(text.data(), text.size());
+  CHECK(append_literal(text.data(), size, text.size(), 'h', 0));
+  CHECK(append_literal(text.data(), size, text.size(), 'A', kShift));
+  CHECK(std::string_view(text.data(), size) == "nihA");
+  CHECK(!append_literal(text.data(), size, text.size(), 'a', kControl));
+  CHECK(!append_literal(text.data(), size, text.size(), 'a', kAlt));
+  CHECK(!append_literal(text.data(), size, text.size(), 'a', kSuper));
+  CHECK(!append_literal(text.data(), size, text.size(), 'a', kRelease));
+  CHECK(!append_literal(text.data(), size, text.size(), 0xff51, 0));
+  size = text.size();
+  CHECK(!append_literal(text.data(), size, text.size(), 'z', 0));
+  CHECK(size == text.size());
+  c.secure = true;
+  CHECK(c.fallback(text.data(), text.size()) == 0);
+  c.focus(2, false);
+  CHECK(c.fallback(text.data(), text.size()) == 0);
+  CHECK(allocations.load() == before);
+}
 int main() {
+  stalled_engine();
   scopes();
   keymap();
   golden();

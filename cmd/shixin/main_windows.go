@@ -350,14 +350,35 @@ func (h *windowsHost) view(c *ui.Context) {
 	}
 	p := &h.prefs
 	style := candview.Style{Skin: skin.Get(p.Skin), Dark: p.Theme == "dark" || p.Theme == "system" && c.Theme().Dark, FontFamily: p.FontFamily, FontSize: float32(p.FontSize), Vertical: p.Layout == "vertical"}
-	width, height := candview.Measure(c, &h.state, &style)
 	h.mu.Lock()
 	caret, valid := h.display.caret, h.display.visibleIn(foregroundPID())
 	h.mu.Unlock()
+	style.MaxWidth, style.MaxHeight = h.candidateLimits(caret)
+	width, height := candview.Measure(c, &h.state, &style)
 	if valid {
 		h.position(caret, width, height)
 	}
 	candview.Draw(c, &h.state, &style, h.choose)
+}
+
+func (h *windowsHost) candidateLimits(c ipc.Caret) (float32, float32) {
+	type rect struct{ left, top, right, bottom int32 }
+	r := rect{c.Left, c.Top, c.Right, c.Bottom}
+	monitor, _, _ := monitorFromRect.Call(uintptr(unsafe.Pointer(&r)), 2)
+	info := struct {
+		size          uint32
+		monitor, work rect
+		flags         uint32
+	}{}
+	info.size = uint32(unsafe.Sizeof(info))
+	if ok, _, _ := monitorInfo.Call(monitor, uintptr(unsafe.Pointer(&info))); ok == 0 {
+		return 1376, 536
+	}
+	dpi, _, _ := dpiForWindow.Call(h.window.NativeHandle())
+	if dpi == 0 {
+		dpi = 96
+	}
+	return candidateViewport(info.work.right-info.work.left, info.work.bottom-info.work.top, uint32(dpi))
 }
 func (h *windowsHost) position(c ipc.Caret, width, height float32) {
 	type rect struct{ left, top, right, bottom int32 }

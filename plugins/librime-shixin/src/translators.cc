@@ -1,6 +1,5 @@
 #include "translators.h"
 
-#include <chrono>
 #include <cstdio>
 #include <ctime>
 #include <iterator>
@@ -16,6 +15,7 @@
 
 #include "calc.h"
 #include "codepoint.h"
+#include "date_clock.h"
 #include "numerals.h"
 
 namespace shixin {
@@ -54,24 +54,6 @@ an<Translation> translation_of(std::vector<an<Candidate>>* cands) {
   return t;
 }
 
-DateTime now() {
-  using namespace std::chrono;
-  long long ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-  std::time_t secs = static_cast<std::time_t>(ms / 1000);
-  std::tm tm{};
-  long offset;
-#ifdef _WIN32
-  localtime_s(&tm, &secs);
-  std::tm copy = tm;
-  offset = static_cast<long>(_mkgmtime(&copy) - secs);
-#else
-  localtime_r(&secs, &tm);
-  offset = tm.tm_gmtoff;
-#endif
-  return DateTime{tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour,      tm.tm_min,
-                  tm.tm_sec,         tm.tm_wday,    offset,    ms / 1000, static_cast<int>(ms % 1000)};
-}
-
 }  // namespace
 
 // ---------------------------------------------------------------- dates
@@ -100,11 +82,10 @@ DateTranslator::DateTranslator(const Ticket& ticket) : Translator(ticket) {
       config->GetString(name_space_ + "/" + kCodes[i].key, &codes_[i].code);
   }
   // Load the time zone now rather than on the first rq.
-#ifdef _WIN32
-  _tzset();
-#else
+#ifndef _WIN32
   tzset();
 #endif
+  (void)date_now();
 }
 
 an<Translation> DateTranslator::Query(const std::string& input, const Segment& segment) {
@@ -114,7 +95,7 @@ an<Translation> DateTranslator::Query(const std::string& input, const Segment& s
     if (c.code.empty() || input != c.code)
       continue;
     std::vector<std::string> texts;
-    date_candidates(c.kind, now(), &texts);
+    date_candidates(c.kind, date_now(), &texts);
     std::vector<an<Candidate>> cands;
     for (auto& text : texts) {
       auto cand = New<SimpleCandidate>("date", segment.start, segment.end, text);

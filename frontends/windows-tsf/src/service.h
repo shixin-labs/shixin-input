@@ -34,6 +34,7 @@ public:
   ITfComposition *ending = nullptr;
   uint32_t epoch = 0;
   bool probe = false;
+  bool recovery = false;
   bool idle() const { return refs_.load() == 0; }
   void prepare(Service *, ITfContext *, uint32_t, bool);
   HRESULT STDMETHODCALLTYPE QueryInterface(REFIID, void **) override;
@@ -47,6 +48,7 @@ class Service final : public ProcessorEx,
                       public ITfCompositionSink,
                       public ITfTextEditSink,
                       public Host {
+  friend struct ServiceTest;
   std::atomic<ULONG> refs_{1};
   ITfThreadMgr *manager_ = nullptr;
   ITfContext *context_ = nullptr;
@@ -59,6 +61,9 @@ class Service final : public ProcessorEx,
   bool active_ = false, probe_needed_ = false, inside_ = false,
        pumping_ = false, focus_pending_ = false, draining_ = false,
        finalize_needed_ = false;
+  bool recovering_ = false;
+  std::array<char, 128> fallback_{};
+  size_t fallback_size_ = 0;
   unsigned key_depth_ = 0;
   ITfContext *next_context_ = nullptr;
   bool tested_ = false, test_up_ = false, test_eaten_ = false;
@@ -84,6 +89,7 @@ class Service final : public ProcessorEx,
   size_t edit_read_ = 0, edit_write_ = 0;
   void edit_pop();
   void edit_clear();
+  void receive_result(std::string_view);
   std::array<wchar_t, 16384> wide_{};
   LARGE_INTEGER frequency_{};
   HANDLE timer_ = nullptr; // high-resolution deadline for wait_until

@@ -55,6 +55,7 @@ func (c *stringCache) intern(b []byte) string {
 // place and intern changes across candidate positions and successive pages.
 // New text allocates once on a cache miss, outside the key callback.
 func (st *State) Apply(r *ipc.Result) {
+	st.reveal = true
 	if st.strings == nil {
 		st.strings = new(stringCache)
 	}
@@ -91,6 +92,7 @@ func (st *State) Apply(r *ipc.Result) {
 // Clear hides the content while retaining buffers, handlers and bounded text
 // caches for the next composition. No data is written to disk or logged.
 func (st *State) Clear() {
+	st.reveal, st.viewportSeen = false, false
 	st.Preedit, st.Highlight = "", 0
 	clear(st.Items)
 	st.Items = st.Items[:0]
