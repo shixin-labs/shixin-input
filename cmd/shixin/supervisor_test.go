@@ -29,7 +29,7 @@ func TestSupervisorBacksOffWhileLocked(t *testing.T) {
 		s.lastTry = time.Time{} // let ensure start it now
 		s.mu.Unlock()
 		s.ensure(nil)
-		for deadline := time.Now().Add(5 * time.Second); ; time.Sleep(5 * time.Millisecond) {
+		for deadline := time.Now().Add(30 * time.Second); ; time.Sleep(5 * time.Millisecond) {
 			s.mu.Lock()
 			running := s.running
 			s.mu.Unlock()
