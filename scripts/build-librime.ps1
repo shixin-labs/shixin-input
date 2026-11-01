@@ -66,7 +66,9 @@ try {
     $common = @('-A', $target,
         '-DCMAKE_POLICY_VERSION_MINIMUM=3.5',
         '-DCMAKE_CONFIGURATION_TYPES=Release', '-DCMAKE_BUILD_TYPE=Release',
-        '-DCMAKE_CXX_FLAGS_INIT=/utf-8',
+        # MSBuild --parallel distributes projects; /MP also compiles the
+        # many source files inside librime's main project in parallel.
+        "-DCMAKE_CXX_FLAGS_INIT=/utf-8 /MP$Jobs",
         '-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded',
         "-DCMAKE_USER_MAKE_RULES_OVERRIDE=$source/cmake/c_flag_overrides.cmake",
         "-DCMAKE_USER_MAKE_RULES_OVERRIDE_CXX=$source/cmake/cxx_flag_overrides.cmake")

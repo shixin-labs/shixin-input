@@ -67,7 +67,24 @@ jobs:
         with:
           path: build/vulkan-tools-${{ matrix.arch }}/sdk
           key: vulkan-tools-${{ matrix.runner }}-${{ matrix.arch }}-${{ hashFiles('scripts/build-vulkan-tools.ps1') }}
+      - name: Native source revisions
+        id: native-keys
+        shell: pwsh
+        run: |
+          "rime=$((& git rev-parse HEAD:third_party/librime).Trim())" >> $env:GITHUB_OUTPUT
+          "llama=$((& git rev-parse HEAD:third_party/llama.cpp).Trim())" >> $env:GITHUB_OUTPUT
+          "image=$env:ImageVersion" >> $env:GITHUB_OUTPUT
+      - name: Restore tested native libraries
+        id: native
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            build/llama-windows-${{ matrix.arch }}/lib
+            build/windows-${{ matrix.arch }}/rime.dll
+            build/librime-windows-${{ matrix.arch }}/out/share/opencc
+          key: native-v1-${{ matrix.runner }}-${{ matrix.arch }}-${{ steps.native-keys.outputs.image }}-${{ steps.native-keys.outputs.rime }}-${{ steps.native-keys.outputs.llama }}-${{ hashFiles('scripts/build-llama.ps1', 'scripts/build-librime.ps1', 'scripts/build-vulkan-tools.ps1', 'plugins/librime-shixin/**', 'packaging/windows/Khronos-headers.txt') }}
       - name: Build native runtime and test bindings
+        if: steps.native.outputs.cache-hit != 'true'
         shell: pwsh
         env:
           SHIXIN_ARCH: ${{ matrix.arch }}
@@ -76,10 +93,28 @@ jobs:
           $env:VULKAN_SDK="$PWD/build/vulkan-tools-$env:SHIXIN_ARCH/sdk"
           ./scripts/build-llama.ps1 -Arch $env:SHIXIN_ARCH -Test
       - name: Build native librime and test components
+        if: steps.native.outputs.cache-hit != 'true'
         shell: pwsh
         env:
           SHIXIN_ARCH: ${{ matrix.arch }}
         run: ./scripts/build-librime.ps1 -Arch $env:SHIXIN_ARCH -Test
+      - name: Cache tested native libraries
+        if: steps.native.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            build/llama-windows-${{ matrix.arch }}/lib
+            build/windows-${{ matrix.arch }}/rime.dll
+            build/librime-windows-${{ matrix.arch }}/out/share/opencc
+          key: native-v1-${{ matrix.runner }}-${{ matrix.arch }}-${{ steps.native-keys.outputs.image }}-${{ steps.native-keys.outputs.rime }}-${{ steps.native-keys.outputs.llama }}-${{ hashFiles('scripts/build-llama.ps1', 'scripts/build-librime.ps1', 'scripts/build-vulkan-tools.ps1', 'plugins/librime-shixin/**', 'packaging/windows/Khronos-headers.txt') }}
+      - name: Recheck cached runtime bindings
+        if: steps.native.outputs.cache-hit == 'true'
+        shell: pwsh
+        env:
+          SHIXIN_ARCH: ${{ matrix.arch }}
+        run: |
+          $env:SHIXIN_LLAMA="$PWD/build/llama-windows-$env:SHIXIN_ARCH/lib"
+          go test -count=1 -p=1 -short ./internal/llama ./internal/ai ./internal/rerank ./cmd/shixin-ai
       - name: Fetch dictionary source
         uses: actions/download-artifact@v8
         with:

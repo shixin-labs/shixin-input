@@ -71,10 +71,15 @@ try {
     # IPC with public codes. Capture owns a warm-only scratch user directory.
     & "$install/shixin-builder.exe" -lib "$install/rime.dll" -data "$install/data" -prebuilt "$install/prebuilt" -output "$work/generation"
     Check 'build isolated installed generation'
-    & go build -o "$work/menu-capture.exe" ./tools/menu-capture; Check 'build capture fixture'
-    Set-Content "$work/codes.jsonl" '{"code":"nihao"}' -Encoding utf8NoBOM
-    & "$work/menu-capture.exe" -engine "$install/shixin-engine.exe" -generation "$work/generation" -data "$install/data" -prebuilt "$install/prebuilt" -lib "$install/rime.dll" -profile ('0'*64) -input "$work/codes.jsonl" -output "$work/menus.jsonl" -limit 5 -timeout 2m
-    Check 'installed engine IPC and dictionary replay'
+    # Windows IPC trusts sibling executables. Place the disposable client
+    # beside the installed engine; never weaken that identity check for tests.
+    $capture=Join-Path $install 'ShixinCaptureTest.exe'
+    try {
+        & go build -o $capture ./tools/menu-capture; Check 'build capture fixture'
+        Set-Content "$work/codes.jsonl" '{"code":"nihao"}' -Encoding utf8NoBOM
+        & $capture -engine "$install/shixin-engine.exe" -generation "$work/generation" -data "$install/data" -prebuilt "$install/prebuilt" -lib "$install/rime.dll" -profile ('0'*64) -input "$work/codes.jsonl" -output "$work/menus.jsonl" -limit 5 -timeout 2m
+        Check 'installed engine IPC and dictionary replay'
+    } finally { Remove-Item $capture -ErrorAction SilentlyContinue }
     if (-not ((Get-Content "$work/menus.jsonl" | ForEach-Object {($_ | ConvertFrom-Json).candidates.text}) -contains '你好')) { throw 'Installed dictionary did not return the expected public candidate' }
     # The synthetic next package is ONLY a lifecycle fixture, never uploaded.
     $v=[version]$Version
