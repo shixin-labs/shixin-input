@@ -162,6 +162,53 @@ func TestNamedPipeHalfClose(t *testing.T) {
 	}
 }
 
+// TestNamedPipeDoesNotAllocate: the engine's connection to shixin-ai reads
+// and writes on the engine thread's budget. The echo makes every client
+// Read wait for its completion, and the sizes cover a Write the pipe takes
+// at once.
+func TestNamedPipeDoesNotAllocate(t *testing.T) {
+	_, c, server := pipeFixture(t, filepath.Join(t.TempDir(), "e.sock"))
+	go func() {
+		var b [256]byte
+		for {
+			n, err := server.Read(b[:])
+			if err != nil {
+				return
+			}
+			if _, err := server.Write(b[:n]); err != nil {
+				return
+			}
+		}
+	}()
+	msg := []byte("0123456789abcdef0123456789abcdef")
+	var back [256]byte
+	round := func() {
+		if _, err := c.Write(msg); err != nil {
+			t.Fatal(err)
+		}
+		if n, err := c.Read(back[:]); err != nil || n != len(msg) {
+			t.Fatalf("read %d: %v", n, err)
+		}
+	}
+	round()
+	if a := testing.AllocsPerRun(200, round); a != 0 {
+		t.Errorf("%v allocations per write and read", a)
+	}
+	// A deadline that never passes, set around every call as the host does.
+	if a := testing.AllocsPerRun(200, func() {
+		c.SetWriteDeadline(time.Now().Add(time.Minute))
+		c.SetReadDeadline(time.Now().Add(time.Minute))
+		round()
+	}); a != 0 {
+		t.Errorf("%v allocations per write and read with deadlines", a)
+	}
+	// And a deadline that does pass cancels the read.
+	c.SetReadDeadline(time.Now().Add(20 * time.Millisecond))
+	if _, err := c.Read(back[:]); !errors.Is(err, os.ErrDeadlineExceeded) {
+		t.Fatalf("deadline: %v", err)
+	}
+}
+
 func TestWindowsRuntimeDir(t *testing.T) {
 	t.Setenv("LOCALAPPDATA", t.TempDir())
 	dir, err := RuntimeDir()

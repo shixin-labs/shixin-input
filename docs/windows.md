@@ -138,7 +138,10 @@ DPI and click behavior still needs VM verification.
 ## Runtime and security
 
 Go IPC uses go-winio's overlapped named pipes. Message mode supplies a write
-half-close while preserving the byte-stream framing. The default discovery
+half-close while preserving the byte-stream framing. Reads and writes go
+through `pipeConn`, which reuses one preallocated operation per direction on
+go-winio's handle (go-winio allocates two objects per call), so they and
+deadline changes allocate nothing. The default discovery
 directory is `%LOCALAPPDATA%\Shixin\run-<SessionId>`, with a protected
 user/System DACL. Logical endpoints map to
 `\\.\pipe\shixin-<SessionId>-<UserSID>-<path-hash>`; the hash is the first

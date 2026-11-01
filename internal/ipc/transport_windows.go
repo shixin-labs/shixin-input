@@ -128,7 +128,7 @@ func Accept(l net.Listener) (net.Conn, error) {
 			return nil, err
 		}
 		if err := checkPeer(c, false); err == nil {
-			return c, nil
+			return newPipeConn(c), nil
 		}
 		c.Close()
 	}
@@ -159,7 +159,7 @@ func Dial(path string, timeout time.Duration) (net.Conn, error) {
 		c.Close()
 		return nil, err
 	}
-	return c, nil
+	return newPipeConn(c), nil
 }
 
 func checkPeer(c net.Conn, server bool) error {
