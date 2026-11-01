@@ -1052,8 +1052,16 @@ appear after restarting the app.
      uninstall. No `lsregister`, no `TISRegisterInputSource` /
      `TISEnableInputSource`, so no consent dialog. The input source stays
      enabled and selected, even though the ad-hoc signature changed.
-  3. At an idle boundary, stop the old front gracefully and relaunch it
-     (`open -g … --args -after-upgrade`). Stop an open settings app too:
+  3. At an idle boundary, stop the old front gracefully, restart the
+     engine, and relaunch the front (`open -g … --args -after-upgrade`).
+     The installer restarts the engine itself: while 拾新 is the selected
+     input source, macOS may relaunch the front before that `open`, which
+     then only activates it without the argument, and the old engine kept
+     running old code (seen with the 0.1.3 in-app update). The front also
+     restarts an engine that started before the installed engine binary
+     changed (`staleEngine`), which covers updates done by older
+     installers, and the supervisor backs off while another engine holds
+     the lock instead of starting one every half second. Stop an open settings app too:
      it would keep running the old code (one model download still used
      the old downloader); the installer opens the new one.
   4. Once its IMK server is up, the new front re-selects its own input mode

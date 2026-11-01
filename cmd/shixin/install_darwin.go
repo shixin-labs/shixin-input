@@ -242,6 +242,12 @@ func upgradeInstalled(src, dest string) error {
 	// An open settings app would keep running the old code; the installer
 	// opens the new one.
 	stopProcs(filepath.Join(dest, "Contents", "Helpers", "Shixin Settings.app", "Contents", "MacOS", "shixin-settings"))
+	// The engine is restarted here, not only by the new front's
+	// -after-upgrade: while 拾新 is the selected input source, macOS may
+	// relaunch the front itself before the open below, and then the open
+	// only activates that instance without the argument. The old engine
+	// would keep running old code next to the new front.
+	restartEngine()
 	if err := run("/usr/bin/open", "-g", dest, "--args", "-after-upgrade"); err != nil {
 		return fmt.Errorf("upgrade: restart: %w", err)
 	}

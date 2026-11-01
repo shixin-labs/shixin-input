@@ -64,7 +64,12 @@ func (s *supervisor) ensure(error) {
 			s.logf("engine exited")
 			s.backoff = 500 * time.Millisecond
 		case errors.As(err, &ee) && ee.ExitCode() == lifecycle.ExitLocked:
-			s.logf("another engine is running; connecting to it")
+			// Another engine owns the user dir: the client connects to it.
+			// If ensure keeps being called, that engine isn't answering
+			// yet (or is an older one being replaced); don't spawn a new
+			// engine every half second meanwhile.
+			s.backoff = min(2*s.backoff, 30*time.Second)
+			s.logf("another engine is running; connecting to it (next start in ≥ %v)", s.backoff)
 		default:
 			s.crashes++
 			if time.Since(s.lastTry) < 10*time.Second {

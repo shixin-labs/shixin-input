@@ -169,9 +169,15 @@ func main() {
 	dir, err := ipc.RuntimeDir()
 	must(err)
 	sup = newSupervisor(enginePath(), logf)
-	if *afterUpgrade {
+	switch {
+	case *afterUpgrade:
 		// The engine helper may be a new version too: replace the running
 		// one before connecting.
+		restartEngine()
+	case staleEngine():
+		// An upgrade whose engine restart didn't happen: don't keep
+		// talking to old code.
+		logf("the running engine predates the installed one; restarting it")
 		restartEngine()
 	}
 	core = client.New(client.Options{

@@ -30,6 +30,24 @@ func lockFile(path string) (func(), error) {
 	return func() { f.Close() }, nil
 }
 
+// RunningPID returns the pid of the engine holding userDataDir's lock, or 0
+// if none holds it.
+func RunningPID(userDataDir string) int {
+	path := lockPath(userDataDir)
+	if free(path) {
+		return 0
+	}
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return 0
+	}
+	pid, err := strconv.Atoi(strings.TrimSpace(string(b)))
+	if err != nil || pid <= 1 {
+		return 0
+	}
+	return pid
+}
+
 // StopRunning asks the engine that owns userDataDir to exit (SIGTERM) and
 // waits up to timeout for it to release the user dictionary; then it kills
 // it and waits for the lock (DESIGN §3.5: a replacement never starts while
