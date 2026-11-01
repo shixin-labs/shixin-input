@@ -13,8 +13,6 @@ usability. Documents:
   design in the same change, or discuss it first.
 - [`docs/KNOWN-ISSUES.md`](docs/KNOWN-ISSUES.md): deferred work and known
   problems. Remove an entry when you fix it.
-- [`docs/manual-tests.md`](docs/manual-tests.md): GUI checks to run in the
-  test VM.
 - [`docs/sogou-comparison.md`](docs/sogou-comparison.md): Sogou's Mac
   settings compared with Shixin's.
 - [`docs/macos-input-menu-recovery.md`](docs/macos-input-menu-recovery.md):
@@ -267,7 +265,7 @@ and tools that touch Rime use scratch user dirs, never the live one.
 | Candidate handoff/cache/frame allocation and latency gates | `go test ./cmd/shixin -run TestCandidate -bench BenchmarkCandidateUpdate -benchmem` · `go test ./internal/ui/candview -run 'Test(State\|String\|Selection\|Candidate)' -bench BenchmarkCandidateFrame -benchmem` |
 | Candidate font picker, fallback, installed-font measurement and warm-up | `go test ./cmd/shixin-settings -run 'Test(Font\|UnavailableFont)'` · `go test ./internal/ui/fonts ./internal/ui/candview` (`TestMeasure` checks every installed family on macOS) |
 | Mode bubble lifecycle/allocation tests, tracking cost and all skin/language snapshots | `go test ./cmd/shixin -run TestMode -bench BenchmarkModeIndicator -benchmem` · `go test ./internal/ui/modeview -snapshot DIR` |
-| Render every settings page and shuangpin chart (Chinese/English, light/dark) / every skin to PNGs | `go test ./cmd/shixin-settings -snapshot DIR` · `go test ./internal/ui/candview -snapshot DIR` (English settings PNGs add `-en`; charts also include minimum-window scrolled views) |
+| Render every settings page and shuangpin chart (Chinese/English, light/dark) / every skin to PNGs | `go test ./cmd/shixin-settings -snapshot DIR` · `mkdir -p DIR && go test ./internal/ui/candview -snapshot DIR` (settings generates both languages in one run; English PNG names include `-en`; charts also include minimum-window scrolled views) |
 | macOS IMK connection-name agreement with the installed OS (scratch bundle, no registration) | `go test ./cmd/shixin -run TestConnectionName` |
 | Stale input-source cache choice and cleanup after app exit (scratch dir) | `go test ./cmd/shixin -run TestRemoveStaleCaches` |
 | In-app update: release parsing, version order, download checks (httptest, no network) / the front's verification decisions with fake `codesign`, `spctl` and `plutil` / the 关于 update states | `go test ./internal/update ./internal/netclient` · `go test ./cmd/shixin -run 'Test(Team\|VerifyUpdate)'` · `go test ./cmd/shixin-settings -run 'Test(CheckUpdate\|FinishCheck)'` (`-snapshot DIR` renders every state) |
@@ -339,8 +337,6 @@ shared into the guest read-only.
   guest command.
 - Logs: `~/Library/Logs/Shixin/{shixin,engine,ai}.log`. Touch
   `~/Library/Application Support/Shixin/debug` for key-code diagnostics.
-- Feature checks to repeat by hand are in
-  [`docs/manual-tests.md`](docs/manual-tests.md).
 
 ## Troubleshooting
 
@@ -404,9 +400,8 @@ shared into the guest read-only.
   turned it on (the 智能排序 model download; later cloud input and sync).
   Never log typed text or candidates, except in explicit debug builds.
 - **Docs:** user-visible behavior and architecture go in `docs/DESIGN.md`;
-  open problems in `docs/KNOWN-ISSUES.md`; GUI checks in
-  `docs/manual-tests.md`. Write for outside readers: no local paths,
-  machine names or personal anecdotes.
+  open problems in `docs/KNOWN-ISSUES.md`. Write for outside readers: no
+  local paths, machine names or personal anecdotes.
 
 ## Git
 

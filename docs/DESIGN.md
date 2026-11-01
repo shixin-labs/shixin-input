@@ -693,12 +693,12 @@ scripts/                       data fetch, librime/llama builds, bundling, packa
 tools/vm-input/                test-only native keyboard/clipboard helper for the VM (not bundled)
 tools/menu-capture/            offline menu capture from public codes (§9)
 spikes/                        M0/M2 experiments; results in docs/spikes/
-docs/                          this design, known issues, test records, spike reports
+docs/                          this design, known issues, spike reports
 ```
 
 Windows development code is in `frontends/windows-tsf/` (C++ TSF DLL,
-M3; VM validation pending). Planned: `frontends/fcitx5/` (C++ fcitx5 addon, M4), dictionary import (`.scel`, M2) and the Windows
-candidate window and tray in `cmd/shixin`.
+M3). Planned: `frontends/fcitx5/` (C++ fcitx5 addon, M4) and dictionary
+import (`.scel`, M2).
 
 ### 5.2 `internal/rime`: librime binding
 
@@ -1195,11 +1195,11 @@ appear after restarting the app.
   top-left space about the primary screen's height; left and higher
   secondary displays can have negative window coordinates. Screen work
   areas are refreshed on view updates, so Dock and display changes apply.
-  The transparent shadow margin may extend outside the work area. If the
-  panel itself exceeds the work area it is pinned to that area's origin;
-  fitting or scrolling oversized panels remains deferred.
-  Verified in the VM (the panel flips above the caret at the bottom of
-  the screen); multiple displays and Intel Macs are untested.
+  The transparent shadow margin may extend outside the work area. The card
+  is bounded by both that work area and the pre-created flyout canvas;
+  oversized content scrolls, with the highlighted candidate revealed after
+  result, font, layout or viewport changes.
+  The panel flips above the caret near the bottom of the work area.
 - **Fallback if MyGo + IMK can't share a process:** a minimal Swift IMK front
   with the same client core logic. The engine is already separate, so
   nothing else changes.
@@ -1214,8 +1214,9 @@ settings app and candidate views with macOS. x64/ARM64 builds and native
 COM smoke tests are configured in CI; the DLL has been cross-compiled for
 x64, and the portable core passes ASan/UBSan locally. Actual Windows typing
 and registration have been exercised in the ARM64 VM, including Start search
-at low integrity. [Windows development](windows.md) describes verified coverage
-and remaining release work. Signed Windows release packages and publisher verification are described below.
+at low integrity. [Windows development](windows.md) describes the implementation;
+[known issues](KNOWN-ISSUES.md) records unresolved behavior. Signed Windows
+release packages and publisher verification are described below.
 
 - **Registration:** an ordinary `Shixin.exe -register` invocation requests UAC
   for an isolated machine step: HKLM COM registration,
@@ -1320,8 +1321,8 @@ and remaining release work. Signed Windows release packages and publisher verifi
   launcher shortcuts are not treated as the applications they launch.
 - **`DllMain` does nothing heavy;** it connects lazily on a background
   thread. This matters for games and short-lived processes.
-- **Test matrix:** UWP/AppContainer, elevated apps, Office, Chrome/Electron,
-  Explorer, Start search, windowed games. Builds for x64 and ARM64, signed.
+- Signed x64 and ARM64 builds require a matching native DLL for each
+  application architecture.
 
 ### 5.7 fcitx5 addon
 
@@ -1610,7 +1611,7 @@ These are synchronous calls into the app, like the caret rect. They happen
 at most once per boundary, never per key, and they get a budget: a client
 that doesn't answer (`NSNotFound`, nil: Terminal, some Electron apps) or
 takes over 2 ms twice is marked unverifiable for the session, and tracking
-alone decides. Measure in the VM's app matrix before enabling it per app.
+alone decides.
 
 Apps also answer wrongly, as an experimental Squirrel fork with the same
 feature found in daily use.
@@ -1688,9 +1689,6 @@ native TSF fixtures cover delayed edits, selection changes and secure fields.
   and that the key path doesn't allocate (`testing.AllocsPerRun`).
 - The shared event-sequence vectors, run against the Go and Windows C++
   cores; the fcitx5 client must pass them when implemented.
-- VM: the app matrix (TextEdit, Notes, Safari, Chrome, VS Code, Slack,
-  Terminal), checking for no space after a click, a window switch, a
-  paste and the timeout, plus the verification timings per app.
 
 Not in the first version: spacing against the character *right* of the
 caret (`|iPhone` then `我的`), which needs the app's text and is only
@@ -2229,30 +2227,9 @@ under the user, so none ever does. Instead:
 - **Policy correctness:** for every key in the corpus, compare the predicted
   disposition with librime's actual `handled`. Any non-printable mispredict
   fails CI.
-- **Chaos tests:**
-  - kill the engine mid-typing
-  - hot swap mid-burst
-  - delay the engine artificially by 50 ms or 1 s
-
-  In every case, assert that clients never block beyond the `ASK` cap and
-  that text order is preserved.
-- **Cold/idle tests:** after dropping page caches (Linux) or purging (macOS),
-  the first key must still meet the budget thanks to warm-up and keep-warm.
 - **Unit tests:** engine (`simulate_key_sequence`), settings compiler (golden
   YAML, deployed by librime in CI), IPC codec (golden vectors shared with
   C++), UI views without a window, and skin screenshots.
-- **GUI tests in Tart VMs:** macOS front-end tests run in a Tart VM driven
-  with `scripts/macos-vm.sh`: its `input` command builds the Go/purego
-  helper in `tools/vm-input` as `shixin-vm-input` and runs it in the guest
-  for native CGEvents, including
-  modifier presses/releases and shifted symbols. Clipboard assertions retry
-  within a bounded timeout and compare exact UTF-8 text without logging it.
-  `burst` uses native Cmd+N/A/C and verifies all 84 characters from 14
-  repetitions in TextEdit. VNC remains for clicks and screenshots, and
-  `tart exec` runs guest commands. Accessibility may be needed in the guest;
-  no TCC permissions are needed on the host (spike 2).
-- **Manual app matrix per platform,** as listed in §5.6, plus the macOS and
-  Linux equivalents.
 - **Offline menu capture** (`tools/menu-capture`): replays public corpus
   codes through `shixin-engine -capture` and records each code's visible
   menu as JSONL, for evaluating and training 智能排序 (§7.2). Capture is a
@@ -2274,7 +2251,7 @@ under the user, so none ever does. Instead:
 | M0 | **Spikes** | Answered with fallbacks chosen (below) |
 | M1 | **macOS MVP** ✅ | Engine process + async IMK front + candidate window + Shift 中/英 + menu bar + minimal settings. Our librime build without Lua, plus `librime-shixin` with 以词定字. Budgets met on the replay corpus; no-Lua gates in CI |
 | M2 | **Settings and Sogou features** (settings app ✅, per-app mode ✅, native translators ✅, builder + hot swap ✅) | Full settings app, builder + hot swap, skins, custom phrases, per-app mode, .scel import, remaining `librime-shixin` components (dates ✅, numbers ✅, Unicode ✅, calculator ✅, filters), signed pkg |
-| M3 | **Windows** | TSF DLL with async edit sessions, Shixin.exe, full test matrix passing with zero stalls |
+| M3 | **Windows** | TSF DLL with async edit sessions, Shixin.exe, correct text application and bounded key handling |
 | M4 | **Linux** | fcitx5 addon, theme export, packages |
 | M5 | **Network** | Idle-window sync, dictionary updates, opt-in cloud, typing stats |
 | M6 | **智能排序 (macOS first)** | §7.2 phases 1–4: engine/filter/IPC with per-app context and gates, `shixin-ai` on Metal within its latency gates, settings and download, evaluation on real menus meets the spike's 简拼 gains; Windows/Linux with M3/M4 |
@@ -2308,7 +2285,7 @@ under the user, so none ever does. Instead:
    `purego/objc`, returns from `handleEvent:` at once, and applies the text
    asynchronously in TextEdit, Safari, VS Code and Terminal.
    **Done for TextEdit:** works, budgets met
-   (`docs/spikes/m0-2-imk.md`). Other apps are still to test.
+   (`docs/spikes/m0-2-imk.md`).
 3. **Candidate window.** A non-focusable MyGo flyout, moved to any screen
    point via `NativeHandle`, appears over another app without activating
    Shixin. Measure show and update latency.

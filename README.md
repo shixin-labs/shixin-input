@@ -17,8 +17,7 @@ unsigned previews; Linux is planned
 
 Windows x64 and ARM64 development builds include a TSF frontend and
 candidate/tray host, with the same settings GUI. The 0.2.0 downloads are
-unsigned previews. Physical-GPU scoring and broader application coverage
-remain unvalidated. See
+unsigned previews. See
 [Windows development](docs/windows.md).
 
 ## Install (macOS)

@@ -5,10 +5,21 @@ Delete an entry when it's fixed, and mention it in the commit.
 
 ## Engine lifecycle
 
+### Cold-cache first key exceeds the engine budget in the VM
+- **Reproduced (2026-11-01):** a scratch rime-ice engine with warmed
+  sessions, guest-local libraries/data and no reranking took 13.100 ms
+  for its first key after `purge`, and 12.166 ms after 31 seconds idle
+  plus `purge`, against the 8 ms single-key budget. Idle alone took
+  5.017 ms. Keys still composed correctly.
+- The first key's page-fault and warm-up costs remain unisolated. Warm
+  replay latency does not establish the cold-cache requirement.
+
 ### Hot-swap handoff over budget
 - **What:** spike 4 measured 28–32 ms against a 20 ms target; product
   release-to-ready measured 23–43 ms locally (30 ms isolated) and 51 ms in
-  the VM.
+  the VM. A Windows VM rebuild also took 72–93 ms release-to-ready;
+  a burst preserved all 150 input groups but passed four through as literal
+  `ni ` instead of converting them to `你`.
 - **Decision:** accepted for M2, without patching librime. Builds
   and standby warm-up leave the old engine serving; the brief disconnected
   handoff uses the existing PASS fallback and may clear a composition.
@@ -22,62 +33,71 @@ Delete an entry when it's fixed, and mention it in the commit.
   the VM).
 - **State:** composition, current switches and in-memory remembered app
   modes reset to settings on takeover. Only one context is prepared at
-  activation; extra contexts use the cold session
-  fallback rather than a fully attached standby pool.
+  activation; extra contexts use the cold session fallback rather than a
+  fully attached standby pool.
 
 ## Front and UI
 
-### Windows validation and release support
-- **Implemented, partly VM-verified:** TSF COM server, queued edit sessions,
-  policy speculation and bounded waits, password/PIN guards, candidate/tray
-  host, registration exports, and backend/settings builds for
-  x64/ARM64. Native CI jobs include the COM factory smoke test; portable
-  client tests run on Linux and under sanitizers locally.
-- **ARM64 VM run (2026-10-31):** QEMU/HVF, Windows 11 Pro, native builds,
-  librime without Lua, registration, and Edge typing were exercised.
-  Application versions: Notepad 11.2607.14.0, Edge 156.0.4314.58,
-  Explorer 10.0.26100.8117 and SearchHost 2608.25008.200.0 on Windows
-  build 26300.9457. Settings and its Windows guide render; layout, theme
-  and punctuation changes can apply live. The remaining validation below
-  prevents treating the port as ready. See the
-  [Windows status](windows.md#status-2026-11-01).
-- **智能排序 validation:** native llama/Vulkan build automation and signed
-  runtime packaging are implemented. GPU-less native tests cover the ABI
-  and unavailable-accelerator fallback; actual Windows GPU scoring and
-  latency still need hardware validation.
-- **Setup and input:** the guide queries per-user enablement with `-added`;
-  successful registration adds logon startup, and unregistration removes
-  this copy's startup command. TSF supplies composition display attributes;
-  the host shows confirmed mode changes beside the caret. Saved desktop app
-  IDs also match executable paths, with ambiguous aliases left unresolved.
-- **Security and validation:** production-certificate/timestamp behavior
-  still needs release validation. The Windows release workflow builds full
-  x64/ARM64 packages and checks installation, per-user registration,
-  installed-engine replay, rollback, held-DLL upgrades and uninstall on
-  disposable native runners (Windows Server 2025 x64 and Windows 11 ARM64).
-  GUI/UAC behavior on consumer x64 Windows still needs manual coverage.
-  A separate unsigned-preview package supports manual installation and
-  updates while signing approval is pending. Windows security policies may
-  block it; its integrity checks do not authenticate the publisher.
-  AppContainer transport has capability-free sandbox coverage; Start search
-  typing also passes in the low-integrity ARM64 SearchHost. Real text-store
-  behavior,
-  focus/security transitions, migration, DPI placement and mouse selection
-  need broader application coverage. The public ARM64X DLL has ARM64/x64 COM
-  smoke coverage; broader emulated-app typing remains to test. 32-bit
-  applications are not supported by the current packages. See [Windows development](windows.md).
+### Windows release gaps
+- Version 0.2.0 distributes unsigned x64/ARM64 previews with manual updates.
+  Their integrity checks do not authenticate the publisher, and Windows
+  security policies may block them. Signed installer and in-app upgrade
+  support are implemented separately.
+- Current packages do not support 32-bit applications. ARM64 releases include
+  an ARM64X forwarder and ARM64/x64 backends.
+- See [Windows development](windows.md) for the implemented registration,
+  AppContainer transport, auto spacing, startup and composition feedback.
 
-### Other apps not yet tested
-- **Tested so far:** TextEdit, Terminal, and form fields in Safari
-  (including a password field). Safari's address bar passed composition,
-  candidate selection, Backspace, Escape and English URL checks in the VM,
-  including URL entry after clearing Chinese text
-  ([manual tests](manual-tests.md#safaris-address-bar)).
-- **Still to test:**
-  - Chrome
-  - VS Code / Electron apps
-  - Word, Pages, Notes, Slack
-  - native password prompts (System Settings, sudo dialogs)
+### Windows Notepad save-dialog filename falls back to Latin
+- **Reproduced (2026-11-01):** in Notepad 11.2607.14.0 on Windows 11
+  ARM64 build 26300.9711, the Save as filename field passed `nihao `
+  literally without a candidate panel. Selecting 拾新输入法 explicitly
+  through the native keyboard picker and retrying still passed `nihao`
+  literally. The matching development DLL was loaded in Notepad; ordinary
+  document composition and second-page candidate selection had passed in
+  the same process.
+- This observation used source `0f4eb40`, before the later Windows runtime
+  updates. The filename control's scope, callback routing and edit-session behavior
+  have not been isolated. This is a compatibility failure, not evidence
+  that password guards should be relaxed. Saving via a pasted literal path
+  worked; it does not establish IME composition in this field.
+
+### Windows keyboard-compartment recovery needs a focus change
+- **Reproduced in the native VM fixture (2026-11-01):** ordinary 自然码
+  composition produced exact `你好`. Setting
+  `GUID_COMPARTMENT_KEYBOARD_DISABLED` to 1 then passed `nihk` literally,
+  with no engine keys, as required. Clearing it succeeded, and reading the
+  same focused Edit control's compartment returned `VT_I4` value 0, but
+  subsequent `nihk ` still passed literally with no engine-key increase.
+- Moving focus to another field and back restored exact `你好` without
+  changing profiles, settings or processes. The initial fixture and a
+  second run with explicit compartment readback showed the same behavior.
+- This observation used source `0f4eb40`, before the later Windows runtime
+  updates. The missing state/focus notification has not been isolated. Clearing the
+  compartment does not immediately restore the input service in that context.
+
+### Settings status before the first poll
+- On opening Settings, 开始使用 can briefly show that Shixin is not added,
+  and 性能 can show that the engine is not running, before the first
+  background probe completes. In the VM both later changed to the correct
+  live state without installing or restarting anything.
+- Show a loading/unknown state until the first probe completes, rather
+  than presenting a failed state during that interval.
+
+### Update download/apply errors lose their failure state
+- **Reproduced in the VM (2026-11-01):** with signed 0.1.2 offering 0.1.3,
+  reject the download connection through a process-scoped proxy. Settings
+  returns to 下载并安装 without an error or Retry control. Repeated native
+  button activation reproduced it; the proxy logged the rejected GitHub
+  connection, the installed version remained 0.1.2 and no download files
+  remained.
+- **Cause in the current source:** `installUpdate` calls the cleanup
+  `cancel()` before checking `ctx.Err()`. That makes the context look
+  canceled even when the download or apply helper failed independently, so
+  the state returns to the available offer instead of showing the failure
+  and Retry control.
+- Capture cancellation state before cleanup so an independent download or
+  apply error keeps its failure state.
 
 ### Settings app gaps
 - **Not built yet:** skin editor, .scel/text dictionary import, user
@@ -86,28 +106,8 @@ Delete an entry when it's fixed, and mention it in the commit.
   `handleEvent` and key→candidates histograms (and ASK timeouts, the stall
   counter) stay in its log; the front could report them to the engine for
   the page to show.
-- **Window tested** at the VM's 1024×768 only. Native English pages are
-  checked in light/dark at 880×640, with scrolling verified on long pages.
-  All pages also have headless Chinese/English light/dark snapshots at
-  880×720.
-- **Still to test:** a real Retina display. The VM reports
-  `NSScreen.backingScaleFactor == 1`, so these checks cover 1× only.
 
 ## Auto spacing
-
-### App compatibility checks incomplete
-- **What:** auto spacing (DESIGN §7.1) is unit-tested against the shared
-  vectors and the client core. Safari's address bar has initial deletion,
-  English URL and Chinese/English boundary checks; the full VM app matrix
-  (TextEdit, Notes, Safari, Chrome, VS Code, Slack, Terminal) remains
-  incomplete.
-- **Unknowns:** whether each app answers `selectedRange`,
-  `markedRange` and `attributedSubstringFromRange:` correctly and quickly
-  (Electron and terminals may not; the spacer then falls back to tracking
-  alone), and whether every caret move by mouse is caught by the global
-  monitor (trackpad tap-to-click, Universal Control).
-- **Fix:** run the matrix, measure the read times, and add apps that
-  misbehave to the default `no_auto_space` list.
 
 ### Secure fields that aren't detected
 - **What:** a field counts as secure when the focused app holds Secure

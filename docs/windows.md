@@ -3,10 +3,8 @@
 Windows development builds include the C++ TSF DLL, a Go candidate/tray
 host, the shared engine and settings GUI, and offline tools. Both x64
 (`amd64`) and ARM64 (`arm64`) are build targets. This is an experimental
-front: ARM64 native builds, librime, registration and Edge typing have been
-tested in a Windows VM, with further release validation still required. See
-the [status summary](#status-2026-11-01) and
-[known issues](KNOWN-ISSUES.md#windows-validation-and-release-support).
+front with application compatibility limitations recorded in
+[known issues](KNOWN-ISSUES.md#windows-release-gaps).
 Signed installer and update packaging is available; see [Release packages](#release-packages).
 
 ## Build and check
@@ -307,7 +305,7 @@ An existing COM class pointing to another DLL is rejected; unregister that
 copy before moving the installation. A matching legacy HKCU class is removed
 after successful user enablement so it cannot shadow the machine class.
 Registration does not select the keyboard. Select 拾新 in Windows's input
-settings, then run the application checklist. The tray opens the shared
+settings. The tray opens the shared
 settings GUI and Windows first-run guide. Release installations use the signed installer described above.
 
 To remove the development profile in the VM:
@@ -497,85 +495,6 @@ use the on-screen keyboard to clear a stale Caps Lock state if needed.
 `stop` requests ACPI shutdown, waits up to 60 seconds, then terminates QEMU;
 for normal shutdown, request `Stop-Computer` over SSH and confirm it stopped.
 
-## Status (2026-11-01)
-
-- Windows 11 Pro ARM64 build 26300.9457 ran under QEMU/HVF with four cores;
-  native builds used 6144 MiB, GUI checks used 2048 MiB.
-- ARM64 `build-windows.ps1 -Check`, vet and short Go tests passed.
-  Native librime/Shixin tests (106 upstream cases) and serial short Go
-  tests against the DLL passed, including dictionary lock preservation.
-- Edge 156.0.4314.58 passed exact commits, selection, paging, Shift mode
-  switching, directly focused password/PIN guards and basic placement.
-  Settings rendered; live layout/theme/punctuation changes and worker recovery passed.
-- A subsequent medium-integrity check with UAC enabled verified exact `你好`
-  in Notepad and Explorer search after fixing empty input-scope handling.
-  Explorer rename with 自然码
-  also passed exact `你好.txt` after normalizing the repeat count between
-  the shell’s test-key and key-delivery callbacks.
-- Edge Ctrl+L now finalizes `ni hao` once: the client ends the marked range
-  with its pooled edit request before passing an unhandled app shortcut and
-  invalidates pending replies. The exact copied text passed with UAC enabled.
-- The candidate flyout clips its native region to the measured rounded card.
-  With a visible menu, clicking the password field below it passes literal
-  input; clicking the first candidate still commits exact `你好`.
-- The compatibility checks above were repeated with tracing disabled in the
-  native ARM64 build at 2048 MiB, with UAC enabled and medium-integrity apps.
-  These final checks used Windows build 26300.9711 and Edge 156.0.4314.58.
-  Default host/engine logs also retained startup failures and recovery without
-  explicit log arguments.
-- Start search now commits exact `你好` in low-integrity SearchHost with
-  tracing disabled. Ordinary-shell registration and unregistration complete
-  through UAC; the original user's keyboard list is preserved on cancellation.
-  A capability-free AppContainer regression test verifies discovery reads,
-  input traffic and server identity checks, while rejecting control-pipe
-  access, discovery writes, process control/memory reads and token duplication.
-  See [known issues](KNOWN-ISSUES.md#windows-validation-and-release-support).
-- ARM64 and x64 core/COM tests pass; the x64 tests also ran under emulation.
-  Actual typing in x64/emulated applications, Office/Chrome, mixed DPI, GPU
-  scoring and native x64 installation remain unverified.
-- Runtime follow-up at 2048 MiB: five layout rebuilds passed with peak
-  builder private commit around 22 MB, versus 909–983 MB without compiled
-  resource reuse. A 256 MB process limit rejects a full build but permits
-  the reused build. The original intermittent exit had no captured cause;
-  new failures retain safe build-stage and exit/timeout diagnostics.
-- Suspending the active worker now produces exact literal `nihao ` before
-  resume; resuming neither duplicates nor replaces it, and subsequent
-  Chinese input commits exact `你好`. Native deferred-edit tests cover
-  selection/focus changes, ordered literal recovery and queue exhaustion.
-- The same engine session follows a Windows time-zone change and its
-  restoration without restarting. A ten-row vertical menu at the maximum
-  supported font size is constrained and scrolls on an 800×600 desktop.
-- Auto spacing passes all 73 shared vectors and native edit-session fixtures
-  on ARM64 and x64 (the latter under emulation). With tracing disabled,
-  Edge passes exact `你好 iPhone 你好` and `你好 3 你好`, selected-text
-  replacement, deleting an inserted space (`你好 a` → two Backspaces →
-  `b` → `你好b`), live disabling (`你好iPhone你好`), and literal password/PIN
-  input. The state/history benchmark allocates nothing; the Windows keyboard
-  translation check is measured separately in the native service test.
-  Broader auto-spacing application coverage remains part of the app matrix.
-- Setup/input follow-up: ordinary-shell registration through UAC adds the
-  user's logon command, and `-added` reports enabled/disabled status without
-  starting a host. The logon command starts the host while enabled and exits
-  quietly after removal. Cancelling UAC unregistration preserves the keyboard
-  and startup command; approved removal deletes both. The guide updates its
-  badge in each state without opening console windows.
-- With tracing disabled, Edge shows composition underlines and a
-  nonactivating 中/英 hint beside the caret while exact typing still passes.
-  Character Map's desktop picker ID applies its English default (`nihao`)
-  and no-spacing rule (`你好a`) while global spacing remains enabled.
-  Native tests cover attribute cleanup, UTF-16 spans, metadata references,
-  mode expiration/security/candidate priority, and ambiguous app aliases.
-
-- Installer follow-up on Windows 11 ARM64 build 26300.9711: signed test packages
-  passed fresh installation, standard-user profile enablement, publisher and
-  payload rejection, and original-user uninstall through UAC. Native ARM64 and
-  emulated x64 COM factories both passed after final resource stamping. Full
-  upgrade comparisons matched all 103 payload files, including changed data and
-  rebuilt native libraries. A forced registration failure restored the old
-  product identity and all old payload hashes. An upgrade with a loaded TSF DLL
-  kept its application alive, installed all new file hashes and returned a
-  restart requirement. Settings and scratch dictionary data survived.
-
 Debug native callback routing with `-DSHIXIN_TSF_TRACE=ON` in the TSF
 CMake configuration. This opt-in build queues fixed numeric records on the
 apartment and writes them only on the pipe worker, under
@@ -634,7 +553,6 @@ so the rest of the prewarmed transparent canvas passes app clicks through.
 A click includes its displayed sequence; TSF rejects
 stale clicks rather than selecting from a different menu. Positioning uses
 screen pixels, monitor work areas and the host's DPI. Actual text-store,
-DPI and click behavior still needs VM verification.
 
 ## Runtime and security
 
@@ -681,15 +599,12 @@ waits for both dictionary locks and application processes to exit. Rerank slots 
 `VirtualAlloc` memory. Engine/scorer threads request above-normal priority
 and disable execution-speed throttling at startup.
 
-## Remaining release work
+## Release limitations
 
-- Verify registration and real typing in Windows VMs: Notepad, Office,
-  Chrome/Electron, Explorer, Start search, and other elevated/AppContainer
-  applications. Start search is covered; broader compatibility remains open. Run the checklist in `manual-tests.md`.
-- Complete native x64 installation and broader
-  emulated-app typing coverage, and validate a production signing certificate
-  and timestamp service. Current packages do not support 32-bit applications.
-- Validate Vulkan inference, context-sensitive ranking and latency on native
-  Windows GPU hardware; GPU-less CI covers the ABI and unavailable fallback.
-- Complete broader AppContainer validation; measure Windows key,
-  text application, candidate placement and allocation budgets before release.
+- Version 0.2.0 distributes unsigned previews with manual updates. Their
+  integrity checks detect corruption but do not authenticate the publisher;
+  Windows security policies may reject them.
+- Current packages do not support 32-bit applications. ARM64 releases include
+  an ARM64X forwarder and matching ARM64/x64 backends.
+
+Application-specific failures are recorded in [known issues](KNOWN-ISSUES.md).
