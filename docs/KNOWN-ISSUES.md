@@ -33,17 +33,19 @@ Delete an entry when it's fixed, and mention it in the commit.
 ## Front and UI
 
 ### Windows validation and release support
-- **Implemented, not VM-verified:** TSF COM server, queued edit sessions,
+- **Implemented, partly VM-verified:** TSF COM server, queued edit sessions,
   policy speculation and bounded waits, password/PIN guards, candidate/tray
-  host, per-user registration exports, and backend/settings builds for
+  host, registration exports, and backend/settings builds for
   x64/ARM64. Native CI jobs include the COM factory smoke test; portable
   client tests run on Linux and under sanitizers locally.
-- **Latest VM attempt (2026-10-31):** direct QEMU/HVF installed Windows 11
-  Pro ARM64, completed a local-account login and verified SSH public-key
-  access at 2048 MiB. Virtio networking and guest tools work. Native builds
-  and product runtime checks are next; see the
-  [setup evidence](manual-tests.md#windows-qemu-setup-2026-10-31).
-- **Missing:** native library build automation, the front's `-added`
+- **ARM64 VM run (2026-10-31):** QEMU/HVF, Windows 11 Pro, native builds,
+  librime without Lua, registration, and Edge typing were exercised.
+  The shared Settings app and its Windows guide render; layout, theme and
+  punctuation changes can apply live. Compatibility failures below prevent
+  treating the port as ready. See the
+  [build results](manual-tests.md#windows-arm64-native-build-checks-2026-10-31)
+  and [GUI results](manual-tests.md#windows-arm64-gui-results-2026-10-31).
+- **Missing:** native llama build automation, the front's `-added`
   answer for the 开始使用 guide, startup registration, a signed installer
   and in-place updates (关于 links to the release page meanwhile), display attributes/mode
   indicator, and the native auto-spacing implementation. Desktop app IDs
@@ -52,8 +54,99 @@ Delete an entry when it's fixed, and mention it in the commit.
 - **Security and validation:** AppContainer/low-integrity pipe access and
   Authenticode checks are required before release. Real text-store behavior,
   focus/security transitions, migration, DPI placement and mouse selection
-  need Windows VM tests. ARM64 packaging must also address x64 emulated
-  applications, which need a matching DLL. See [Windows development](windows.md).
+  need broader validation after the observed failures are fixed. ARM64
+  packaging must also address x64 emulated applications, which need a
+  matching DLL. See [Windows development](windows.md).
+
+### Windows ordinary fields can fall back to Latin text
+- **Repro:** select Shixin in native ARM64 Notepad 11.2607.14.0 on Windows
+  11 build 26300.9457, using full pinyin; type `nihao` and Space. The result
+  is literal `nihao ` with no candidates, although `shixin_tsf.dll` is
+  loaded. Edge 156.0.4314.58 on the same account commits `你好`.
+- Repeated with UAC enabled and medium-integrity Notepad: 自然码 `nihk`
+  plus Space produces literal `nihk `. The Explorer, Ctrl+L and candidate-click
+  failures below were also reproduced on the normal desktop; see `shots/normal-*.png` and
+  `logs/normal/normal-integrity.txt` in the external Windows state.
+- Explorer search and Start search also passed `nihk` through without
+  candidates when 自然码双拼 was selected. The cause is not isolated;
+  these results do not establish AppContainer or secure-scope support.
+- **Evidence:** external Windows state `shots/notepad-slow-nihao.png`,
+  `shots/explorer-search-nihk.png`, `shots/start-search-nihk.png`, and
+  `logs/gui-cases.jsonl`.
+
+### Windows Explorer rename produces the wrong composition
+- **Repro:** select 自然码双拼, select a scratch text file in Explorer,
+  press F2, type `nihk` once, then Space and Enter. The observed preedit
+  was `nin chi hang kao` and the file became `您吃行靠.txt`; the same
+  four keys in Edge produced `ni hao` and committed `你好`.
+- This resembles doubled key delivery, but the cause is not confirmed.
+  Do not infer correctness from the portable or COM smoke tests.
+- **Evidence:** `shots/explorer-shuangpin-fresh.png`,
+  `shots/edge-shuangpin-nihk.png`, and `logs/explorer-result.json`.
+
+### Windows Edge duplicates preedit on Ctrl+L
+- **Repro:** in a fresh Edge textarea with 自然码双拼, type `nihk`, wait
+  for the `ni hao` composition, press Ctrl+L, then Escape. The original
+  textarea contains `ni haoni hao`, rather than one finalized `ni hao`.
+  A fixture readout copied through the guest clipboard confirms the exact
+  value. Full pinyin showed the same duplication. Alt+Tab to another app
+  and back finalized `ni hao` once in the separate tested case.
+- **Evidence:** `shots/edge-ctrl-l-before.png`,
+  `shots/edge-ctrl-l-after.png`, and `logs/gui-cases.jsonl`.
+
+### Windows candidate flyout intercepts clicks below its visible panel
+- **Repro:** in Edge, put a textarea above a password input. Compose
+  `nihao` in full pinyin, then click the password input below the visible
+  candidate panel. Even after six seconds, focus remains in the textarea;
+  subsequent keys continue composing there. Directly focusing the password
+  field when no menu is visible passes literal input correctly.
+- Candidate clicks themselves select a word and preserve typing focus.
+  The transparent flyout's input region needs investigation.
+- **Evidence:** `shots/edge-password-click-after-six-seconds.png`,
+  `shots/edge-candidate-click-after.png`, and `logs/gui-cases.jsonl`.
+
+### Windows low-memory lifecycle validation remains incomplete
+- At 2048 MiB, the first live layout rebuild returned `builder failed:
+  exit status 1`; the old engine stayed usable. The builder's diagnostics
+  are deliberately discarded by the coordinator, so the underlying failure
+  was not captured. Standalone builds and a later instrumented retry passed;
+  the original builder executable was restored afterward. This is an
+  observed intermittent failure, not an isolated cause or reliable repro.
+- Suspending the active worker left printable input pending until resume;
+  it did not immediately appear as literal fallback. Killing the worker
+  did recover automatically and subsequent exact typing passed. These GUI
+  observations do not measure the real application's 8 ms ASK budget.
+- **Evidence:** `shots/settings-apply-error.png`,
+  `shots/engine-hang-fallback.png`, `shots/engine-hang-after-resume.png`,
+  `logs/engine.log`, and `logs/builder-probe.log`.
+
+### Windows keyboard registration needs elevation
+- **Repro:** on a normal desktop with UAC enabled, run the ARM64
+  `Shixin.exe -register` at medium integrity. It exits 1 with
+  `DllRegisterServer failed: HRESULT 0x80004005`. The same command succeeds
+  elevated. The successful command creates a TIP under
+  `HKLM\Software\Microsoft\CTF\TIP`, although the COM class is under HKCU;
+  this is not a working per-user-only registration flow.
+- The exact failing TSF/category call is not isolated. The command does not
+  elevate itself, and a successful administrator test must not be reported
+  as ordinary-user registration support.
+- **Evidence:** `logs/normal/normal-registration-token.txt`,
+  `logs/normal/normal-register.{log,json}` and `normal-registry.json` in that
+  same directory.
+
+### Windows unregistration returns failure after removing registration
+- **Repro:** register the ARM64 development DLL, add its Chinese keyboard
+  profile, close the test apps, and run `Shixin.exe -unregister` at medium
+  integrity. It exits 1 with `0x80004005`, removes the user COM class, and
+  leaves the machine TIP registered. Elevated unregistration also returns
+  this error, but removes the machine TIP. Restoring the original language
+  list then removes the remaining user TIP cache.
+- The exact failing TSF/category call is not isolated. Check both machine
+  and user registration state and preserve the output. This result was also
+  observed during the earlier UAC-disabled run.
+- **Evidence:** `logs/normal/normal-{unregister,elevated-unregister}.{log,json}`,
+  `normal-after-limited-unregister.json`, `normal-after-elevated-unregister.json`
+  and `normal-cleanup.json` in the same directory.
 
 ### Windows development logs are not persistent by default
 - **Source-inspected; not VM-reproduced:** `internal/logx.Dir` recognizes

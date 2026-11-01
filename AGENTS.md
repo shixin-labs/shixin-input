@@ -28,11 +28,12 @@ Update this file as code, commands and conventions are added.
 M1 (macOS MVP) is done; M2 (DESIGN §10) is in progress. Built so far:
 
 - **Windows development front:** C++ TSF DLL, background pipes, bounded
-  policy decisions, queued edit sessions, password/PIN guards and per-user
+  policy decisions, queued edit sessions, password/PIN guards and
   registration exports; a Go candidate/tray/supervisor host uses the shared
   settings app and candidate views. x64/ARM64 builds and native tests are
-  configured in CI. Windows VM typing, compatibility and release packaging
-  are still unverified; see [`docs/windows.md`](docs/windows.md).
+  configured in CI. ARM64 VM builds and Edge typing have been exercised;
+  app compatibility failures and release packaging remain open. See
+  [`docs/windows.md`](docs/windows.md).
 
 - **Input:** full pinyin and seven double-pinyin layouts (including 自然码)
   with keyboard charts; optional full pinyin inside every shuangpin layout

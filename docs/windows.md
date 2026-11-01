@@ -3,9 +3,11 @@
 Windows development builds include the C++ TSF DLL, a Go candidate/tray
 host, the shared engine and settings GUI, and offline tools. Both x64
 (`amd64`) and ARM64 (`arm64`) are build targets. This is an experimental
-front: ARM64 native builds, headless checks, librime and per-user
-registration are verified in a Windows VM; real typing and app compatibility
-checks are in progress. There is no signed Windows installer or updater yet.
+front: ARM64 native builds, librime, registration and Edge typing have been
+tested in a Windows VM, with substantial app compatibility failures. See
+the [GUI results](manual-tests.md#windows-arm64-gui-results-2026-10-31) and
+[known issues](KNOWN-ISSUES.md#windows-validation-and-release-support).
+There is no signed Windows installer or updater yet.
 
 ## Build and check
 
@@ -111,8 +113,16 @@ Errors propagate to the caller. Registration at a different DLL path is
 rejected while the existing class points elsewhere; unregister that copy
 before moving it. The command does not silently elevate or change the
 currently selected keyboard. Select 拾新 under Windows's language/input
-settings, then test in Notepad. The tray opens the same settings GUI as
-macOS. Its first-run guide and update installer still need Windows adapters.
+settings, then run the application checklist. The tray opens the same
+settings GUI as macOS, including a Windows first-run guide. The update
+installer still needs a Windows implementation.
+
+The current registration is **not per-user-only**: ordinary medium-integrity
+registration failed in the VM, while an elevated command succeeded and
+created a machine TIP entry. Use an administrator shell only inside the
+disposable test VM if needed to continue runtime checks, then run the host
+and applications as ordinary desktop processes. See the
+[registration failure](KNOWN-ISSUES.md#windows-keyboard-registration-needs-elevation).
 
 To remove the development profile in the VM:
 
@@ -124,6 +134,10 @@ Close apps using the DLL before deleting its files. An ARM64 DLL supports
 native ARM64 applications; the package strategy for x64 emulated apps,
 which require a matching DLL, still needs validation. The build script does
 not create logon startup entries; start `Shixin.exe` before typing tests.
+The tested unregistration returned an error; its machine TIP was removed
+only by an elevated attempt. Verify both user and machine state and preserve
+diagnostics as described
+in [known issues](KNOWN-ISSUES.md#windows-unregistration-returns-failure-after-removing-registration).
 
 ## Collecting development logs
 
