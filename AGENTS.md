@@ -37,6 +37,10 @@ M1 (macOS MVP) is done; M2 (DESIGN §10) is in progress. Built so far:
   ordinary shell (with UAC for the machine step) now pass; release packaging
   remains open. Auto spacing uses TSF text ranges and the shared spacing
   vectors; Edge boundaries, live disabling and Backspace suppression pass.
+  The Windows guide queries profile enablement; registration configures
+  per-user logon startup. TSF composition attributes and the host's mode
+  indicator share the existing result/caret stream. Desktop picker IDs
+  resolve to executable aliases for per-app rules off the engine thread.
   See
   [`docs/windows.md`](docs/windows.md).
 
@@ -191,7 +195,9 @@ and tools that touch Rime use scratch user dirs, never the live one.
 | Rebuild with private compiled-resource copies / safe stage diagnostics | Add `-reuse-generation /path/to/warm-only-generation` / `-status-file /path/to/new-private-file` to `shixin-builder`; neither accepts a live user dictionary |
 | Capture offline menus from public codes (warm-only scratch engine, no learning) | `go run ./tools/menu-capture -engine build/bin/shixin-engine -generation /tmp/shixin-generation -data build/rime-data -lib "$SHIXIN_LIBRIME" -profile SHA256 -input codes.jsonl -output menus.jsonl -limit 50` |
 | Portable TSF core and auto-spacing tests (Go wire/spacing vectors, timeout/focus safety, queues, allocation, latency and parser stress) | `cmake -S frontends/windows-tsf -B build/tsf-tests && cmake --build build/tsf-tests && ctest --test-dir build/tsf-tests --output-on-failure` |
-| Native Windows deferred edit/selection recovery and core/COM tests | `ctest --test-dir build/tsf-arm64 -C Release --output-on-failure` (use the configured native TSF build directory; includes `shixin_service_test`) |
+| Native Windows core/COM, composition attributes and deferred edit/selection tests | `ctest --test-dir build/tsf-arm64 -C Release --output-on-failure` (use the configured native TSF build directory; includes `shixin_service_test`) |
+| Windows enablement / logon startup (VM only; startup opens the scratch-configured host) | `Shixin.exe -added` (0 enabled, 1 disabled); successful `-register` adds the user startup command; `Shixin.exe -startup` starts only while enabled |
+| Windows startup ownership and desktop picker/executable alias rules (private registry fixture; no IME registration) | `go test ./cmd/shixin -run TestWindowsStartup` · `go test ./internal/settings -run TestWindows` · `go test ./cmd/shixin-engine -run TestWindowsDesktopAppRules` |
 | Windows capability-free AppContainer input/discovery access, private-pipe and process/token restrictions (native Windows) | `go test -v ./internal/ipc -run TestInputPipeAppContainer` |
 | librime latency spike (needs rime data) | `go run ./spikes/m0-rime` (`-lua` for the Lua comparison) |
 | User dictionary handoff spike | `go run ./spikes/m0-handoff` (scratch copies under `build/spike/m0-handoff`) |

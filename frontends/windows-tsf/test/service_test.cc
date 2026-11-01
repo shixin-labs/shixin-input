@@ -36,6 +36,7 @@ struct Range final : ITfRange {
     return n;
   }
   Range *root = nullptr;
+  ITfContext *context = nullptr;
   LONG start = 0, end = 0;
   bool readable = true;
   bool empty_failure = false;
@@ -170,8 +171,57 @@ struct Range final : ITfRange {
     *out = range;
     return S_OK;
   }
+  HRESULT STDMETHODCALLTYPE GetContext(ITfContext **out) override {
+    *out = root ? root->context : context;
+    if (!*out)
+      return E_NOTIMPL;
+    (*out)->AddRef();
+    return S_OK;
+  }
+};
+struct Property final : ITfProperty {
+  UNKNOWN
+  struct Mark {
+    LONG start, end, atom;
+  };
+  std::array<Mark, 16> marks{};
+  unsigned sets = 0, clears = 0;
+  bool active = false;
+  HRESULT STDMETHODCALLTYPE GetType(GUID *out) override {
+    *out = GUID_PROP_ATTRIBUTE;
+    return S_OK;
+  }
+  HRESULT STDMETHODCALLTYPE EnumRanges(TfEditCookie, IEnumTfRanges **,
+                                       ITfRange *) override {
+    return E_NOTIMPL;
+  }
+  HRESULT STDMETHODCALLTYPE GetValue(TfEditCookie, ITfRange *,
+                                     VARIANT *) override {
+    return E_NOTIMPL;
+  }
   HRESULT STDMETHODCALLTYPE GetContext(ITfContext **) override {
     return E_NOTIMPL;
+  }
+  HRESULT STDMETHODCALLTYPE FindRange(TfEditCookie, ITfRange *, ITfRange **,
+                                      TfAnchor) override {
+    return E_NOTIMPL;
+  }
+  HRESULT STDMETHODCALLTYPE SetValueStore(TfEditCookie, ITfRange *,
+                                          ITfPropertyStore *) override {
+    return E_NOTIMPL;
+  }
+  HRESULT STDMETHODCALLTYPE SetValue(TfEditCookie, ITfRange *span,
+                                     const VARIANT *value) override {
+    CHECK(value->vt == VT_I4 && sets < marks.size());
+    auto range = static_cast<Range *>(span);
+    marks[sets++] = {range->first(), range->last(), value->lVal};
+    active = true;
+    return S_OK;
+  }
+  HRESULT STDMETHODCALLTYPE Clear(TfEditCookie, ITfRange *) override {
+    ++clears;
+    active = false;
+    return S_OK;
   }
 };
 struct Composition final : ITfComposition {
@@ -205,6 +255,8 @@ struct Context final : ITfContext, ITfContextComposition {
   ULONG STDMETHODCALLTYPE AddRef() override { return 2; }
   ULONG STDMETHODCALLTYPE Release() override { return 1; }
   Range range;
+  Property property;
+  Context() { range.context = static_cast<ITfContext *>(this); }
   Composition composition;
   std::function<void()> on_status, on_selection;
   HRESULT STDMETHODCALLTYPE StartComposition(TfEditCookie, ITfRange *,
@@ -299,8 +351,13 @@ struct Context final : ITfContext, ITfContextComposition {
   HRESULT STDMETHODCALLTYPE EnumViews(IEnumTfContextViews **) override {
     return E_NOTIMPL;
   }
-  HRESULT STDMETHODCALLTYPE GetProperty(REFGUID, ITfProperty **) override {
-    return E_NOTIMPL;
+  HRESULT STDMETHODCALLTYPE GetProperty(REFGUID id,
+                                        ITfProperty **out) override {
+    if (id != GUID_PROP_ATTRIBUTE)
+      return E_NOTIMPL;
+    *out = &property;
+    property.AddRef();
+    return S_OK;
   }
   HRESULT STDMETHODCALLTYPE GetAppProperty(REFGUID,
                                            ITfReadOnlyProperty **) override {
@@ -376,6 +433,47 @@ struct ServiceTest {
     CHECK(SUCCEEDED(s.apply_text(1, result, 0)));
   }
   static void spacing() {
+    // Even with spacing off, a mode hint survives Chromium's redundant
+    // selection-only notification after an ordinary passed text edit.
+    {
+      Context c;
+      auto s = std::make_unique<Service>();
+      spacing_prepare(*s, c);
+      s->spacer_.on = false;
+      s->ui_ = std::make_shared<Transport>(nullptr, L"", true);
+      s->mode_until_ = GetTickCount64() + 900;
+      CHECK(!s->passed_key('a', 0));
+      c.range.text += L'a';
+      Changed changed;
+      changed.updates.text = true;
+      s->OnEndEdit(&c, 1, &changed);
+      changed.updates.text = false;
+      s->OnEndEdit(&c, 1, &changed);
+      CHECK(s->mode_until_ != 0);
+    }
+    // Native composition styling uses UTF-16 spans and is removed when the
+    // marked text commits, including the target segment's underline.
+    {
+      Context c;
+      auto s = std::make_unique<Service>();
+      spacing_prepare(*s, c);
+      s->attributes_ = &c.property;
+      c.property.AddRef();
+      s->input_atom_ = 5;
+      s->target_atom_ = 6;
+      Result preedit;
+      preedit.preedit = "你hao";
+      preedit.cursor = 6;
+      preedit.start = 3;
+      preedit.end = 6;
+      CHECK(SUCCEEDED(s->apply_text(1, preedit, 0)));
+      CHECK(c.property.sets == 2 && c.property.active);
+      CHECK(c.property.marks[0].atom == 5 && c.property.marks[1].atom == 6);
+      CHECK(c.property.marks[1].start == 1 && c.property.marks[1].end == 4);
+      commit(*s, "你好");
+      CHECK(!c.property.active && c.property.clears == 1);
+      CHECK(c.range.text == L"你好");
+    }
     // A selected range stays a replacement throughout preedit updates and
     // commit. A later, independent composition may space normally again.
     {

@@ -1,6 +1,9 @@
 package main
 
-import "shixin/internal/ipc"
+import (
+	"shixin/internal/ipc"
+	"time"
+)
 
 // presentation owns a single focused menu. Connection IDs are assigned by
 // the host, so two applications choosing the same context ID cannot collide.
@@ -16,6 +19,7 @@ type presentation struct {
 	secure, caretValid bool
 	caret              ipc.Caret
 	update             candidateUpdate
+	mode               modeIndicator
 }
 
 func (p *presentation) init() { p.update.init(); p.secure = true }
@@ -23,12 +27,18 @@ func (p *presentation) focus(client uint64, pid, ctx uint32, secure bool) {
 	p.client, p.pid, p.ctx, p.seq = client, pid, ctx, 0
 	p.secure, p.caretValid = secure, false
 	p.update.capture(&ipc.Result{})
+	if secure {
+		p.mode.focus(0)
+	} else {
+		p.mode.focus(uintptr(client))
+	}
 }
 func (p *presentation) hide(client uint64) {
 	if p.client == client {
 		p.secure = true
 		p.caretValid = false
 		p.update.capture(&ipc.Result{})
+		p.mode.focus(0)
 	}
 }
 
@@ -45,10 +55,14 @@ func (p *presentation) result(client uint64, r *ipc.Result) {
 		return
 	}
 	p.seq = r.Seq
+	changed := p.mode.observe(r.Flags&ipc.ResultASCII != 0)
+	if len(r.Candidates) > 0 || r.Flags&ipc.ResultComposing != 0 {
+		p.mode.dismiss()
+	}
 	display := *r
 	display.Commit = nil
 	p.update.capture(&display)
-	if len(r.Candidates) == 0 {
+	if changed && len(r.Candidates) == 0 {
 		p.caretValid = false
 	}
 }
@@ -60,6 +74,8 @@ func (p *presentation) position(client uint64, c ipc.Caret) {
 	if p.caretValid {
 		p.caret = c
 		p.update.dirty = true
+	} else {
+		p.mode.dismiss()
 	}
 }
 func (p *presentation) visible() bool { return !p.secure && p.caretValid && p.update.visible }
@@ -68,4 +84,21 @@ func (p *presentation) visible() bool { return !p.secure && p.caretValid && p.up
 // process owning the foreground window. Callers evaluate it at draw time.
 func (p *presentation) visibleIn(foreground uint32) bool {
 	return p.visible() && p.pid == foreground
+}
+
+func (p *presentation) modeVisibleIn(foreground uint32, now time.Time) bool {
+	if p.secure || p.visible() {
+		p.mode.dismiss()
+		return false
+	}
+	if p.pid != foreground {
+		if !p.mode.pending {
+			p.mode.dismiss()
+		}
+		return false
+	}
+	if !p.caretValid {
+		return false
+	}
+	return p.mode.visible(now)
 }

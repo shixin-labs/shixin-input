@@ -141,7 +141,13 @@ To remove the development profile in the VM:
 Close apps using the DLL before deleting its files. An ARM64 DLL supports
 native ARM64 applications; the package strategy for x64 emulated apps,
 which require a matching DLL, still needs validation. The build script does
-not create logon startup entries; start `Shixin.exe` before typing tests.
+not install or register anything. Successful `Shixin.exe -register` also
+adds this user's logon command, `Shixin.exe -startup`; it exits quietly when
+the keyboard is disabled. Start `Shixin.exe` before typing tests in the
+current session. `Shixin.exe -added` exits 0 when the current user has enabled
+the profile, or 1 otherwise; it starts no host or engine. The settings guide
+uses this status without showing a console. UI binaries use Windows' GUI
+subsystem; registration failures remain in the default log.
 Unregistration queries the caller's enabled state and requests UAC. After
 approval, the elevated child waits on a private event while the original
 caller disables its keyboard with the machine profile still present. The
@@ -149,6 +155,8 @@ caller then releases the child to remove the machine profile. Windows can otherw
 in Settings. Cancellation leaves the keyboard list untouched. Machine failure
 restores a previously enabled keyboard; a user who did not enable it never gains one during rollback. TSF
 removes profiles and categories together, with no redundant category removal.
+Successful removal also deletes this copy's logon command. A command that
+belongs to another installation or has custom arguments is preserved.
 Legacy HKCU COM entries are cleaned only after successful machine removal,
 including when the keyboard was already disabled. If the TIP was removed but
 machine COM cleanup failed, Shixin reports a cleanup error and keeps the
@@ -367,6 +375,18 @@ for normal shutdown, request `Stop-Computer` over SSH and confirm it stopped.
   input. The state/history benchmark allocates nothing; the Windows keyboard
   translation check is measured separately in the native service test.
   Broader auto-spacing application coverage remains part of the app matrix.
+- Setup/input follow-up: ordinary-shell registration through UAC adds the
+  user's logon command, and `-added` reports enabled/disabled status without
+  starting a host. The logon command starts the host while enabled and exits
+  quietly after removal. Cancelling UAC unregistration preserves the keyboard
+  and startup command; approved removal deletes both. The guide updates its
+  badge in each state without opening console windows.
+- With tracing disabled, Edge shows composition underlines and a
+  nonactivating 中/英 hint beside the caret while exact typing still passes.
+  Character Map's desktop picker ID applies its English default (`nihao`)
+  and no-spacing rule (`你好a`) while global spacing remains enabled.
+  Native tests cover attribute cleanup, UTF-16 spans, metadata references,
+  mode expiration/security/candidate priority, and ambiguous app aliases.
 
 Debug native callback routing with `-DSHIXIN_TSF_TRACE=ON` in the TSF
 CMake configuration. This opt-in build queues fixed numeric records on the
@@ -476,13 +496,6 @@ and disable execution-speed throttling at startup.
 - Verify registration and real typing in Windows VMs: Notepad, Office,
   Chrome/Electron, Explorer, Start search, and other elevated/AppContainer
   applications. Start search is covered; broader compatibility remains open. Run the checklist in `manual-tests.md`.
-- Implement composition display attributes and mode indication. Map
-  desktop apps without explicit AppUserModelIDs to the
-  shared picker IDs; packaged/explicit IDs are already reported.
-- Let the front answer `-added` so the 开始使用 guide can show whether 拾新
-  is added, and add startup registration. The shared settings app already
-  shows Windows' guide steps and links 关于's updates to the release page
-  (`cmd/shixin-settings/platform_windows.go`).
 - Automate native llama builds, validate both architecture packages
   including emulation, and produce signed installers.
 - Complete signature checks and broader AppContainer validation; measure Windows key,

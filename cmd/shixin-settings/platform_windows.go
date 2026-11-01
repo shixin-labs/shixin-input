@@ -18,8 +18,8 @@ var plat = platform{
 		}
 		return p
 	},
-	// The Windows front doesn't answer -added yet, Windows asks no consent,
-	// and releases are installed by hand until there's a signed installer.
+	// Windows reports enablement without macOS's cache-repair operation.
+	added:         true,
 	inputSettings: "ms-settings:regionlanguage",
 	guide:         windowsGuide,
 }

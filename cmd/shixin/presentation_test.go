@@ -5,6 +5,7 @@ import (
 	"shixin/internal/ipc"
 	"shixin/internal/ui/candview"
 	"testing"
+	"time"
 )
 
 func TestPresentationOwnership(t *testing.T) {
@@ -72,6 +73,88 @@ func TestPresentationOwnership(t *testing.T) {
 	p.position(20, caret)
 	if p.visible() {
 		t.Fatal("invalid caret accepted")
+	}
+}
+
+func TestPresentationModeHint(t *testing.T) {
+	var p presentation
+	p.init()
+	now := time.Unix(100, 0)
+	caret := ipc.Caret{Ctx: 1, Left: 10, Top: 20, Right: 12, Bottom: 40}
+	p.focus(1, 10, 1, false)
+	r := ipc.Result{Ctx: 1}
+	p.result(1, &r)
+	p.position(1, caret)
+	if p.modeVisibleIn(10, now) {
+		t.Fatal("initial mode flashed")
+	}
+	r.Flags = ipc.ResultASCII
+	p.result(1, &r)
+	if p.modeVisibleIn(10, now) {
+		t.Fatal("mode used a stale caret")
+	}
+	p.position(1, caret)
+	if !p.modeVisibleIn(10, now) {
+		t.Fatal("confirmed English mode missing")
+	}
+	deadline := p.mode.until
+	p.result(1, &r)
+	if !p.modeVisibleIn(10, now.Add(time.Millisecond)) || p.mode.until != deadline {
+		t.Fatal("ordinary result restarted or hid the hint")
+	}
+	if p.modeVisibleIn(10, deadline) {
+		t.Fatal("mode did not expire")
+	}
+	r.Flags = 0
+	p.result(1, &r)
+	p.position(1, caret)
+	if p.modeVisibleIn(20, now) || !p.mode.pending || !p.modeVisibleIn(10, now) {
+		t.Fatal("foreground catch-up lost the mode")
+	}
+	r.Candidates = []ipc.Candidate{{Text: []byte("你")}}
+	p.result(1, &r)
+	if p.modeVisibleIn(10, now) {
+		t.Fatal("mode covered candidates")
+	}
+	r.Candidates = nil
+	r.Flags = ipc.ResultASCII
+	p.result(1, &r)
+	p.position(1, caret)
+	if !p.modeVisibleIn(10, now) {
+		t.Fatal("toggle missing")
+	}
+	invalid := caret
+	invalid.Right = invalid.Left - 1
+	p.position(1, invalid)
+	if p.modeVisibleIn(10, now) || p.mode.pending {
+		t.Fatal("caret movement failed to dismiss")
+	}
+	p.focus(1, 10, 1, true)
+	p.result(1, &r)
+	p.position(1, caret)
+	if p.modeVisibleIn(10, now) {
+		t.Fatal("secure hint appeared")
+	}
+}
+
+func TestPresentationModeDoesNotAllocate(t *testing.T) {
+	var p presentation
+	p.init()
+	now := time.Unix(100, 0)
+	r := ipc.Result{Ctx: 1}
+	caret := ipc.Caret{Ctx: 1, Left: 10, Top: 20, Right: 12, Bottom: 40}
+	if n := testing.AllocsPerRun(1000, func() {
+		p.focus(1, 10, 1, false)
+		r.Flags = 0
+		p.result(1, &r)
+		p.position(1, caret)
+		r.Flags = ipc.ResultASCII
+		p.result(1, &r)
+		p.position(1, caret)
+		p.modeVisibleIn(10, now)
+		p.hide(1)
+	}); n != 0 {
+		t.Fatalf("mode presentation allocates %v", n)
 	}
 }
 

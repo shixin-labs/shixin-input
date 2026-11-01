@@ -251,6 +251,24 @@ Registration and unregistration must happen only in the VM. See
 
 ### Windows app matrix
 
+After registration, run `Shixin.exe -added` in the invoking user's account:
+it must exit 0, leave the input source unchanged and start no host/engine.
+The 开始使用 guide must show enablement. Check the user's **Startup Apps**
+entry and its quoted executable command with `-startup`; execute that
+command in the test session with the scratch settings environment, then
+verify normal typing. After unregistration, `-added` must exit 1,
+`-startup` must exit quietly, and this copy's startup entry must be gone.
+UAC cancellation must preserve both the keyboard and startup entry.
+
+While composing, inspect the input underline and active segment. Committing,
+cancelling and switching away must leave no composition underline on the
+final text. Tap Shift while idle: the confirmed 中/英 hint must appear beside
+the caret for about 900 ms without taking focus. Candidates take priority;
+switching fields/apps, moving the caret and entering secure fields dismiss
+the hint. A repeated result must not restart its timer. Test per-app default
+modes and no-spacing rules using a desktop app chosen from the app picker,
+including an app without an explicit AppUserModelID.
+
 With **中英文、数字之间自动加空格** enabled, verify `你好 iPhone 你好`
 by committing `nihao`, tapping Shift, typing `iPhone`, tapping Shift and
 committing `nihao` again. In Chinese mode, committing `nihao`, typing `3`

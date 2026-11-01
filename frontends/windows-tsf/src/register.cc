@@ -11,7 +11,8 @@ constexpr HRESULT kUnregisterCleanupFailure = static_cast<HRESULT>(0x8004a001u);
 // Advertise only capabilities implemented by this DLL. In particular, do
 // not advertise UIElement/search integration: candidates live in our host.
 const GUID kCategories[] = {GUID_TFCAT_TIP_KEYBOARD,
-                            GUID_TFCAT_TIPCAP_IMMERSIVESUPPORT};
+                            GUID_TFCAT_TIPCAP_IMMERSIVESUPPORT,
+                            GUID_TFCAT_DISPLAYATTRIBUTEPROVIDER};
 HRESULT allow_sandbox_load(const wchar_t *path) {
   BYTE sid[SECURITY_MAX_SID_SIZE]{};
   DWORD size = sizeof(sid);

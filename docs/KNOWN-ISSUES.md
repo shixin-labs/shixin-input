@@ -46,12 +46,13 @@ Delete an entry when it's fixed, and mention it in the commit.
   and punctuation changes can apply live. The remaining validation and
   packaging work below prevent treating the port as ready. See the
   [Windows status](windows.md#status-2026-11-01).
-- **Missing:** native llama build automation, the front's `-added`
-  answer for the 开始使用 guide, startup registration, a signed installer
-  and in-place updates (关于 links to the release page meanwhile), and
-  display attributes/mode indicator. Desktop app IDs without an explicit
-  AppUserModelID still need mapping to the shared
-  settings app's shell IDs; packaged/explicit IDs are supplied by TSF.
+- **Missing:** native llama build automation, a signed installer and
+  in-place updates (关于 links to the release page meanwhile).
+- **Setup and input:** the guide queries per-user enablement with `-added`;
+  successful registration adds logon startup, and unregistration removes
+  this copy's startup command. TSF supplies composition display attributes;
+  the host shows confirmed mode changes beside the caret. Saved desktop app
+  IDs also match executable paths, with ambiguous aliases left unresolved.
 - **Security and validation:** Authenticode checks are required before release.
   AppContainer transport has capability-free sandbox coverage; Start search
   typing also passes in the low-integrity ARM64 SearchHost. Real text-store

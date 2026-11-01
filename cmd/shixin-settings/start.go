@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os/exec"
 	"time"
 
 	"github.com/egoist/mygo"
@@ -29,10 +28,10 @@ func (a *app) pollAdded() {
 		if !a.startShown.Load() {
 			continue
 		}
-		added := exec.Command(front, "-added").Run() == nil
-		if added && !was {
+		added := frontCommand(front, "-added").Run() == nil
+		if added && !was && plat.repair {
 			// Just added: macOS's caches may still lack it (DESIGN §5.5).
-			exec.Command(front, "-repair").Run()
+			frontCommand(front, "-repair").Run()
 		}
 		was = added
 		update(a, func() { a.added = added })
@@ -72,7 +71,7 @@ func (a *app) start(c *ui.Context) {
 					// System Settings may list input sources from a stale
 					// cache that lacks 拾新: refresh it first.
 					if front != "" && plat.refresh {
-						exec.Command(front, "-refresh").Run()
+						frontCommand(front, "-refresh").Run()
 					}
 					mygo.Shell.OpenExternal(plat.inputSettings)
 				}()

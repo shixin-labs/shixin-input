@@ -67,6 +67,25 @@ func TestPagesBuild(t *testing.T) {
 	}
 }
 
+func TestWindowsGuideEnablement(t *testing.T) {
+	saved := plat
+	defer func() { plat = saved }()
+	plat.added, plat.repair, plat.consent, plat.guide = true, false, false, windowsGuide
+	for _, added := range []bool{false, true} {
+		a, _, _ := testApp(t)
+		a.page, a.added = "start", added
+		view := ui.NewTester(a.view, 880, 640)
+		view.Frame()
+		want, other := T("s.start.not_added"), T("s.start.added")
+		if added {
+			want, other = other, want
+		}
+		if !view.HasText(want) || view.HasText(other) {
+			t.Fatalf("Windows guide: added=%v, status missing/wrong", added)
+		}
+	}
+}
+
 func TestZiranmaSelection(t *testing.T) {
 	defer i18n.SetLang(i18n.Current())
 	for _, language := range testLanguages {
@@ -186,9 +205,12 @@ func TestSnapshots(t *testing.T) {
 				if pg.id == "start" {
 					a.added = true
 					// The same page as Windows shows it: no consent step,
-					// no added status, its own steps.
+					// its own steps and current enablement status.
 					mac := plat
-					plat.added, plat.consent, plat.guide = false, false, windowsGuide
+					plat.added, plat.repair, plat.consent, plat.guide = true, false, false, windowsGuide
+					a.added = false
+					writeSnapshot(t, a, language.lang, dark, 720, "start-windows-not-added")
+					a.added = true
 					writeSnapshot(t, a, language.lang, dark, 720, "start-windows")
 					plat = mac
 				}

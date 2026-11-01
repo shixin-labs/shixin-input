@@ -12,6 +12,7 @@ import (
 
 	"shixin/internal/ipc"
 	"shixin/internal/rime"
+	"shixin/internal/settings"
 )
 
 // queueDepth bounds the frames in flight to one client. A client that falls
@@ -216,7 +217,7 @@ func (c *Conn) read() {
 			if focus.Decode(payload) != nil {
 				return
 			}
-			req.ctx, req.flags, req.name = focus.Ctx, focus.Flags, string(focus.App)
+			req.ctx, req.flags, req.name = focus.Ctx, focus.Flags, settings.AppKey(string(focus.App))
 		case ipc.TypeFocusOut:
 			if out.Decode(payload) != nil {
 				return

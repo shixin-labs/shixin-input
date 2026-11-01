@@ -138,11 +138,26 @@ func appModes(s *settings.Settings) engine.AppModes {
 		AutoSpace:   s.AutoSpace,
 		NoAutoSpace: map[string]bool{},
 	}
+	aliases, conflicts := map[string]bool{}, map[string]bool{}
 	for _, a := range s.Apps {
-		m.English[a.ID] = a.Mode == settings.ModeEnglish
+		mode := a.Mode == settings.ModeEnglish
+		m.English[settings.AppKey(a.ID)] = mode
+		for _, alias := range settings.AppAliases(a.ID)[1:] {
+			if previous, found := aliases[alias]; found && previous != mode {
+				conflicts[alias] = true
+			}
+			aliases[alias] = mode
+		}
+	}
+	for id, english := range aliases {
+		if _, direct := m.English[id]; !direct && !conflicts[id] {
+			m.English[id] = english
+		}
 	}
 	for _, id := range s.NoAutoSpace {
-		m.NoAutoSpace[id] = true
+		for _, alias := range settings.AppAliases(id) {
+			m.NoAutoSpace[alias] = true
+		}
 	}
 	return m
 }

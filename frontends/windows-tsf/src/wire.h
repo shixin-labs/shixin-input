@@ -35,7 +35,8 @@ enum Type : uint8_t {
 constexpr uint32_t kShift = 1, kLock = 2, kControl = 4, kAlt = 8,
                    kSuper = 1u << 26, kRelease = 1u << 30;
 constexpr uint32_t kCommand = kControl | kAlt | kSuper;
-constexpr uint16_t kHandled = 1, kComposing = 2, kAutoSpace = 1 << 7;
+constexpr uint16_t kHandled = 1, kComposing = 2, kASCII = 1 << 2,
+                   kAutoSpace = 1 << 7;
 
 struct Reader {
   std::string_view bytes;

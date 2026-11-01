@@ -1,5 +1,5 @@
-// Package modeview draws the transient input-mode bubble. The macOS front
-// pre-renders both modes in every skin/appearance at startup, keeping font
+// Package modeview draws the transient input-mode bubble. The fronts
+// pre-render both modes in every skin/appearance at startup, keeping font
 // loading and glyph rasterization off the key path.
 package modeview
 

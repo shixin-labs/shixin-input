@@ -6,9 +6,10 @@ type platform struct {
 	// front finds the input method's front executable beside this app; ""
 	// if it isn't there (a development build).
 	front func() string
-	// added: the front answers -added and -repair, so the guide shows
-	// whether 拾新 is in the user's input sources and repairs stale caches.
+	// added: the front answers -added so the guide can show enablement.
 	added bool
+	// repair: after enablement, repair macOS's stale input-source caches.
+	repair bool
 	// consent: the OS asks the user to allow a new input method (macOS),
 	// the guide's first step.
 	consent bool

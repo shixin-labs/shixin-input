@@ -51,17 +51,21 @@ type windowsSession struct {
 	done chan struct{}
 }
 type windowsHost struct {
-	window   *mygo.Window
-	mu       sync.Mutex
-	display  presentation
-	sessions map[uint64]*windowsSession
-	queued   atomic.Bool
-	shown    bool
-	region   candidateRegion
-	next     atomic.Uint64
-	state    candview.State
-	prefs    settings.Settings
-	listener net.Listener
+	window               *mygo.Window
+	modeWindow           *mygo.Window
+	modeImages           map[windowsModeImage]*ui.Bitmap
+	modeTimer            *time.Timer
+	modeShown, modeASCII bool
+	mu                   sync.Mutex
+	display              presentation
+	sessions             map[uint64]*windowsSession
+	queued               atomic.Bool
+	shown                bool
+	region               candidateRegion
+	next                 atomic.Uint64
+	state                candview.State
+	prefs                settings.Settings
+	listener             net.Listener
 }
 
 func foregroundPID() uint32 {
@@ -79,7 +83,7 @@ func main() {
 		logger = logx.New(os.Stderr)
 	}
 	err := runWindows(logger.Printf)
-	if err != nil {
+	if err != nil && !errors.Is(err, errNotAdded) {
 		logger.Printf("host: %v", err)
 		fmt.Fprintln(os.Stderr, err)
 	}
@@ -93,11 +97,29 @@ func main() {
 }
 
 func runWindows(logf func(string, ...any)) error {
+	added := flag.Bool("added", false, "exit 0 if Shixin is enabled for this user; otherwise exit 1")
+	startup := flag.Bool("startup", false, "start the host at logon only if Shixin is enabled")
 	register := flag.Bool("register", false, "register the adjacent TSF DLL (requests UAC; Windows test VM only)")
 	unregister := flag.Bool("unregister", false, "unregister the adjacent TSF DLL (requests UAC; Windows test VM only)")
 	system := flag.Bool("system-registration", false, "internal elevated machine registration step")
 	gate := flag.String("registration-gate", "", "internal user disablement gate")
 	flag.Parse()
+	if *added {
+		if *register || *unregister || *system || *gate != "" || *startup {
+			return fmt.Errorf("added cannot be combined with registration or startup")
+		}
+		ok, err := windowsAdded()
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return errNotAdded
+		}
+		return nil
+	}
+	if *startup && (*register || *unregister || *system || *gate != "") {
+		return fmt.Errorf("startup cannot be combined with registration")
+	}
 	if *gate != "" && (!*system || !*unregister) {
 		return fmt.Errorf("registration-gate requires the elevated unregister step")
 	}
@@ -121,6 +143,15 @@ func runWindows(logf func(string, ...any)) error {
 
 	if *system {
 		return fmt.Errorf("system-registration requires register or unregister")
+	}
+	if *startup {
+		ok, err := windowsAdded()
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return nil
+		}
 	}
 
 	logf("host starting (version %s)", version)
@@ -172,6 +203,7 @@ func runWindows(logf func(string, ...any)) error {
 		}
 		fonts.Warm(prefs.FontFamily, float32(prefs.FontSize))
 		host.window = mygo.NewFlyout(mygo.FlyoutOptions{Tray: tray, Hidden: true, Width: 1400, Height: 560, Shadow: false, Content: ui.View(host.view)})
+		host.newModeWindow(tray)
 		go host.accept()
 		go settings.Watch(path, time.Second, nil, func(s settings.Settings) {
 			fonts.Warm(s.FontFamily, float32(s.FontSize))
@@ -187,7 +219,10 @@ func runWindows(logf func(string, ...any)) error {
 					c.Close()
 				}
 				host.mu.Lock()
-				changed := host.display.visibleIn(foregroundPID()) != host.shown
+				foreground := foregroundPID()
+				changed := host.display.visibleIn(foreground) != host.shown ||
+					host.modeShown && (host.display.secure || host.display.pid != foreground) ||
+					host.display.mode.pending && host.display.caretValid && host.display.pid == foreground
 				host.mu.Unlock()
 				if changed {
 					host.refresh()
@@ -207,8 +242,12 @@ func (h *windowsHost) refresh() {
 	h.window.Update(func() {
 		h.queued.Store(false)
 		h.mu.Lock()
-		visible := h.display.visibleIn(foregroundPID())
+		foreground := foregroundPID()
+		visible := h.display.visibleIn(foreground)
 		h.shown = visible
+		mode := h.display.modeVisibleIn(foreground, time.Now())
+		until, caret := h.display.mode.until, h.display.caret
+		h.modeASCII, h.modeShown = h.display.mode.ascii, mode
 		if visible {
 			h.display.update.apply(&h.state)
 		}
@@ -220,6 +259,7 @@ func (h *windowsHost) refresh() {
 			h.state.Clear()
 			h.window.Hide()
 		}
+		h.showMode(mode, until, caret)
 	})
 }
 func (h *windowsHost) accept() {
@@ -381,6 +421,39 @@ func (h *windowsHost) candidateLimits(c ipc.Caret) (float32, float32) {
 	return candidateViewport(info.work.right-info.work.left, info.work.bottom-info.work.top, uint32(dpi))
 }
 func (h *windowsHost) position(c ipc.Caret, width, height float32) {
+	placement, ok := windowsFlyoutPlacement(h.window, c, width, height)
+	if !ok {
+		return
+	}
+	handle, dpi := placement.handle, placement.dpi
+	region := candidatePanelRegion(width, height, float32(h.prefs.FontSize), uint32(dpi))
+	if region != h.region {
+		rgn, _, _ := roundRectRegion.Call(uintptr(region.left), uintptr(region.top), uintptr(region.right), uintptr(region.bottom), uintptr(region.diameter), uintptr(region.diameter))
+		if rgn != 0 {
+			if ok, _, _ := setWindowRegion.Call(handle, rgn, 1); ok != 0 {
+				h.region = region // Windows owns the successful region.
+			} else {
+				deleteGDIObject.Call(rgn)
+			}
+		}
+	}
+	placement.move()
+}
+
+type windowsPlacement struct {
+	handle, dpi uintptr
+	x, y        int32
+}
+
+func (p windowsPlacement) move() {
+	moveWindow.Call(p.handle, ^uintptr(0), uintptr(p.x), uintptr(p.y), 0, 0, 0x0001|0x0010)
+}
+func positionWindowsFlyout(window *mygo.Window, c ipc.Caret, width, height float32) {
+	if placement, ok := windowsFlyoutPlacement(window, c, width, height); ok {
+		placement.move()
+	}
+}
+func windowsFlyoutPlacement(window *mygo.Window, c ipc.Caret, width, height float32) (windowsPlacement, bool) {
 	type rect struct{ left, top, right, bottom int32 }
 	r := rect{c.Left, c.Top, c.Right, c.Bottom}
 	monitor, _, _ := monitorFromRect.Call(uintptr(unsafe.Pointer(&r)), 2)
@@ -391,24 +464,12 @@ func (h *windowsHost) position(c ipc.Caret, width, height float32) {
 	}{}
 	info.size = uint32(unsafe.Sizeof(info))
 	if ok, _, _ := monitorInfo.Call(monitor, uintptr(unsafe.Pointer(&info))); ok == 0 {
-		return
+		return windowsPlacement{}, false
 	}
-	handle := h.window.NativeHandle()
+	handle := window.NativeHandle()
 	dpi, _, _ := dpiForWindow.Call(handle)
 	if dpi == 0 {
 		dpi = 96
-	}
-	region := candidatePanelRegion(width, height, float32(h.prefs.FontSize), uint32(dpi))
-	if region != h.region {
-		rgn, _, _ := roundRectRegion.Call(uintptr(region.left), uintptr(region.top), uintptr(region.right), uintptr(region.bottom), uintptr(region.diameter), uintptr(region.diameter))
-		if rgn != 0 {
-			if ok, _, _ := setWindowRegion.Call(handle, rgn, 1); ok != 0 {
-				// Windows owns the region after SetWindowRgn succeeds.
-				h.region = region
-			} else {
-				deleteGDIObject.Call(rgn)
-			}
-		}
 	}
 	scale := float64(dpi) / 96
 	w, hgt := int32((float64(width)+24)*scale), int32((float64(height)+24)*scale)
@@ -418,5 +479,5 @@ func (h *windowsHost) position(c ipc.Caret, width, height float32) {
 	}
 	x = max(info.work.left, min(x, info.work.right-w))
 	y = max(info.work.top, min(y, info.work.bottom-hgt))
-	moveWindow.Call(handle, ^uintptr(0), uintptr(x), uintptr(y), 0, 0, 0x0001|0x0010) // TOPMOST, NOSIZE, NOACTIVATE
+	return windowsPlacement{handle, dpi, x, y}, true
 }

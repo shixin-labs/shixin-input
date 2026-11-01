@@ -20,6 +20,7 @@ var plat = platform{
 		return filepath.Clean(p)
 	},
 	added:      true,
+	repair:     true,
 	consent:    true,
 	selfUpdate: true,
 	// System Settings' input source editor, with + one click away.

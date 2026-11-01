@@ -36,7 +36,16 @@ func registerWindows(remove bool) error {
 		}
 		enabled = hr == 0 // S_OK enabled, S_FALSE disabled
 	}
-	return registrationSteps(remove, enabled, registerWindowsSystemElevated, installWindowsUser, cleanupWindowsUser)
+	err := registrationSteps(remove, enabled, registerWindowsSystemElevated, installWindowsUser, func() error {
+		return errors.Join(cleanupWindowsUser(), windowsStartup(true))
+	})
+	if err != nil {
+		return err
+	}
+	if !remove {
+		return windowsStartup(false)
+	}
+	return nil
 }
 
 func registrationSteps(remove, enabled bool, system func(bool, func() error) error, user func(bool) error, cleanup func() error) error {

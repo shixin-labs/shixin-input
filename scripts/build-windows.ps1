@@ -20,11 +20,13 @@ try {
     New-Item -ItemType Directory -Force $out | Out-Null
     # Keep build artifacts outside the parent Go module's package walk.
     Set-Content -Path (Join-Path $root 'build/go.mod') -Value 'module shixin/build' -Encoding ascii
-    foreach ($name in @('shixin-engine', 'shixin-builder', 'shixin-ai', 'shixin-settings')) {
+    foreach ($name in @('shixin-engine', 'shixin-builder', 'shixin-ai')) {
         & go build -o (Join-Path $out "$name.exe") "./cmd/$name"
         if ($LASTEXITCODE -ne 0) { throw "build $name failed" }
     }
-    & go build -o (Join-Path $out 'Shixin.exe') ./cmd/shixin
+    & go build -ldflags '-H windowsgui' -o (Join-Path $out 'shixin-settings.exe') ./cmd/shixin-settings
+    if ($LASTEXITCODE -ne 0) { throw 'build Windows settings app failed' }
+    & go build -ldflags '-H windowsgui' -o (Join-Path $out 'Shixin.exe') ./cmd/shixin
     if ($LASTEXITCODE -ne 0) { throw 'build Windows candidate host failed' }
     if (-not $SkipNative) {
         if (-not $IsWindows) { throw 'Native TSF builds require Windows and the Visual Studio C++ toolchain; use -SkipNative for Go cross-builds' }

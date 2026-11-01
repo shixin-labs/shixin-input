@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #pragma once
 #include "core.h"
+#include "display_attributes.h"
 #include "ids.h"
 #include "spacer.h"
 #include "transport.h"
@@ -50,12 +51,18 @@ class Service final : public ProcessorEx,
                       public ITfThreadMgrEventSink,
                       public ITfCompositionSink,
                       public ITfTextEditSink,
+                      public ITfDisplayAttributeProvider,
                       public Host {
   friend struct ServiceTest;
   std::atomic<ULONG> refs_{1};
   ITfThreadMgr *manager_ = nullptr;
   ITfContext *context_ = nullptr;
   ITfComposition *composition_ = nullptr;
+  ITfProperty *attributes_ = nullptr;
+  TfGuidAtom input_atom_ = TF_INVALID_GUIDATOM,
+             target_atom_ = TF_INVALID_GUIDATOM;
+  bool mode_known_ = false, mode_ascii_ = false;
+  uint64_t mode_until_ = 0;
   bool composition_spacing_ = true;
   ITfCompartment *disabled_ = nullptr;
   TfClientId client_ = 0;
@@ -120,11 +127,20 @@ class Service final : public ProcessorEx,
   };
   bool passed_key(uint32_t, uint32_t);
   bool same_passed_selection(TfEditCookie);
+  void mark_attributes(TfEditCookie, ITfRange *, const Result &);
   static bool matches_character(uint32_t, WPARAM, LPARAM);
   HRESULT apply_text(TfEditCookie, Result &, uint32_t repair);
   HRESULT handle(ITfContext *, WPARAM, LPARAM, bool, BOOL *);
 
 public:
+  HRESULT STDMETHODCALLTYPE
+  EnumDisplayAttributeInfo(IEnumTfDisplayAttributeInfo **out) override {
+    return enum_display_attributes(out);
+  }
+  HRESULT STDMETHODCALLTYPE
+  GetDisplayAttributeInfo(REFGUID id, ITfDisplayAttributeInfo **out) override {
+    return display_attribute_info(id, out);
+  }
   Service();
   ~Service();
   HRESULT STDMETHODCALLTYPE QueryInterface(REFIID, void **) override;

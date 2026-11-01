@@ -46,7 +46,7 @@ public:
     return n;
   }
   HRESULT STDMETHODCALLTYPE DoEditSession(TfEditCookie ec) override {
-    return composition_->EndComposition(ec);
+    return end_composition(ec, composition_);
   }
 };
 void finish(ITfContext *context, ITfComposition *&composition,
@@ -142,6 +142,8 @@ HRESULT Service::QueryInterface(REFIID iid, void **p) {
     *p = static_cast<ITfCompositionSink *>(this);
   else if (iid == IID_ITfTextEditSink)
     *p = static_cast<ITfTextEditSink *>(this);
+  else if (iid == IID_ITfDisplayAttributeProvider)
+    *p = static_cast<ITfDisplayAttributeProvider *>(this);
   else
     return E_NOINTERFACE;
   AddRef();
@@ -186,6 +188,16 @@ HRESULT Service::ActivateEx(ITfThreadMgr *m, TfClientId id, DWORD flags) {
   manager_->AddRef();
   client_ = id;
   active_ = true;
+  // Register display atoms once, before input can arrive. Styling remains
+  // optional when an application's text store does not support properties.
+  ITfCategoryMgr *category = nullptr;
+  if (SUCCEEDED(CoCreateInstance(CLSID_TF_CategoryMgr, nullptr,
+                                 CLSCTX_INPROC_SERVER, IID_ITfCategoryMgr,
+                                 reinterpret_cast<void **>(&category)))) {
+    category->RegisterGUID(kDisplayInput, &input_atom_);
+    category->RegisterGUID(kDisplayTarget, &target_atom_);
+    category->Release();
+  }
   WNDCLASSW cls{};
   cls.lpfnWndProc = window_proc;
   cls.hInstance = module;
@@ -295,6 +307,8 @@ void Service::focus(ITfContext *c) {
   spacer_.focus();
   passed_edit_ = false;
   release(passed_selection_);
+  release(attributes_);
+  mode_until_ = 0;
   if (recovering_) {
     recovering_ = false;
     fallback_size_ = 0;
@@ -382,10 +396,11 @@ HRESULT Service::OnSetFocus(BOOL foreground) {
   }
   return S_OK;
 }
-HRESULT Service::OnCompositionTerminated(TfEditCookie, ITfComposition *c) {
+HRESULT Service::OnCompositionTerminated(TfEditCookie ec, ITfComposition *c) {
   if (transport_)
     transport_->trace("terminated", uintptr_t(c), uintptr_t(composition_));
   if (c == composition_) {
+    clear_composition_attributes(ec, c);
     release(composition_);
     secure_changed(core_.secure);
   }
@@ -402,7 +417,8 @@ HRESULT Service::OnEndEdit(ITfContext *c, TfEditCookie ec,
     return S_OK;
   if (secure != core_.secure)
     secure_changed(secure);
-  else if (spacer_.on || recovering_ || core_.sent != core_.applied) {
+  else if (spacer_.on || recovering_ || core_.sent != core_.applied ||
+           (ui_ && GetTickCount64() < mode_until_)) {
     // Own write sessions also notify this sink after execute() returns.
     // Ask TSF who owns the lock instead of retaining a callback marker.
     BOOL own = FALSE;
@@ -427,7 +443,7 @@ HRESULT Service::OnEndEdit(ITfContext *c, TfEditCookie ec,
       // unknown edits and application commands always reset it. Verification
       // at the next boundary catches autocorrection in that same app edit.
       bool observed = passed_edit_ && !unknown && count != 0;
-      if (observed && spacer_.on) {
+      if (observed && (spacer_.on || (ui_ && GetTickCount64() < mode_until_))) {
         // Chromium sends a text edit followed by a separate selection
         // notification for the SAME caret after Backspace. Remember its
         // position so that only that redundant notification is ignored.
@@ -455,6 +471,11 @@ HRESULT Service::OnEndEdit(ITfContext *c, TfEditCookie ec,
         spacer_.clear();
       if (changed && !observed)
         release(passed_selection_);
+      if (changed && !observed && ui_) {
+        mode_until_ = 0;
+        shixin::caret(scratch_, core_.ctx, 1, 0, 0, 0);
+        ui_->send(scratch_);
+      }
       if (changed && !observed &&
           (recovering_ || core_.sent != core_.applied)) {
         // The application moved/replaced text while our edit was delayed.
@@ -546,6 +567,7 @@ void Service::secure_changed(bool secure) {
   spacer_.focus();
   passed_edit_ = false;
   release(passed_selection_);
+  mode_until_ = 0;
   if (recovering_) {
     recovering_ = false;
     fallback_size_ = 0;
@@ -645,6 +667,7 @@ void Service::degraded() {
   spacer_.focus();
   passed_edit_ = false;
   release(passed_selection_);
+  mode_until_ = 0;
   if (!recovering_) {
     fallback_size_ =
         core_.secure ? 0 : core_.fallback(fallback_.data(), fallback_.size());
@@ -854,7 +877,7 @@ HRESULT Service::execute(Edit &edit, TfEditCookie ec) {
   // This request only finalizes already-marked text. It never copies new
   // text into a context, even if focus changed while the session waited.
   if (edit.ending)
-    return edit.ending->EndComposition(ec);
+    return end_composition(ec, edit.ending);
   if (!active_ || edit.epoch != epoch_ || edit.context != context_)
     return S_OK;
   if (edit.spacing_key) {
@@ -911,7 +934,7 @@ HRESULT Service::execute(Edit &edit, TfEditCookie ec) {
     if (composition_) {
       auto old = composition_;
       composition_ = nullptr;
-      hr = old->EndComposition(ec);
+      hr = end_composition(ec, old);
       old->Release();
     }
     if (SUCCEEDED(hr) && !secure && fallback_size_) {
@@ -940,6 +963,13 @@ HRESULT Service::execute(Edit &edit, TfEditCookie ec) {
   if (edit.probe) {
     core_.secure = secure;
     core_.known = false;
+    if (!secure && !attributes_) {
+      inside_ = true;
+      context_->GetProperty(GUID_PROP_ATTRIBUTE, &attributes_);
+      inside_ = false;
+      if (flush_focus())
+        return S_OK;
+    }
     send_focus();
     return S_OK;
   }
@@ -975,6 +1005,14 @@ HRESULT Service::execute(Edit &edit, TfEditCookie ec) {
     spacer_.clear();
   spacer_.on = (result.flags & kAutoSpace) != 0;
   spacer_.tick(now());
+  bool ascii = (result.flags & kASCII) != 0;
+  bool mode_changed = mode_known_ && mode_ascii_ != ascii;
+  mode_known_ = true;
+  mode_ascii_ = ascii;
+  if (mode_changed || !result.seq)
+    mode_until_ = GetTickCount64() + 900;
+  if (result.count)
+    mode_until_ = 0;
   // Notify keys reach the app too, but their results still apply: a Shift
   // tap's commit_code commits the typed letters and ends the composition,
   // as on macOS. A result that changes nothing is a no-op in apply_text,
@@ -986,7 +1024,7 @@ HRESULT Service::execute(Edit &edit, TfEditCookie ec) {
     ui_->send(scratch_);
   }
   hr = apply_text(ec, result, pending.notify ? 0 : pending.repair);
-  if (SUCCEEDED(hr) && result.count)
+  if (SUCCEEDED(hr) && (result.count || mode_changed || !result.seq))
     caret(ec);
   inside_ = false;
   if (flush_focus())
@@ -1069,12 +1107,14 @@ HRESULT Service::apply_text(TfEditCookie ec, Result &result, uint32_t repair) {
     if (composition_) {
       auto old = composition_;
       composition_ = nullptr;
-      old->EndComposition(ec);
+      end_composition(ec, old);
       old->Release();
     }
     range->Collapse(ec, TF_ANCHOR_END);
     allow_spacing = true;
   }
+  if (focus_pending_)
+    hr = TF_E_DISCONNECTED;
   if (SUCCEEDED(hr) && !result.preedit.empty()) {
     if (!composition_) {
       ITfContextComposition *cc = nullptr;
@@ -1089,6 +1129,10 @@ HRESULT Service::apply_text(TfEditCookie ec, Result &result, uint32_t repair) {
     }
     if (SUCCEEDED(hr))
       hr = set(result.preedit);
+    if (SUCCEEDED(hr) && !focus_pending_)
+      mark_attributes(ec, range, result);
+    if (focus_pending_)
+      hr = TF_E_DISCONNECTED;
     // Convert the UTF-8 cursor prefix, not the byte offset, to UTF-16.
     if (SUCCEEDED(hr)) {
       LONG prefix = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
@@ -1112,7 +1156,7 @@ HRESULT Service::apply_text(TfEditCookie ec, Result &result, uint32_t repair) {
     if (composition_) {
       auto old = composition_;
       composition_ = nullptr;
-      old->EndComposition(ec);
+      end_composition(ec, old);
       old->Release();
     }
     range->Collapse(ec, TF_ANCHOR_END);
@@ -1122,6 +1166,39 @@ HRESULT Service::apply_text(TfEditCookie ec, Result &result, uint32_t repair) {
   }
   range->Release();
   return hr;
+}
+void Service::mark_attributes(TfEditCookie ec, ITfRange *range,
+                              const Result &result) {
+  if (!attributes_ || input_atom_ == TF_INVALID_GUIDATOM)
+    return;
+  VARIANT value;
+  VariantInit(&value);
+  value.vt = VT_I4;
+  value.lVal = LONG(input_atom_);
+  if (FAILED(attributes_->SetValue(ec, range, &value)) ||
+      target_atom_ == TF_INVALID_GUIDATOM || result.end <= result.start)
+    return;
+  auto prefix = [&](uint32_t bytes) -> LONG {
+    return bytes ? MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
+                                       result.preedit.data(), int(bytes),
+                                       nullptr, 0)
+                 : 0;
+  };
+  LONG start = prefix(result.start), end = prefix(result.end), moved = 0;
+  if (end <= start)
+    return;
+  ITfRange *selected = nullptr;
+  if (SUCCEEDED(range->Clone(&selected)) && selected) {
+    if (SUCCEEDED(selected->Collapse(ec, TF_ANCHOR_START)) &&
+        SUCCEEDED(selected->ShiftEnd(ec, end, &moved, nullptr)) &&
+        moved == end &&
+        SUCCEEDED(selected->ShiftStart(ec, start, &moved, nullptr)) &&
+        moved == start && !focus_pending_) {
+      value.lVal = LONG(target_atom_);
+      attributes_->SetValue(ec, selected, &value);
+    }
+    selected->Release();
+  }
 }
 bool Service::SpacingReader::read(uint32_t &r) {
   if (!range)

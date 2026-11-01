@@ -1215,6 +1215,13 @@ and remaining release work. Authenticode verification remains required before re
   and enablement use the Windows APIs.
   This is a supported machine installation with user enablement, not a
   registration that bypasses Windows' administrator requirement.
+  Successful user registration also writes the caller's HKCU logon startup
+  command. It survives cancellation and failed machine removal; successful
+  removal deletes only this installation's command. `-startup` exits quietly
+  if the user disabled the keyboard. Windows Startup Apps can disable logon
+  startup. `-added` queries the current user's enabled profile without
+  starting the host, selecting a keyboard or changing registration. The
+  settings guide polls it without opening a console or running macOS repair.
 - **Restricted apps:** the DLL grants packages read/execute access, and its
   worker resolves unredirected LocalAppData without verifying its private
   parent directory. Connection, discovery and identity checks stay off the
@@ -1225,6 +1232,18 @@ and remaining release work. Authenticode verification remains required before re
   mode.
 - **Contains:** VK → keysym mapping, policy lookup, speculation/barrier, the
   overlapped pipe client and async edit sessions. No UI, no Rime.
+- **Composition appearance:** TSF display attributes underline preedit and
+  its active segment using native system colors. Display atoms are warmed at
+  activation and the property is cached during the focus probe. Applying a
+  result converts the engine's UTF-8 segment offsets to UTF-16; every local
+  composition finalization clears the property before ending the composition.
+  Metadata references keep the DLL loaded independently of its active service.
+- **Desktop app rules:** settings loading resolves shell picker IDs to
+  executable aliases, through known folders or the shell's target property.
+  Incoming executable identities are normalized on the connection reader;
+  no shell/file access happens on the engine thread. Explicit IDs and path
+  rules take precedence. Conflicting aliases do not guess a mode, and generic
+  launcher shortcuts are not treated as the applications they launch.
 - **`DllMain` does nothing heavy;** it connects lazily on a background
   thread. This matters for games and short-lived processes.
 - **Test matrix:** UWP/AppContainer, elevated apps, Office, Chrome/Electron,
@@ -1361,7 +1380,7 @@ controls and Shixin's current support separately from the plans below.
 **Built by Shixin:**
 - Settings app and first-run guide
 - Skins and skin editor
-- Mode indicator bubble (macOS): a small card (26 pt, about a line of
+- Mode indicator bubble (macOS and Windows): a small card (26 pt, about a line of
   text) with 中 / 英 (En in the English UI) beside the caret for 900 ms
   when the confirmed mode differs from the last one: a Shift toggle, or a
   per-app mode that switches on focus. Focusing a field or selecting 拾新
@@ -1369,10 +1388,18 @@ controls and Shixin's current support separately from the plans below.
   for an input source switch, and a bubble on every focus was too loud. It
   uses the candidate skin's background, 中 in its highlight color, and the
   same screen/work-area clamping as the candidates. Repeated results do not
-  restart it; candidates take priority. Focus loss, mouse clicks,
+  restart it; candidates take priority. Focus loss, caret changes,
   input-source changes, engine disconnects and secure fields dismiss it.
   Only engine results request a mode; focus alone never guesses one.
+  The macOS front also dismisses the hint on global mouse presses.
   Lifecycle and allocation tests are headless.
+  On Windows the separate host pre-renders both modes in each skin and
+  appearance, and owns a mouse-transparent, nonactivating window. The DLL
+  supplies a fresh caret inside the edit session after a mode change or
+  focus reply; the host never positions a new hint from the preceding
+  context's caret. External caret changes dismiss the hint. Foreground
+  checks, secure guards and candidate priority apply before drawing, and
+  expiration timers consult the latest confirmed mode's deadline.
 - Per-app mode and secure-field handling
 - Auto spacing between Chinese and English (§7.1)
 - Right-click delete word
