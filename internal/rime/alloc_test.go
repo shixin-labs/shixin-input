@@ -9,10 +9,14 @@ const brewLib = "/opt/homebrew/opt/librime/lib/librime.1.dylib"
 
 func loadForTest(t *testing.T) *Lib {
 	t.Helper()
-	if _, err := os.Stat(brewLib); err != nil {
-		t.Skip("librime not installed")
+	path := os.Getenv("SHIXIN_LIBRIME")
+	if path == "" {
+		path = brewLib
+		if _, err := os.Stat(path); err != nil {
+			t.Skip("librime not installed; set SHIXIN_LIBRIME")
+		}
 	}
-	l, err := Load(brewLib)
+	l, err := Load(path)
 	if err != nil {
 		t.Fatal(err)
 	}

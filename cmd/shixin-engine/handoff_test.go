@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -52,6 +53,9 @@ func fixture(t *testing.T) (*coordinator, string) {
 	}
 	t.Cleanup(func() { os.RemoveAll(root) })
 	builder := filepath.Join(root, "builder")
+	if runtime.GOOS == "windows" {
+		builder += ".exe"
+	}
 	cmd := exec.Command("go", "build", "-o", builder, "../shixin-builder")
 	if b, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("build builder: %v: %s", err, b)
@@ -114,6 +118,11 @@ func dbSnapshot(t *testing.T, user string) map[string][32]byte {
 }
 
 func TestStandbyPreservesLearning(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		// dbOwner's Windows implementation skips this Unix owner-PID test.
+		// Check before attempting to hash LevelDB's exclusively open logs.
+		t.Skip("Windows exposes no F_GETLK owner PID; see TestWindowsDictionaryOwnership")
+	}
 	s, _ := fixture(t)
 	initial := mustBuild(t, s, s.applied)
 	old := mustStart(t, s, initial)

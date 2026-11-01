@@ -77,8 +77,22 @@ func newHarness(t *testing.T, socket string, a Applier) *harness {
 		},
 		Logf: t.Logf,
 	}, a)
-	h.c.Start(h.stop)
-	t.Cleanup(func() { close(h.stop) })
+	// Join the background connection loop before t.Logf becomes invalid.
+	// Closing stop alone can leave a Windows pipe error logging after the
+	// test has returned, especially when running timeout tests repeatedly.
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		h.c.connectLoop(h.stop)
+	}()
+	t.Cleanup(func() {
+		close(h.stop)
+		select {
+		case <-done:
+		case <-time.After(5 * time.Second):
+			t.Error("client connection loop did not stop")
+		}
+	})
 	h.until(func() bool { return h.c.connected })
 	h.c.FocusIn("com.example.Test", false)
 	h.until(func() bool { return h.c.cur != &policy.Passthrough })

@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -217,6 +218,9 @@ func TestCoordinatorControlAndRecovery(t *testing.T) {
 // worker while the upgraded front reconnects. Also supports legacy engines
 // that own only the live user lock.
 func TestStopForUpgrade(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows StopRunning requires the coordinator to be stopped first")
+	}
 	s, _ := fixture(t)
 	exe, err := os.Executable()
 	if err != nil {

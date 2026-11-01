@@ -448,6 +448,9 @@ func TestRerankKeyPathDoesNotAllocate(t *testing.T) {
 	testScorer.use(t, func(sl *rerank.Slot) []uint8 { return perm[:min(int(sl.Count), 3)] }, false)
 	keys := []uint32{'c', 'e', 's', 'h', 'i', ' ', 'c', 'e', 's', 'h', 'i', policy.KeyEscape}
 	run := func() {
+		// Bound each cycle, rather than inheriting a deadline for the whole
+		// hundred-cycle allocation batch from dial's initial result.
+		cl.c.SetReadDeadline(time.Now().Add(5 * time.Second))
 		for _, k := range keys {
 			cl.seq++
 			cl.buf = (&ipc.Key{Ctx: 1, Seq: cl.seq, Keysym: k}).Append(cl.buf[:0])

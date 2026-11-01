@@ -3,6 +3,7 @@ package engine
 import (
 	"os"
 	"testing"
+	"time"
 
 	"shixin/internal/ipc"
 	"shixin/internal/policy"
@@ -147,6 +148,9 @@ func mixedPinyinAllocs(t *testing.T, cl *client, inputs []string) {
 		return
 	}
 	cycle := func() {
+		// Each allocation cycle is bounded; the entire repeated batch can
+		// exceed the last functional result's deadline on Windows pipes.
+		cl.c.SetReadDeadline(time.Now().Add(5 * time.Second))
 		for _, input := range inputs {
 			for i := 0; i < len(input)+2; i++ {
 				k := uint32(policy.KeyEscape)

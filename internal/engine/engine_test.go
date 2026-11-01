@@ -375,6 +375,9 @@ func TestKeyPathDoesNotAllocate(t *testing.T) {
 			keys := []uint32{'n', 'i', 'h', 'a', 'o', policy.KeyEscape}
 			runtime.GC()
 			n := testing.AllocsPerRun(200, func() {
+				// Renew the existing bound for each cycle; the full batch can
+				// outlive dial's initial deadline on Windows named pipes.
+				cl.c.SetReadDeadline(time.Now().Add(5 * time.Second))
 				for _, k := range keys {
 					cl.seq++
 					cl.buf = (&ipc.Key{Ctx: 1, Seq: cl.seq, Keysym: k}).Append(cl.buf[:0])
