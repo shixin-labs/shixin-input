@@ -3,6 +3,7 @@
 #include "keys.h"
 #include <algorithm>
 #include <appmodel.h>
+#include <cstring>
 #include <new>
 #include <shobjidl.h>
 namespace shixin {
@@ -308,7 +309,7 @@ void Service::focus(ITfContext *c) {
   core_.focus(context_id(epoch_), true);
   ui_focus(true);
   probe_needed_ = c != nullptr;
-  edit_read_ = edit_write_ = 0;
+  edit_clear();
   if (c) {
     ITfSource *source = nullptr;
     if (SUCCEEDED(c->QueryInterface(IID_ITfSource,
@@ -448,7 +449,7 @@ void Service::secure_changed(bool secure) {
     ++epoch_;
   core_.focus(context_id(epoch_), secure);
   ui_focus(secure);
-  edit_read_ = edit_write_ = 0;
+  edit_clear();
   if (secure && context_)
     finish(context_, composition_, client_);
   send_focus();
@@ -573,11 +574,11 @@ void Service::pump() {
     return;
   pumping_ = true;
   if (ui_)
-    while (auto frame = ui_->front()) {
-      if (frame->type() == Welcome)
+    for (auto frame = ui_->front(); !frame.empty(); frame = ui_->front()) {
+      if (frame_type(frame) == Welcome)
         ui_focus(!core_.connected);
-      else if (frame->type() == Select) {
-        Reader r(frame->payload());
+      else if (frame_type(frame) == Select) {
+        Reader r(frame_payload(frame));
         auto ctx = r.u32();
         auto seq = r.u32();
         auto index = r.u32();
@@ -593,11 +594,11 @@ void Service::pump() {
   }
   while (!draining_) {
     auto frame = transport_->front();
-    if (!frame)
+    if (frame.empty())
       break;
-    switch (frame->type()) {
+    switch (frame_type(frame)) {
     case Welcome: {
-      Reader r(frame->payload());
+      Reader r(frame_payload(frame));
       auto version = r.u16();
       r.u32();
       if (!r.good || version != kVersion) {
@@ -611,24 +612,28 @@ void Service::pump() {
       break;
     }
     case PolicyType:
-      if (!core_.install(frame->payload()))
+      if (!core_.install(frame_payload(frame)))
         degraded();
       break;
     case ResultType: {
       Result result;
-      if (!result.decode(frame->payload())) {
+      if (!result.decode(frame_payload(frame))) {
         degraded();
         break;
       }
       auto complete = core_.result(result);
       if (!complete.accept)
         break;
-      if (edit_write_ - edit_read_ == edits_.size()) {
+      auto slot = edit_write_ - edit_read_ == kEditSlots
+                      ? nullptr
+                      : edit_frames_.reserve(frame.size());
+      if (!slot) {
         degraded();
         break;
       }
-      auto &edit = edits_[edit_write_ % edits_.size()];
-      edit.frame.copy(*frame);
+      std::memcpy(slot, frame.data(), frame.size());
+      edit_frames_.publish(frame.size());
+      auto &edit = edit_meta_[edit_write_ % kEditSlots];
       edit.epoch = epoch_;
       edit.repair = complete.repair;
       edit.notify = complete.notify;
@@ -687,7 +692,7 @@ void Service::schedule() {
       client_, &edit_,
       TF_ES_ASYNCDONTCARE | (probe ? TF_ES_READ : TF_ES_READWRITE), &result);
   if (FAILED(hr) || FAILED(result)) {
-    edit_read_ = edit_write_;
+    edit_clear();
     probe_needed_ = false;
     core_.secure = true;
     degraded();
@@ -718,9 +723,16 @@ HRESULT Service::execute(Edit &edit, TfEditCookie ec) {
   }
   if (edit_read_ == edit_write_)
     return S_OK;
-  auto &pending = edits_[edit_read_ % edits_.size()];
+  auto &pending = edit_meta_[edit_read_ % kEditSlots];
+  size_t size = 0;
+  auto bytes = edit_frames_.front(size);
+  if (!bytes) {
+    edit_clear();
+    return S_OK;
+  }
+  // The frame stays in the ring, and so valid, until edit_pop().
   Result result;
-  if (!result.decode(pending.frame.payload())) {
+  if (!result.decode(frame_payload({bytes, size}))) {
     degraded();
     return E_FAIL;
   }
@@ -729,7 +741,7 @@ HRESULT Service::execute(Edit &edit, TfEditCookie ec) {
     return S_OK;
   }
   if (!core_.connected || pending.epoch != epoch_) {
-    ++edit_read_;
+    edit_pop();
     return S_OK;
   }
   HRESULT hr = S_OK;
@@ -754,8 +766,18 @@ HRESULT Service::execute(Edit &edit, TfEditCookie ec) {
     core_.acknowledge(result.seq);
   else
     degraded();
-  ++edit_read_;
+  edit_pop();
   return hr;
+}
+void Service::edit_pop() {
+  if (edit_read_ == edit_write_)
+    return;
+  ++edit_read_;
+  edit_frames_.pop();
+}
+void Service::edit_clear() {
+  while (edit_read_ != edit_write_)
+    edit_pop();
 }
 HRESULT Service::apply_text(TfEditCookie ec, Result &result, uint32_t repair) {
   if (!composition_ && result.commit.empty() && result.preedit.empty() &&

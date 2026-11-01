@@ -8,7 +8,11 @@
 
 namespace shixin {
 constexpr uint32_t kMaxFrame = 1 << 20;
-constexpr size_t kFrameCapacity = 64 << 10;
+// The largest frame the DLL builds, queues or accepts: what a 128 KiB
+// FrameRing (ring.h) is guaranteed to hold. The protocol allows more
+// (kMaxFrame); the DLL treats a longer frame as a protocol error and
+// reconnects.
+constexpr size_t kFrameCapacity = (64 << 10) - 4;
 constexpr uint16_t kVersion = 1;
 enum Type : uint8_t {
   Hello = 1,
@@ -64,6 +68,13 @@ struct Reader {
   }
 };
 
+// A whole frame: its u32 length, type byte and payload.
+inline uint8_t frame_type(std::string_view frame) {
+  return frame.size() >= 5 ? uint8_t(frame[4]) : 0;
+}
+inline std::string_view frame_payload(std::string_view frame) {
+  return frame.size() >= 5 ? frame.substr(5) : std::string_view{};
+}
 struct Frame {
   std::array<char, kFrameCapacity> data{};
   size_t size = 0;
@@ -118,11 +129,8 @@ struct Frame {
     }
   }
   std::string_view view() const { return {data.data(), size}; }
-  std::string_view payload() const {
-    return size >= 5 ? std::string_view(data.data() + 5, size - 5)
-                     : std::string_view{};
-  }
-  uint8_t type() const { return size >= 5 ? uint8_t(data[4]) : 0; }
+  std::string_view payload() const { return frame_payload(view()); }
+  uint8_t type() const { return frame_type(view()); }
 };
 
 inline bool frame_size(std::string_view header, uint32_t &size) {

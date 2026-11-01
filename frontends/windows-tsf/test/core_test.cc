@@ -106,16 +106,17 @@ static void golden() {
     }
     if (type == PolicyType) {
       Policy p;
-      CHECK(p.decode(payload));
-      CHECK(p.id == 3 && p.lookup('a', 0) == 6);
-      CHECK(p.lookup(0xff0d, 0) == 10 && p.lookup('`', kControl) == 11);
-      CHECK(p.lookup(0xffe1, kRelease) == Notify &&
-            p.lookup('a', kRelease) == Pass);
+      auto t = std::make_unique<Policy::Tables>();
+      CHECK(p.decode(payload, *t));
+      CHECK(p.id == 3 && p.lookup(*t, 'a', 0) == 6);
+      CHECK(p.lookup(*t, 0xff0d, 0) == 10 && p.lookup(*t, '`', kControl) == 11);
+      CHECK(p.lookup(*t, 0xffe1, kRelease) == Notify &&
+            p.lookup(*t, 'a', kRelease) == Pass);
       for (size_t i = 0; i < payload.size(); ++i) {
         Policy truncated;
-        CHECK(!truncated.decode(payload.substr(0, i)));
+        CHECK(!truncated.decode(payload.substr(0, i), *t));
       }
-      CHECK(p.decode(std::string(payload) + "future"));
+      CHECK(p.decode(std::string(payload) + "future", *t));
     }
   }
 }
@@ -367,6 +368,7 @@ static void latency() {
 }
 static void parser_stress() {
   std::array<char, 512> bytes{};
+  auto tables = std::make_unique<Policy::Tables>();
   uint32_t state = 123;
   for (size_t n = 0; n < 100000; ++n) {
     for (auto &b : bytes) {
@@ -376,7 +378,7 @@ static void parser_stress() {
     std::string_view view(bytes.data(), n % bytes.size());
     Policy p;
     Result r;
-    p.decode(view);
+    p.decode(view, *tables);
     r.decode(view);
     uint32_t size;
     frame_size(view, size);
@@ -414,6 +416,175 @@ static void rings() {
   }
   producer.join();
 }
+
+// Fills a frame of n bytes whose content identifies it (and its length).
+static void fill(char *p, size_t n, uint32_t id) {
+  for (size_t i = 0; i < n; ++i)
+    p[i] = char(id * 31 + i * 7);
+}
+static bool matches(const char *p, size_t n, uint32_t id) {
+  for (size_t i = 0; i < n; ++i)
+    if (p[i] != char(id * 31 + i * 7))
+      return false;
+  return true;
+}
+static bool put(FrameRing &r, size_t n, uint32_t id) {
+  auto p = r.reserve(n);
+  if (!p)
+    return false;
+  fill(p, n, id);
+  r.publish(n);
+  return true;
+}
+static void frame_rings() {
+  {
+    // Bounded, first in first out, and frames are contiguous across wraps.
+    FrameRing r(1024);
+    CHECK(r.ok() && r.max_frame() == 508);
+    size_t n = 0;
+    CHECK(!r.front(n) && r.empty());
+    CHECK(!r.reserve(0) && !r.reserve(509));
+    uint32_t next = 0, expect = 0;
+    std::array<size_t, 8> sizes{1, 5, 22, 100, 333, 7, 508, 64};
+    for (int round = 0; round < 2000; ++round) {
+      while (put(r, sizes[next % sizes.size()], next))
+        ++next;
+      CHECK(next > expect);
+      // Drain a few so the write position wraps at varied offsets.
+      for (int k = 0; k < 3 && r.front(n); ++k) {
+        auto size = sizes[expect % sizes.size()];
+        auto p = r.front(n);
+        CHECK(n == size && matches(p, n, expect));
+        r.pop();
+        ++expect;
+      }
+    }
+    while (auto p = r.front(n)) {
+      CHECK(n == sizes[expect % sizes.size()] && matches(p, n, expect));
+      r.pop();
+      ++expect;
+    }
+    CHECK(expect == next && r.empty());
+  }
+  {
+    // A maximum frame fits an empty ring wherever the position is, and a
+    // slot is not reused until it is popped.
+    FrameRing r(1 << 17);
+    CHECK(r.max_frame() == kFrameCapacity);
+    for (size_t shift : {size_t(0), size_t(1), size_t(100), size_t(65531),
+                         size_t(65532), size_t(100000)}) {
+      size_t n = 0;
+      for (size_t moved = 0; moved < shift;) {
+        auto step = std::min<size_t>(shift - moved, 4000);
+        CHECK(put(r, step, 1) && r.front(n) && n == step);
+        r.pop();
+        moved += step;
+      }
+      CHECK(put(r, kFrameCapacity, 9));
+      auto p = r.front(n);
+      CHECK(p && n == kFrameCapacity && matches(p, n, 9));
+      // Held by the consumer: whatever the producer adds meanwhile, the
+      // frame in use stays intact.
+      for (uint32_t id = 100; put(r, kFrameCapacity, id); ++id) {
+      }
+      CHECK(!r.reserve(kFrameCapacity) && matches(p, n, 9));
+      r.pop();
+      while (r.front(n))
+        r.pop();
+      CHECK(put(r, kFrameCapacity, 10));
+      CHECK(r.front(n) && matches(r.front(n), n, 10));
+      r.pop();
+      CHECK(r.empty());
+    }
+  }
+  {
+    // Full: a frame that does not fit is refused, nothing is overwritten, and
+    // space returns exactly when the consumer pops.
+    FrameRing r(256);
+    uint32_t id = 0;
+    while (put(r, 20, id))
+      ++id;
+    CHECK(id >= 5);
+    CHECK(!r.reserve(20));
+    size_t n = 0;
+    CHECK(r.front(n) && matches(r.front(n), n, 0));
+    r.pop();
+    CHECK(put(r, 20, id++));
+    for (uint32_t i = 1; i < id; ++i) {
+      auto p = r.front(n);
+      CHECK(p && n == 20 && matches(p, n, i));
+      r.pop();
+    }
+    CHECK(r.empty());
+    // An unpublished reservation changes nothing.
+    CHECK(r.reserve(20) && r.empty() && !r.front(n));
+  }
+  {
+    // Two threads, mixed sizes, no allocation after construction.
+    FrameRing r(1 << 12);
+    constexpr uint32_t count = 200000;
+    std::thread producer([&] {
+      for (uint32_t i = 0; i < count; ++i)
+        while (!put(r, 1 + (i * 37) % r.max_frame() / 4, i))
+          std::this_thread::yield();
+    });
+    size_t before = allocations.load(); // after the thread's own allocations
+    for (uint32_t i = 0; i < count; ++i) {
+      size_t n = 0;
+      const char *p;
+      while (!(p = r.front(n)))
+        std::this_thread::yield();
+      CHECK(n == 1 + (i * 37) % r.max_frame() / 4 && matches(p, n, i));
+      r.pop();
+    }
+    producer.join();
+    CHECK(allocations.load() == before);
+  }
+}
+static void policy_tables() {
+  // Many installed policies share bounded tables; a rejected one claims
+  // nothing, and a reset gives the space back.
+  auto c = std::make_unique<Core>();
+  auto encode = [](uint16_t id, size_t specials, size_t hotkeys) {
+    Frame f;
+    f.u16(id);
+    f.u16(0);
+    f.u8(0);
+    f.u8(0);
+    f.u8(0);
+    for (int i = 0; i < 95; ++i)
+      f.u8(0);
+    f.u16(uint16_t(specials));
+    for (size_t i = 0; i < specials; ++i) {
+      f.u32(uint32_t(0xff00 + i));
+      f.u8(0);
+      f.u8(Eat);
+    }
+    f.u16(uint16_t(hotkeys));
+    for (size_t i = 0; i < hotkeys; ++i) {
+      f.u32(uint32_t(0x61 + i));
+      f.u32(kControl);
+    }
+    CHECK(f.good);
+    return std::string(f.view());
+  };
+  c->reset();
+  for (uint16_t id = 0; id < 100; ++id)
+    CHECK(c->install(encode(id, 40, 4)));
+  c->policy = 77;
+  CHECK(c->policies[77].lookup(c->tables, 0xff00 + 39, 0) == Eat);
+  CHECK(c->policies[3].lookup(c->tables, 0xff00 + 40, 0) == 0);
+  CHECK(c->policies[99].lookup(c->tables, 'b', kControl) == (Ask | 2 << 2));
+  CHECK(!c->install(encode(101, Policy::kMaxSpecial + 1, 0)));
+  // Exhaustion fails cleanly (the service degrades) and keeps what's there.
+  auto used = c->tables.specials;
+  while (c->install(encode(150, 128, 0))) {
+  }
+  CHECK(c->tables.specials >= used && c->installed[3]);
+  CHECK(c->policies[3].lookup(c->tables, 0xff00 + 39, 0) == Eat);
+  c->reset();
+  CHECK(c->tables.specials == 0 && c->install(encode(1, 128, 128)));
+}
 static void keymap() {
   CHECK(windows_key('A', 0, false, 0) == 'a');
   CHECK(windows_key('A', 0, false, kShift) == 'A');
@@ -440,6 +611,8 @@ int main() {
   golden();
   decisions();
   rings();
+  frame_rings();
+  policy_tables();
   parser_stress();
   latency();
   std::cout << "native client tests passed\n";

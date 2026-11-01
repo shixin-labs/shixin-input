@@ -68,16 +68,23 @@ class Service final : public ProcessorEx,
   std::shared_ptr<Transport> transport_, ui_;
   Edit edit_;
   Frame scratch_;
-  std::array<char, 32768> app_{};
+  std::array<char, 4096> app_{};
   size_t app_size_ = 0;
-  struct Display {
-    Frame frame;
+  // Results waiting for an edit session, applied in order: their frames in a
+  // byte ring (a result is a few KB, at most kFrameCapacity), and what Core
+  // decided about each beside it. Both are bounded; when either is full the
+  // service degrades. Only the apartment thread touches them.
+  static constexpr size_t kEditSlots = 32;
+  struct EditMeta {
     uint32_t epoch = 0, repair = 0;
     bool notify = false;
   };
-  std::array<Display, 32> edits_{};
+  FrameRing edit_frames_{kLargeRing};
+  std::array<EditMeta, kEditSlots> edit_meta_{};
   size_t edit_read_ = 0, edit_write_ = 0;
-  std::array<wchar_t, 32768> wide_{};
+  void edit_pop();
+  void edit_clear();
+  std::array<wchar_t, 16384> wide_{};
   LARGE_INTEGER frequency_{};
   HANDLE timer_ = nullptr; // high-resolution deadline for wait_until
   static LRESULT CALLBACK window_proc(HWND, UINT, WPARAM, LPARAM);

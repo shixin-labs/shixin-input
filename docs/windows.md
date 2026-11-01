@@ -114,6 +114,11 @@ thread; deactivation requests stop without joining a worker there. Worker
 module pins prevent DLL unload while a thread still runs its code.
 
 Replies reach the TSF apartment through fixed queues and a posted message.
+Each activated thread commits about 0.6 MB for them, allocated once at
+activation: byte rings holding variable-length frames (128 KiB for results
+and for pending edits, 16 KiB for keys and focus), the policy tables, and
+scratch space. A frame is limited to 64 KiB less four bytes; a longer one
+is a protocol error and reconnects.
 Only one edit request is submitted at a time, so an immediately granted
 session cannot overtake an older deferred edit. Each request retains its
 context and epoch; focus changes, secure transitions and reconnections

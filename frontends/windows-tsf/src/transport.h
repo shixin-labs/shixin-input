@@ -5,6 +5,7 @@
 #include <atomic>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <windows.h>
 namespace shixin {
 constexpr UINT kWake = WM_APP + 0x31;
@@ -12,6 +13,11 @@ constexpr uint8_t kDisconnected = 250;
 // Pipes are opened, verified, read and written only by this worker. All
 // apartment-facing operations are bounded queue operations and SetEvent.
 extern std::atomic<long> objects;
+// Ring sizes per direction (a ring holds frames of up to half its size).
+// The big direction carries results and candidate lists; the other only
+// keys, focus and selections. Bytes are allocated once, with the transport.
+constexpr size_t kLargeRing = 128 << 10, kSmallRing = 16 << 10;
+static_assert(kLargeRing / 2 - 4 >= kFrameCapacity, "a maximum frame fits");
 class Transport : public std::enable_shared_from_this<Transport> {
   HWND window_;
   bool presentation_;
@@ -19,7 +25,7 @@ class Transport : public std::enable_shared_from_this<Transport> {
   HANDLE stop_ = nullptr, wake_ = nullptr, arrived_ = nullptr;
   std::atomic<bool> online_{false};
   std::atomic<bool> drop_{false}, drain_{false};
-  Ring<Frame, 64> outgoing_, incoming_;
+  FrameRing outgoing_, incoming_;
   void run();
 
 public:
@@ -28,7 +34,12 @@ public:
   bool start();
   void stop();
   bool send(const Frame &frame);
-  Frame *front() { return incoming_.front(); }
+  // The oldest received frame, valid until pop(); empty if there is none.
+  std::string_view front() {
+    size_t n = 0;
+    auto p = incoming_.front(n);
+    return p ? std::string_view(p, n) : std::string_view{};
+  }
   void pop() { incoming_.pop(); }
   void migrate() {
     drain_.store(true);

@@ -26,6 +26,7 @@ struct Completion {
 struct Core {
   static constexpr uint64_t kBudget = 8000000;
   std::array<Policy, 256> policies{};
+  Policy::Tables tables;
   std::array<bool, 256> installed{};
   struct Pending {
     uint32_t seq = 0, sym = 0;
@@ -44,6 +45,7 @@ struct Core {
     connected = false;
     known = false;
     installed.fill(false);
+    tables.clear();
     sent = received = applied = 0;
     answer_seq = 0;
   }
@@ -54,12 +56,13 @@ struct Core {
     received = applied = sent;
   }
   bool install(std::string_view b) {
-    // Decode into temporary storage; a malformed frame must not corrupt a
-    // policy still in use. This stack object contains no owning strings.
+    // Decode into the free part of the tables; a malformed frame must not
+    // corrupt a policy still in use, and claims nothing until it is kept.
     Policy p;
-    if (!p.decode(b) || p.id >= policies.size() ||
+    if (!p.decode(b, tables) || p.id >= policies.size() ||
         p.composing >= policies.size())
       return false;
+    p.commit(tables);
     policies[p.id] = p;
     installed[p.id] = true;
     return true;
@@ -159,14 +162,14 @@ struct Core {
     uint64_t deadline = h.now() + kBudget;
     if (!known && !await_known(h, deadline))
       return false;
-    auto a = policies[policy].lookup(sym, mods);
+    auto a = policies[policy].lookup(tables, sym, mods);
     auto disposition = Disposition(a & 3);
     bool modifier = sym >= 0xffe1 && sym <= 0xffe4;
     if (disposition == Pass || disposition == Notify) {
       if (!modifier && sent > applied) {
         if (!barrier(h, deadline, true))
           return false;
-        a = policies[policy].lookup(sym, mods);
+        a = policies[policy].lookup(tables, sym, mods);
         disposition = Disposition(a & 3);
       }
     }

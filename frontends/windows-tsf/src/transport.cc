@@ -2,9 +2,12 @@
 #include "transport.h"
 #include <algorithm>
 #include <bcrypt.h>
+#include <cstring>
+#include <memory>
 #include <new>
 #include <sddl.h>
 #include <shlobj.h>
+#include <string>
 #include <vector>
 namespace shixin {
 namespace {
@@ -134,8 +137,9 @@ std::wstring module_directory(HMODULE module) {
   return i == std::wstring::npos ? std::wstring{} : path.substr(0, i);
 }
 Transport::Transport(HWND w, std::wstring directory, bool presentation)
-    : window_(w), presentation_(presentation),
-      directory_(std::move(directory)) {
+    : window_(w), presentation_(presentation), directory_(std::move(directory)),
+      outgoing_(presentation ? kLargeRing : kSmallRing),
+      incoming_(presentation ? kSmallRing : kLargeRing) {
   stop_ = CreateEventW(nullptr, TRUE, FALSE, nullptr);
   wake_ = CreateEventW(nullptr, FALSE, FALSE, nullptr);
   arrived_ = CreateEventW(nullptr, FALSE, FALSE, nullptr);
@@ -149,7 +153,7 @@ Transport::~Transport() {
     CloseHandle(arrived_);
 }
 bool Transport::start() {
-  if (!stop_ || !wake_ || !arrived_)
+  if (!stop_ || !wake_ || !arrived_ || !outgoing_.ok() || !incoming_.ok())
     return false;
   struct Worker {
     std::shared_ptr<Transport> self;
@@ -202,11 +206,11 @@ void Transport::stop() {
 bool Transport::send(const Frame &frame) {
   if (!frame.good || drain_.load())
     return false;
-  auto p = outgoing_.reserve();
+  auto p = outgoing_.reserve(frame.size);
   if (!p)
     return false;
-  p->copy(frame);
-  outgoing_.publish();
+  std::memcpy(p, frame.data.data(), frame.size);
+  outgoing_.publish(frame.size);
   SetEvent(wake_);
   return true;
 }
@@ -221,23 +225,26 @@ void Transport::run() {
   std::wstring runtime =
       std::wstring(local) + L"\\Shixin\\run-" + std::to_wstring(session);
   CoTaskMemFree(local);
-  auto publish = [&](const Frame &f) {
-    auto p = incoming_.reserve();
-    if (!p)
-      return false;
-    p->copy(f);
-    incoming_.publish();
+  auto arrived = [&] {
     SetEvent(arrived_);
     PostMessageW(window_, kWake, 0, 0);
-    return true;
   };
+  // The first frame of every connection. Built once, in a temporary Frame.
+  std::string initial;
+  {
+    auto f = std::make_unique<Frame>();
+    hello(*f, 2, GetCurrentProcessId(), utf8(directory_));
+    if (!f->good)
+      return;
+    initial.assign(f->view());
+  }
   // Reconnects back off while connections keep ending quickly (an engine
   // migration refusing new clients, a full or mismatched candidate host):
   // 20 ms doubling to 2 s, reset by a connection that lasted 2 s.
   DWORD backoff = 20;
   while (WaitForSingleObject(stop_, 0) != WAIT_OBJECT_0) {
     // Discard keys from the previous connection before opening a new one.
-    while (outgoing_.front())
+    for (size_t n; outgoing_.front(n);)
       outgoing_.pop();
     drop_.store(false);
     drain_.store(false);
@@ -265,9 +272,12 @@ void Transport::run() {
     write.hEvent = write_event.value;
     online_.store(true);
     ULONGLONG opened = GetTickCount64();
-    Frame input, initial, eof;
-    hello(initial, 2, GetCurrentProcessId(), utf8(directory_));
-    Frame *output = &initial;
+    // Incoming frames are read straight into the ring: the length first,
+    // then the rest into the slot reserved for it.
+    char header[4], eof = 0, *slot = nullptr;
+    const char *output = initial.data();
+    size_t output_size = initial.size();
+    bool has_output = true;
     bool initial_write = true, reading = false, writing = false, failed = false,
          half_closed = false, eof_write = false;
     size_t have = 0, need = 4;
@@ -277,19 +287,25 @@ void Transport::run() {
         return;
       }
       have += n;
-      if (have == 4 && need == 4) {
+      if (!slot && have == 4) {
         uint32_t length = 0;
-        if (!frame_size({input.data.data(), 4}, length) ||
-            length + 4 > input.data.size()) {
+        if (!frame_size({header, 4}, length) ||
+            length + 4 > incoming_.max_frame()) {
           failed = true;
           return;
         }
         need = length + 4;
-      }
-      if (have == need) {
-        input.size = have;
-        if (!publish(input))
+        slot = incoming_.reserve(need);
+        if (!slot) {
           failed = true;
+          return;
+        }
+        std::memcpy(slot, header, 4);
+      }
+      if (slot && have == need) {
+        incoming_.publish(need);
+        arrived();
+        slot = nullptr;
         have = 0;
         need = 4;
       }
@@ -310,8 +326,8 @@ void Transport::run() {
       if (!reading) {
         ResetEvent(read.hEvent);
         DWORD n = 0;
-        if (ReadFile(pipe.value, input.data.data() + have, DWORD(need - have),
-                     &n, &read)) {
+        if (ReadFile(pipe.value, (slot ? slot : header) + have,
+                     DWORD(need - have), &n, &read)) {
           received(n);
           ResetEvent(read.hEvent);
           progress = true;
@@ -321,28 +337,32 @@ void Transport::run() {
           failed = true;
       }
       if (!writing) {
-        if (!output && !half_closed)
-          output = outgoing_.front();
-        if (!output && !half_closed && drain_.load()) {
+        if (!has_output && !half_closed) {
+          if (auto next = outgoing_.front(output_size)) {
+            output = next;
+            has_output = true;
+          }
+        }
+        if (!has_output && !half_closed && drain_.load()) {
           output = &eof;
-          output->size = 0;
+          output_size = 0;
+          has_output = true;
           eof_write = true;
           half_closed = true;
         }
-        if (output) {
+        if (has_output) {
           ResetEvent(write.hEvent);
           DWORD n = 0;
-          if (WriteFile(pipe.value, output->data.data(), DWORD(output->size),
-                        &n, &write)) {
+          if (WriteFile(pipe.value, output, DWORD(output_size), &n, &write)) {
             ResetEvent(write.hEvent);
             progress = true;
-            if (n != output->size)
+            if (n != output_size)
               failed = true;
             if (initial_write)
               initial_write = false;
             else if (!eof_write)
               outgoing_.pop();
-            output = nullptr;
+            has_output = false;
           } else if (GetLastError() == ERROR_IO_PENDING)
             writing = true;
           else
@@ -372,13 +392,13 @@ void Transport::run() {
         writing = false;
         ResetEvent(write.hEvent);
         if (!GetOverlappedResult(pipe.value, &write, &n, FALSE) ||
-            n != output->size)
+            n != output_size)
           failed = true;
         if (initial_write)
           initial_write = false;
         else if (!eof_write)
           outgoing_.pop();
-        output = nullptr;
+        has_output = false;
       }
     }
     online_.store(false);
@@ -389,10 +409,13 @@ void Transport::run() {
       GetOverlappedResult(pipe.value, &read, &ignored, TRUE);
     if (writing)
       GetOverlappedResult(pipe.value, &write, &ignored, TRUE);
-    Frame disconnected;
-    disconnected.begin(kDisconnected);
-    disconnected.end();
-    publish(disconnected);
+    // A local frame tells the apartment the connection ended.
+    const char disconnected[5] = {1, 0, 0, 0, char(kDisconnected)};
+    if (auto p = incoming_.reserve(sizeof disconnected)) {
+      std::memcpy(p, disconnected, sizeof disconnected);
+      incoming_.publish(sizeof disconnected);
+      arrived();
+    }
     if (GetTickCount64() - opened >= 2000)
       backoff = 20;
     WaitForSingleObject(stop_, backoff);
