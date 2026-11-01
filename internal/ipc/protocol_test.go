@@ -93,6 +93,7 @@ func vectors() []struct {
 		{"stats_request", (&StatsRequest{Reset: true}).Append(nil)},
 		{"stats", sampleStats().Append(nil)},
 		{"stats_rerank", sampleRerankStats().Append(nil)},
+		{"caret", (&Caret{Ctx: 1, Left: -1920, Top: 100, Right: -1918, Bottom: 124}).Append(nil)},
 	}
 }
 
@@ -138,6 +139,7 @@ func TestRoundTrip(t *testing.T) {
 		{&Migrate{Endpoint: []byte("e")}, &Migrate{}, TypeMigrate},
 		{&StatsRequest{Reset: true}, &StatsRequest{}, TypeStatsRequest},
 		{sampleRerankStats(), &Stats{}, TypeStats},
+		{&Caret{Ctx: 9, Left: -400, Top: 20, Right: -398, Bottom: 44}, &Caret{}, TypeCaret},
 	} {
 		frame := c.in.(interface{ Append([]byte) []byte }).Append(nil)
 		r := NewReader(bytes.NewReader(frame), 64)
@@ -296,6 +298,8 @@ func FuzzDecode(f *testing.F) {
 				m = &FocusIn{}
 			case TypeFocusOut:
 				m = &FocusOut{}
+			case TypeCaret:
+				m = &Caret{}
 			case TypeSelect:
 				m = &Select{}
 			case TypeChangePage:

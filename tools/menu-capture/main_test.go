@@ -44,7 +44,7 @@ type fakeEngine struct {
 
 func fakeSocket(t *testing.T, precommit, change bool) (*fakeEngine, string) {
 	t.Helper()
-	root, err := os.MkdirTemp("/tmp", "sx-menu-test-")
+	root, err := ipc.TempDir("sx-menu-test-")
 	if err != nil {
 		t.Fatal(err)
 	}

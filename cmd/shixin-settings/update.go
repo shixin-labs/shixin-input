@@ -5,8 +5,8 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"shixin/internal/process"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/egoist/mygo/ui"
@@ -124,7 +124,7 @@ func (a *app) installUpdate() {
 // download has been verified: the wait only ends here if it failed.
 func (a *app) applyUpdate(front, dmg, ver string) error {
 	cmd := exec.Command(front, "-apply-update", dmg, "-update-version", ver)
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	process.Detach(cmd)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {

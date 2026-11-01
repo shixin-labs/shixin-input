@@ -14,6 +14,10 @@ type in never waits on the engine, whatever the engine is doing.
 **Status:** pre-release. macOS works and is in daily use; Windows and Linux
 are planned ([milestones](docs/DESIGN.md#10-milestones)).
 
+Windows x64 and ARM64 development builds include a TSF frontend and
+candidate/tray host, with the same settings GUI. Windows VM validation and
+release packaging are pending. See [Windows development](docs/windows.md).
+
 ## Install (macOS)
 
 Requires macOS 13 or later on Apple silicon.

@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -146,8 +147,8 @@ func TestGenerationCleanupLinkedActive(t *testing.T) {
 }
 
 func TestGenerationCleanupContinuesAfterFailure(t *testing.T) {
-	if os.Geteuid() == 0 {
-		t.Skip("root bypasses directory permissions")
+	if os.Geteuid() == 0 || runtime.GOOS == "windows" {
+		t.Skip("requires Unix permission enforcement for an unprivileged user")
 	}
 	user := t.TempDir()
 	dir := filepath.Join(user, "generations")

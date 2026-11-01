@@ -40,7 +40,7 @@ func NewServer(m Model, logf func(string, ...any)) *Server {
 // Serve accepts engines on l until l is closed. Connections are served one
 // at a time on the calling goroutine, which owns the model; a newer one
 // closes the current one.
-func (s *Server) Serve(l *net.UnixListener) error {
+func (s *Server) Serve(l net.Listener) error {
 	conns := make(chan net.Conn, 1)
 	errc := make(chan error, 1)
 	go func() {

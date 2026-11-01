@@ -54,7 +54,7 @@ func superviseAI(socket, log string, logf func(string, ...any)) func() {
 	if err != nil {
 		return func() {}
 	}
-	path := filepath.Join(filepath.Dir(exe), "shixin-ai")
+	path := filepath.Join(filepath.Dir(exe), "shixin-ai"+executableSuffix())
 	run := filepath.Dir(socket)
 	modelDir, _ := models.Dir()
 	// Developers point shixin-ai at another model (cmd/shixin-ai).

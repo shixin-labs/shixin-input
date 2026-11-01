@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"runtime/debug"
 	"strings"
 	"syscall"
@@ -115,7 +116,7 @@ func defaults(c *config) error {
 		if err != nil {
 			return err
 		}
-		c.builder = filepath.Join(filepath.Dir(exe), "shixin-builder")
+		c.builder = filepath.Join(filepath.Dir(exe), "shixin-builder"+executableSuffix())
 	}
 	for _, p := range []*string{&c.data, &c.user, &c.settings, &c.socket, &c.builder} {
 		*p, err = filepath.Abs(*p)
@@ -155,6 +156,14 @@ func resources() paths {
 	exe, err := os.Executable()
 	if err == nil {
 		exe, _ = filepath.EvalSymlinks(exe)
+		if runtime.GOOS == "windows" {
+			dir := filepath.Dir(exe)
+			p := paths{lib: filepath.Join(dir, "rime.dll"), data: filepath.Join(dir, "data")}
+			if _, err := os.Stat(filepath.Join(dir, "prebuilt")); err == nil {
+				p.prebuilt = filepath.Join(dir, "prebuilt")
+			}
+			return p
+		}
 		if contents := filepath.Dir(filepath.Dir(exe)); strings.HasSuffix(contents, ".app/Contents") {
 			p := paths{
 				lib:  filepath.Join(contents, "Frameworks", "librime.1.dylib"),
@@ -211,3 +220,10 @@ func touchData(logf func(string, ...any), buf []byte, dirs ...string) {
 type onlyReader struct{ r io.Reader }
 
 func (o onlyReader) Read(p []byte) (int, error) { return o.r.Read(p) }
+
+func executableSuffix() string {
+	if runtime.GOOS == "windows" {
+		return ".exe"
+	}
+	return ""
+}

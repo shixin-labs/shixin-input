@@ -12,7 +12,7 @@ import (
 
 // sink is a shixin-ai that says it is ready and discards everything.
 func sink(t *testing.T) string {
-	dir, err := os.MkdirTemp("/tmp", "sxr-")
+	dir, err := ipc.TempDir("sxr-")
 	if err != nil {
 		t.Fatal(err)
 	}

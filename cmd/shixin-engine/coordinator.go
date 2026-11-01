@@ -180,19 +180,6 @@ func (s *coordinator) build(snapshot settings.Settings) (string, error) {
 	return temp, nil
 }
 
-func publish(path, target string) error {
-	tmp := path + ".next"
-	os.Remove(tmp)
-	if err := os.Symlink(target, tmp); err != nil {
-		return err
-	}
-	if err := os.Rename(tmp, path); err != nil {
-		os.Remove(tmp)
-		return err
-	}
-	return nil
-}
-
 func (s *coordinator) activate(p *child) error {
 	if _, err := p.call(lifecycle.OpPromote); err != nil {
 		return err
@@ -406,7 +393,7 @@ func runCoordinator(c config, logf func(string, ...any), sig <-chan os.Signal) e
 	}
 }
 
-func acceptControl(l *net.UnixListener, requests chan<- applyRequest, stop <-chan struct{}) {
+func acceptControl(l net.Listener, requests chan<- applyRequest, stop <-chan struct{}) {
 	for {
 		c, err := ipc.Accept(l)
 		if err != nil {

@@ -136,7 +136,7 @@ func realEngine(t *testing.T) string {
 		t.Skip("librime not found; set SHIXIN_LIBRIME")
 	}
 	realOnce.Do(func() {
-		dir, err := os.MkdirTemp("/tmp", "shixin-client-test-")
+		dir, err := ipc.TempDir("shixin-client-test-")
 		if err != nil {
 			realErr = err
 			return
@@ -260,7 +260,7 @@ func TestKeyPathDoesNotAllocate(t *testing.T) {
 type fake struct {
 	t         *testing.T
 	path      string
-	l         *net.UnixListener
+	l         net.Listener
 	delay     time.Duration
 	syncDelay time.Duration
 	mu        sync.Mutex
@@ -292,7 +292,7 @@ func fakePolicies() (idle, comp *policy.Policy) {
 }
 
 func startFake(t *testing.T) *fake {
-	dir, err := os.MkdirTemp("/tmp", "sxc-")
+	dir, err := ipc.TempDir("sxc-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -771,7 +771,7 @@ func TestDecimalPoint(t *testing.T) {
 // TestMigrationDrainsQueuedCommit proves that the main-thread migration
 // boundary includes writes posted before Drain sees the migration frame.
 func TestMigrationDrainsQueuedCommit(t *testing.T) {
-	dir, err := os.MkdirTemp("/tmp", "sxc-migrate-")
+	dir, err := ipc.TempDir("sxc-migrate-")
 	if err != nil {
 		t.Fatal(err)
 	}

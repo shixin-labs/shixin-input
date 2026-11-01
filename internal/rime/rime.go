@@ -13,6 +13,8 @@ import (
 	"unsafe"
 
 	"github.com/ebitengine/purego"
+
+	"shixin/internal/dynlib"
 )
 
 // Traits configures librime. Modules should always be set explicitly; the
@@ -55,11 +57,11 @@ func (l *Lib) call(fn uintptr, a ...uintptr) uintptr {
 
 // Load opens librime at path and validates its API table.
 func Load(path string) (*Lib, error) {
-	h, err := purego.Dlopen(path, purego.RTLD_NOW|purego.RTLD_GLOBAL)
+	h, err := dynlib.Open(path, true)
 	if err != nil {
 		return nil, fmt.Errorf("rime: dlopen %s: %w", path, err)
 	}
-	sym, err := purego.Dlsym(h, "rime_get_api")
+	sym, err := dynlib.Symbol(h, "rime_get_api")
 	if err != nil {
 		return nil, fmt.Errorf("rime: rime_get_api: %w", err)
 	}
@@ -260,7 +262,7 @@ func (s *Session) SetProperty(name, value string) {
 // until AttachRerank(nil, 0, 0) detaches them. It reports false if librime
 // has no shixin_rerank or its slot layout differs.
 func (l *Lib) AttachRerank(base unsafe.Pointer, count, size int) bool {
-	sym, err := purego.Dlsym(l.handle, "shixin_rerank_attach")
+	sym, err := dynlib.Symbol(l.handle, "shixin_rerank_attach")
 	if err != nil {
 		return false
 	}

@@ -1,3 +1,5 @@
+//go:build darwin || linux
+
 // Command m0-handoff is M0 spike 4 (DESIGN §3.5): can a standby engine
 // process take over the user dictionary from a running one without losing
 // learned words, and how long is the engine unavailable?

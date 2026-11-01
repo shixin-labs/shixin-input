@@ -55,13 +55,18 @@ func Listen(path string) (*net.UnixListener, error) {
 
 // Accept accepts a connection from a process of the same user and closes
 // connections from anyone else.
-func Accept(l *net.UnixListener) (*net.UnixConn, error) {
+func Accept(l net.Listener) (net.Conn, error) {
 	for {
-		c, err := l.AcceptUnix()
+		c, err := l.Accept()
 		if err != nil {
 			return nil, err
 		}
-		uid, err := peerUID(c)
+		uc, ok := c.(*net.UnixConn)
+		if !ok {
+			c.Close()
+			return nil, errors.New("ipc: listener did not return a Unix connection")
+		}
+		uid, err := peerUID(uc)
 		if err == nil && uid == os.Getuid() {
 			return c, nil
 		}

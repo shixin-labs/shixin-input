@@ -6,6 +6,8 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
+	"runtime"
 	"time"
 
 	"shixin/internal/generation"
@@ -14,7 +16,7 @@ import (
 
 func main() {
 	var o generation.Options
-	flag.StringVar(&o.Lib, "lib", "/opt/homebrew/opt/librime/lib/librime.1.dylib", "librime shared library")
+	flag.StringVar(&o.Lib, "lib", defaultLibrary(), "librime shared library")
 	flag.StringVar(&o.Data, "data", "build/rime-data", "shared Rime data (read-only)")
 	flag.StringVar(&o.Prebuilt, "prebuilt", "", "prebuilt dictionaries (optional)")
 	flag.StringVar(&o.Dir, "output", "", "new generation directory (must not exist)")
@@ -38,4 +40,15 @@ func main() {
 		fmt.Fprintf(os.Stderr, "shixin-builder: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+func defaultLibrary() string {
+	if runtime.GOOS == "windows" {
+		exe, err := os.Executable()
+		if err == nil {
+			return filepath.Join(filepath.Dir(exe), "rime.dll")
+		}
+		return "rime.dll"
+	}
+	return "/opt/homebrew/opt/librime/lib/librime.1.dylib"
 }

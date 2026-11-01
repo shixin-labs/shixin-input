@@ -41,6 +41,9 @@ const (
 	// TypeStatsRequest asks for the engine's counters (the settings app's
 	// performance page); the engine answers with Stats.
 	TypeStatsRequest Type = 9
+	// TypeCaret is a TSF-to-candidate-host screen rectangle in physical pixels.
+	// It is never sent on the engine key stream.
+	TypeCaret Type = 10
 )
 
 // Engine → client.
@@ -576,4 +579,33 @@ func (m *Stats) Decode(payload []byte) error {
 	}
 	m.Rerank = rs
 	return nil
+}
+
+// Caret positions the Windows candidate host for one focused context.
+// Coordinates are physical screen pixels; negative monitor origins are valid.
+type Caret struct {
+	Ctx                      uint32
+	Left, Top, Right, Bottom int32
+}
+
+// Append appends m as a frame.
+func (m *Caret) Append(dst []byte) []byte {
+	off := len(dst)
+	dst = BeginFrame(dst, TypeCaret)
+	dst = AppendU32(dst, m.Ctx)
+	for _, v := range [...]int32{m.Left, m.Top, m.Right, m.Bottom} {
+		dst = AppendU32(dst, uint32(v))
+	}
+	return EndFrame(dst, off)
+}
+
+// Decode reads a caret from a frame payload, ignoring future trailing fields.
+func (m *Caret) Decode(payload []byte) error {
+	r := NewDecoder(payload)
+	m.Ctx = r.U32()
+	m.Left = int32(r.U32())
+	m.Top = int32(r.U32())
+	m.Right = int32(r.U32())
+	m.Bottom = int32(r.U32())
+	return r.Err()
 }

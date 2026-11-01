@@ -46,7 +46,7 @@ func TestRerankEndToEnd(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	dir, err := os.MkdirTemp("/tmp", "sxe2e-")
+	dir, err := ipc.TempDir("sxe2e-")
 	if err != nil {
 		t.Fatal(err)
 	}

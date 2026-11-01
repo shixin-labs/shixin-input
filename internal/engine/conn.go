@@ -45,7 +45,7 @@ type focusState struct {
 // Serve accepts clients on l until l is closed. Each connection gets a
 // reader and a writer goroutine; all librime work happens on the engine
 // thread.
-func (e *Engine) Serve(l *net.UnixListener) error {
+func (e *Engine) Serve(l net.Listener) error {
 	for {
 		c, err := ipc.Accept(l)
 		if err != nil {

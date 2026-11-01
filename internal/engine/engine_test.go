@@ -42,7 +42,7 @@ var (
 func testEngine(t testing.TB) *Engine {
 	lib := librimePath(t)
 	sharedOnce.Do(func() {
-		sharedDir, sharedErr = os.MkdirTemp("/tmp", "shixin-engine-test-")
+		sharedDir, sharedErr = ipc.TempDir("shixin-engine-test-")
 		if sharedErr != nil {
 			return
 		}
@@ -119,7 +119,7 @@ func dial(t testing.TB, e *Engine) *client {
 
 // socketPair returns two connected Unix sockets.
 func socketPair(t testing.TB) (net.Conn, net.Conn) {
-	dir, err := os.MkdirTemp("/tmp", "sx-")
+	dir, err := ipc.TempDir("sx-")
 	if err != nil {
 		t.Fatal(err)
 	}

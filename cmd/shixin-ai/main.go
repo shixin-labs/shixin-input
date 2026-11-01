@@ -117,6 +117,9 @@ func defaultLlama() string {
 		return ""
 	}
 	dir := filepath.Dir(exe)
+	if runtime.GOOS == "windows" {
+		return dir
+	}
 	if p := filepath.Join(dir, "..", "Frameworks"); fileExists(filepath.Join(p, "libllama.0.dylib")) {
 		return p
 	}

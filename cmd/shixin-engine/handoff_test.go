@@ -13,8 +13,6 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/sys/unix"
-
 	"gopkg.in/yaml.v3"
 	"shixin/internal/engine"
 	"shixin/internal/generation"
@@ -48,7 +46,7 @@ func fixture(t *testing.T) (*coordinator, string) {
 	if _, err := os.Stat(filepath.Join(data, "rime_ice.schema.yaml")); err != nil {
 		t.Skip("rime-ice not available")
 	}
-	root, err := os.MkdirTemp("/tmp", "sx-swap-")
+	root, err := ipc.TempDir("sx-swap-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -90,23 +88,6 @@ func mustStart(t *testing.T, s *coordinator, dir string) *child {
 	}
 	t.Cleanup(func() { p.kill() })
 	return p
-}
-
-func dbOwner(t *testing.T, user string) int {
-	t.Helper()
-	f, err := os.OpenFile(filepath.Join(user, "rime_ice.userdb", "LOCK"), os.O_RDWR, 0)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer f.Close()
-	lk := unix.Flock_t{Type: unix.F_WRLCK}
-	if err := unix.FcntlFlock(f.Fd(), unix.F_GETLK, &lk); err != nil {
-		t.Fatal(err)
-	}
-	if lk.Type == unix.F_UNLCK {
-		return 0
-	}
-	return int(lk.Pid)
 }
 
 func dbSnapshot(t *testing.T, user string) map[string][32]byte {
@@ -219,7 +200,11 @@ func TestStandbyPreservesLearning(t *testing.T) {
 	if r := cl.key(' '); !bytes.Equal(r.Commit, []byte("你好")) {
 		t.Fatal("queued commit lost")
 	}
-	cl.c.CloseWrite()
+	if half, ok := cl.c.(interface{ CloseWrite() error }); ok {
+		half.CloseWrite()
+	} else {
+		cl.c.Close()
+	}
 	if _, _, err := cl.next(); err == nil {
 		t.Fatal("old connection did not drain")
 	}
@@ -399,7 +384,7 @@ func TestRejectUnsafeWarmGeneration(t *testing.T) {
 
 type testClient struct {
 	t      *testing.T
-	c      *net.UnixConn
+	c      net.Conn
 	reader *ipc.Reader
 	seq    uint32
 }

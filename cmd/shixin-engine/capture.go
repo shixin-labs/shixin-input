@@ -50,7 +50,7 @@ func runCapture(c config, logf func(string, ...any), sig <-chan os.Signal, in io
 	if err := generation.Validate(c.generation); err != nil {
 		return fmt.Errorf("capture: validate generation: %w", err)
 	}
-	root, err := os.MkdirTemp("/tmp", "sx-capture-")
+	root, err := ipc.TempDir("sx-capture-")
 	if err != nil {
 		return err
 	}

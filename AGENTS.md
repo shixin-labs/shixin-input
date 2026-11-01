@@ -27,6 +27,13 @@ Update this file as code, commands and conventions are added.
 
 M1 (macOS MVP) is done; M2 (DESIGN §10) is in progress. Built so far:
 
+- **Windows development front:** C++ TSF DLL, background pipes, bounded
+  policy decisions, queued edit sessions, password/PIN guards and per-user
+  registration exports; a Go candidate/tray/supervisor host uses the shared
+  settings app and candidate views. x64/ARM64 builds and native tests are
+  configured in CI. Windows VM typing, compatibility and release packaging
+  are still unverified; see [`docs/windows.md`](docs/windows.md).
+
 - **Input:** full pinyin and seven double-pinyin layouts (including 自然码)
   with keyboard charts; optional full pinyin inside every shuangpin layout
   (off by default; compiled into the spelling prism); fuzzy pinyin; the
@@ -54,11 +61,12 @@ M1 (macOS MVP) is done; M2 (DESIGN §10) is in progress. Built so far:
 |---|---|
 | `cmd/shixin-engine` | Persistent coordinator and engine workers; `-capture` serves menu capture |
 | `cmd/shixin-builder` | Offline config/dictionary compiler |
-| `cmd/shixin` | macOS front: IMK, candidate window, input menu, installer, supervisor |
+| `cmd/shixin` | macOS front / Windows candidate host: IMK, candidate window, input menu, installer, supervisor |
 | `cmd/shixin-settings` | Settings app |
 | `cmd/shixin-ai` | 智能排序 scorer |
 | `internal/{rime,engine,policy,ipc,client,keymap,settings,generation,lifecycle,perf,logx,i18n,rerank,ai,llama,models,netclient,update}` | Shared packages (DESIGN §5.1) |
 | `internal/ui/{brand,candview,fonts,modeview,skin}` | MyGo views shared by the front and the settings app |
+| `frontends/windows-tsf` | Thin C++ TSF COM server, policy/codec core and tests; CMake for Windows x64/ARM64 |
 | `plugins/librime-shixin` | Native C++ librime components |
 | `third_party/librime`, `third_party/llama.cpp` | Submodules (our librime fork; llama.cpp, MIT): `git submodule update --init --recursive` |
 | `packaging/macos` | Info.plist, localizations and icons for Shixin.app |
@@ -119,7 +127,8 @@ works. Before writing hot-path code, re-read DESIGN §3. In short:
   `internal/engine`, `internal/rime`, `internal/ipc`, `internal/policy`,
   `internal/client`, `internal/settings`, `internal/generation`,
   `internal/lifecycle`, `internal/rerank`, `internal/ai`, `internal/llama`,
-  `internal/models`, `internal/netclient` and `internal/update` **must not import MyGo** (`scripts/ci.sh go`
+  `internal/models`, `internal/netclient`, `internal/update`,
+  `internal/dynlib` and `internal/process` **must not import MyGo** (`scripts/ci.sh go`
   checks). MyGo is only for UI processes (`cmd/shixin`,
   `cmd/shixin-settings`, `internal/ui/...`).
 - Bind librime with `purego`. **No cgo** in Go code (`CGO_ENABLED=0`
@@ -165,6 +174,7 @@ and tools that touch Rime use scratch user dirs, never the live one.
 |---|---|
 | Fetch Rime data (rime-ice) into `build/rime-data` | `scripts/fetch-rime-data.sh` |
 | Build (no cgo) | `CGO_ENABLED=0 go build ./...` |
+| Windows development build (PowerShell 7 + Visual Studio C++; no IME registration) | `./scripts/build-windows.ps1 -Arch amd64` or `-Arch arm64`; add `-Check` on the matching native Windows host for C++ tests, vet and short Go tests; `-SkipNative` builds only Go binaries |
 | Build our librime + librime-shixin (C++ tests with `--test`, sanitizers with `--asan`) | `scripts/build-librime.sh` → `build/librime/out/lib/librime.1.dylib` |
 | Build llama.cpp for shixin-ai (Metal, embedded shaders, no tools or network) | `scripts/build-llama.sh` → `build/llama/lib/libllama.dylib` |
 | Make the 8-bit model from ERNIE-4.5-0.3B-Base (Apache-2.0; weights downloaded into their own dir under `build/`) | `PYTHONPATH=third_party/llama.cpp/gguf-py python third_party/llama.cpp/convert_hf_to_gguf.py --outtype q8_0 --outfile build/models/ernie-4.5-0.3b-base-q8_0.gguf <hf snapshot dir>` |
@@ -172,6 +182,7 @@ and tools that touch Rime use scratch user dirs, never the live one.
 | Run the engine with 智能排序 (scratch user dir; shixin-ai next to shixin-engine) | `go build -o build/bin/ ./cmd/shixin-engine ./cmd/shixin-builder ./cmd/shixin-ai && SHIXIN_AI_MODEL=$PWD/build/models/ernie-4.5-0.3b-base-q8_0.gguf build/bin/shixin-engine -lib … -user /tmp/x/user -settings /tmp/x/settings.json -socket /tmp/x/run/engine.sock`, with `"rerank": "standard"` in that settings.json |
 | Build an isolated generation (output must not exist; no live user dir argument) | `build/bin/shixin-builder -lib "$SHIXIN_LIBRIME" -data build/rime-data -settings /path/to/snapshot.json -output /tmp/shixin-generation` (`-all` for packaging) |
 | Capture offline menus from public codes (warm-only scratch engine, no learning) | `go run ./tools/menu-capture -engine build/bin/shixin-engine -generation /tmp/shixin-generation -data build/rime-data -lib "$SHIXIN_LIBRIME" -profile SHA256 -input codes.jsonl -output menus.jsonl -limit 50` |
+| Portable TSF core tests (Go golden vectors, timeout/focus safety, queues, allocation and parser stress) | `cmake -S frontends/windows-tsf -B build/tsf-tests && cmake --build build/tsf-tests && ctest --test-dir build/tsf-tests --output-on-failure` |
 | librime latency spike (needs rime data) | `go run ./spikes/m0-rime` (`-lua` for the Lua comparison) |
 | User dictionary handoff spike | `go run ./spikes/m0-handoff` (scratch copies under `build/spike/m0-handoff`) |
 
@@ -352,7 +363,8 @@ shared into the guest read-only.
 - Repository: `github.com/shixin-labs/shixin-input`. CI
   (`.github/workflows/ci.yml`) runs `scripts/ci.sh` on every push and pull
   request: `go` and `fuzz` on ubuntu-24.04, and `macos` and `asan` as two
-  parallel macos-15 jobs. `asan-full` runs weekly and on manual dispatch. librime comes from the
+  parallel macos-15 jobs. Native Windows backend builds and short tests run
+  on Windows x64 and ARM64. `asan-full` runs weekly and on manual dispatch. librime comes from the
   `github.com/shixin-labs/librime` fork; patches to librime go on a branch
   there, and the submodule pins it.
 - Small, focused commits with imperative subjects, prefixed with the area

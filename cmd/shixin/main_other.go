@@ -1,4 +1,4 @@
-//go:build !darwin
+//go:build !darwin && !windows
 
 // Command shixin is the macOS front; the Windows UI process arrives in M3.
 package main

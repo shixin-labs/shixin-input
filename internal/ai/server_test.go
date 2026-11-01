@@ -81,7 +81,7 @@ func until(t *testing.T, cond func() bool) {
 }
 
 func TestRemoteAndServer(t *testing.T) {
-	dir, err := os.MkdirTemp("/tmp", "sxai-")
+	dir, err := ipc.TempDir("sxai-")
 	if err != nil {
 		t.Fatal(err)
 	}

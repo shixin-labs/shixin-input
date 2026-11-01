@@ -53,7 +53,7 @@ configuration model.
 | Engine process | Plain Go, no MyGo, no UI | Small heap, no UI work, nothing competing with librime |
 | Engine | librime ≥ 1.10, built and bundled by us, **no Lua** | Same version and performance everywhere; Lua is never loaded (R9) |
 | Engine extensions | `librime-shixin`, a native C++ librime plugin | Replaces rime-ice's Lua features with compiled code (§3.8) |
-| librime binding | `purego` (dlopen), no cgo | Cross-compiles anywhere; every librime function takes only ints and pointers |
+| librime binding | `purego` with native library loading, no cgo | Cross-compiles anywhere; every librime function takes only ints and pointers |
 | Windows IME hook | C++ TSF DLL | TSF only loads in-process COM DLLs; Go must not be loaded into other apps |
 | Linux IME hook | C++ fcitx5 addon | Most widely used framework; required for Wayland |
 | Default data | rime-ice (self-contained: dictionaries, default.yaml, symbols), with our own engine lists | Closest to Sogou; rime-ice's Lua components are replaced |
@@ -86,8 +86,8 @@ configuration model.
  └───────────────▲──────────────────────────────────────────────────────┘
                  │ async key stream ⇄ state stream
                  │ (unix socket / named pipe, binary protocol)
- ┌───────────────┴──────────────┐ state  ┌──────────────────────────────┐
- │ shixin-engine (Go, no UI)    │───────▶│ Shixin UI (Windows only):    │
+ ┌───────────────┴──────────────┐        ┌──────────────────────────────┐
+ │ shixin-engine (Go, no UI)    │        │ Shixin UI (Windows only):    │
  │ librime on one locked thread │        │ candidate window + tray      │
  └───────────────▲──────────────┘        └──────────────────────────────┘
                  │ spawns / hot-swaps
@@ -208,7 +208,7 @@ are sent once per connection; results refer to them by ID.
   posted to the app's TSF thread through a hidden message window, and are
   applied with `RequestEditSession(TF_ES_ASYNCDONTCARE | TF_ES_READWRITE)`.
   The caret rectangle is read inside that edit session and sent to the
-  engine, never on the key path.
+  presentation host, never on the key path.
 - **Linux:** the socket fd is registered in fcitx5's event loop
   (`addIOEvent`). Results update the `InputPanel` on fcitx5's thread.
 
@@ -648,8 +648,8 @@ spikes/                        M0/M2 experiments; results in docs/spikes/
 docs/                          this design, known issues, test records, spike reports
 ```
 
-Planned: `frontends/windows-tsf/` (C++ TSF DLL, M3), `frontends/fcitx5/`
-(C++ fcitx5 addon, M4), dictionary import (`.scel`, M2) and the Windows
+Windows development code is in `frontends/windows-tsf/` (C++ TSF DLL,
+M3; VM validation pending). Planned: `frontends/fcitx5/` (C++ fcitx5 addon, M4), dictionary import (`.scel`, M2) and the Windows
 candidate window and tray in `cmd/shixin`.
 
 ### 5.2 `internal/rime`: librime binding
@@ -758,8 +758,14 @@ appear after restarting the app.
 
   `ctx` is a client-chosen input context id (one Rime session each), so one
   connection can serve several text fields or apps.
-  The engine also sends `CandidateState` / `CaretRect` to the Windows UI
-  process.
+  Windows uses a separate presentation pipe (`ui.sock`). After validating
+  the focused context and secure state, the TSF apartment forwards only
+  display fields from `Result` and a `Caret{ctx, left, top, right, bottom}`
+  frame (type 10, signed physical screen pixels) directly to `Shixin.exe`.
+  It never forwards commits. The host verifies the foreground PID and context,
+  coalesces displays, and sends `Select{ctx, displayedSeq, index}` back; TSF
+  rejects stale clicks and assigns the engine sequence. The engine key
+  stream is unchanged and receives no caret frames.
 - **Security:**
   - Windows: the pipe DACL allows the user, `ALL APPLICATION PACKAGES` and
     the low-integrity label. Clients check the server's PID, image path and
@@ -1138,6 +1144,17 @@ appear after restarting the app.
   nothing else changes.
 
 ### 5.6 Windows TSF DLL
+
+**Implementation status:** `frontends/windows-tsf` implements the native
+COM front, fixed-buffer policy/codec core, background overlapped pipes,
+focus and password/PIN guards, and serialized edit sessions. `Shixin.exe`
+implements the candidate/tray host and engine supervisor, sharing the
+settings app and candidate views with macOS. x64/ARM64 builds and native
+COM smoke tests are configured in CI; the DLL has been cross-compiled for
+x64, and the portable core passes ASan/UBSan locally. Actual Windows typing
+and registration remain unverified. [Windows development](windows.md)
+describes limits and remaining release work. AppContainer access and
+Authenticode verification remain requirements before release.
 
 - A C++17 in-proc COM server: `ITfTextInputProcessorEx`, `ITfKeyEventSink`,
   `ITfThreadMgrEventSink`, `ITfCompositionSink`, display attributes and input

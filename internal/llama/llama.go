@@ -18,6 +18,8 @@ import (
 	"unsafe"
 
 	"github.com/ebitengine/purego"
+
+	"shixin/internal/dynlib"
 )
 
 // Mirrors of llama.h (v0.7.0).
@@ -135,10 +137,13 @@ func Load(dir string) (*Lib, error) {
 	if runtime.GOOS == "linux" {
 		names = []string{"libllama.so.0", "libllama.so"}
 	}
+	if runtime.GOOS == "windows" {
+		names = []string{"llama.dll"}
+	}
 	var h uintptr
 	var err error
 	for _, name := range names {
-		if h, err = purego.Dlopen(filepath.Join(dir, name), purego.RTLD_NOW|purego.RTLD_LOCAL); err == nil {
+		if h, err = dynlib.Open(filepath.Join(dir, name), false); err == nil {
 			break
 		}
 	}
@@ -187,7 +192,7 @@ func Load(dir string) (*Lib, error) {
 		{&l.devName, "ggml_backend_dev_name"},
 		{&l.devDescription, "ggml_backend_dev_description"},
 	} {
-		sym, err := purego.Dlsym(h, f.name)
+		sym, err := dynlib.Symbol(h, f.name)
 		if err != nil {
 			return nil, fmt.Errorf("llama: %s: %w", f.name, err)
 		}

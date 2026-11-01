@@ -32,6 +32,23 @@ Delete an entry when it's fixed, and mention it in the commit.
 
 ## Front and UI
 
+### Windows validation and release support
+- **Implemented, not VM-verified:** TSF COM server, queued edit sessions,
+  policy speculation and bounded waits, password/PIN guards, candidate/tray
+  host, per-user registration exports, and backend/settings builds for
+  x64/ARM64. Native CI jobs include the COM factory smoke test; portable
+  client tests run on Linux and under sanitizers locally.
+- **Missing:** native library build automation, Windows onboarding, startup
+  registration, signed installer and update flow, display attributes/mode
+  indicator, and the native auto-spacing implementation. Desktop app IDs
+  without an explicit AppUserModelID still need mapping to the shared
+  settings app's shell IDs; packaged/explicit IDs are supplied by TSF.
+- **Security and validation:** AppContainer/low-integrity pipe access and
+  Authenticode checks are required before release. Real text-store behavior,
+  focus/security transitions, migration, DPI placement and mouse selection
+  need Windows VM tests. ARM64 packaging must also address x64 emulated
+  applications, which need a matching DLL. See [Windows development](windows.md).
+
 ### Oversized candidate panels
 - **What:** normal horizontal and vertical panels are measured and clamped
   to the caret screen's work area. A panel larger than that work area is

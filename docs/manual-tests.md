@@ -188,3 +188,41 @@ checking once).
    `~/Library/Caches/Shixin/Updates` is gone.
 5. `~/Library/Logs/Shixin/shixin.log` has the `update:` steps. Checking
    again says 已是最新版本.
+
+## Windows TSF development front (VM only; not yet verified)
+
+Use a disposable Windows snapshot and the matching DLL, host, backend,
+and native libraries described in [Windows development](windows.md).
+These are pending checks, not reported passing results. Registration and
+unregistration must happen only in the VM.
+
+1. Register with `Shixin.exe -register`, start `Shixin.exe`, and select
+   拾新 in Windows's language/input settings. Confirm registration appears
+   for the intended architecture; test native ARM64 and x64 emulated apps
+   separately before making architecture support claims.
+2. In Notepad, type `nihao` and Space; copy and assert exactly `你好`.
+   Exercise digits, candidate clicks, arrows, Backspace, Escape, Enter,
+   paging, Shift tap, Shift shortcuts and Ctrl shortcuts during composition.
+   A key tested by TSF and then delivered must be sent once, not twice.
+3. Open the tray's settings app. Confirm the same settings pages, controls,
+   skins and translations as macOS; change pinyin layout, punctuation and
+   appearance and confirm the live engine/host changes.
+4. Switch fields, documents, apps and input sources with results pending.
+   Confirm no late text or candidates reach a new context. Test selection
+   replacement and focus with existing selected text: focus alone must not
+   erase it. Confirm inline text is finalized on focus loss.
+5. Exercise browser password fields, numeric passwords/PINs, private input
+   scopes, read-only controls and disabled keyboard compartments. Keys must
+   pass without reaching the engine, and stale results must stay hidden.
+6. Stop, hang and restart the engine during a burst. Check passthrough and
+   the 8 ms decision budget. Apply settings during typing: accepted commits
+   must drain before the old connection is replaced. Keep a TSF edit session
+   deferred and confirm later text never overtakes it or blocks typing.
+7. Check candidate position on 100%, 150% and 200% DPI, mixed-DPI monitors,
+   negative monitor origins and every work-area edge. Click a candidate
+   while new results/focus changes arrive; an old menu must not select a
+   word from its replacement. Candidates must not take keyboard focus.
+8. Repeat in Word/Office, Chrome/Electron, Explorer and Start search.
+   Elevated/AppContainer tests remain gated on the documented security work.
+   Close test apps and unregister with `Shixin.exe -unregister`; confirm no
+   unrelated input sources or user dictionaries changed.

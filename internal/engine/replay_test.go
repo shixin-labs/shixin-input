@@ -234,7 +234,7 @@ func runInChild(t *testing.T, name string) {
 func rimeIceEngine(t *testing.T, s settings.Settings, opts ...func(*Options)) *Engine {
 	data, _ := filepath.Abs("../../build/rime-data")
 	lib := librimePath(t)
-	dir, err := os.MkdirTemp("/tmp", "shixin-rimeice-")
+	dir, err := ipc.TempDir("shixin-rimeice-")
 	if err != nil {
 		t.Fatal(err)
 	}

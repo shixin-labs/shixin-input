@@ -12,6 +12,25 @@ env:
   SHIXIN_PERF_TOLERANCE: "off"
 
 jobs:
+  windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-2025
+            arch: amd64
+          - runner: windows-11-arm
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: Windows frontend/backend build and native tests
+        shell: pwsh
+        run: ./scripts/build-windows.ps1 -Arch ${{ matrix.arch }} -Check
+
   linux:
     runs-on: ubuntu-24.04
     steps:
@@ -22,6 +41,11 @@ jobs:
       - name: librime for engine tests
         run: sudo apt-get update && sudo apt-get install -y librime1 librime-data clang
       - run: scripts/ci.sh go
+      - name: Native client policy, codecs, queues, and allocation tests
+        run: |
+          cmake -S frontends/windows-tsf -B build/tsf-tests -DCMAKE_BUILD_TYPE=Release
+          cmake --build build/tsf-tests
+          ctest --test-dir build/tsf-tests --output-on-failure
       - run: scripts/ci.sh fuzz
 
   macos:

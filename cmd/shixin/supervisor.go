@@ -4,8 +4,8 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"shixin/internal/process"
 	"sync"
-	"syscall"
 	"time"
 
 	"shixin/internal/lifecycle"
@@ -43,7 +43,7 @@ func (s *supervisor) ensure(error) {
 	}
 	s.lastTry = time.Now()
 	cmd := exec.Command(s.exe)
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true} // survive the front
+	process.Detach(cmd) // survive the front
 	if err := cmd.Start(); err != nil {
 		s.logf("start engine %s: %v", s.exe, err)
 		if errors.Is(err, os.ErrNotExist) {
