@@ -230,7 +230,7 @@ evidence storage, see [Windows VM setup](windows.md#windows-test-vm-on-macos).
 
 ### Windows QEMU setup (2026-10-31)
 
-Status: **blocked during OOBE; no product typing checks run**. QEMU/HVF
+Status: **Windows installed and SSH verified; no product typing checks run**. QEMU/HVF
 booted Windows 11 Pro ARM64 build `26300.9457` from the NVMe disk with
 2048 MiB RAM and four cores. UTM was abandoned after scripting timeouts;
 the helper now delegates to the external `qemu/shixin-win11/run.sh`.
@@ -256,29 +256,42 @@ Observed setup steps and evidence, relative to the external VM root:
   local-account form. The same command had returned “Class not registered”
   on the earlier recovery screen. If the console appears inactive, click
   its client area before typing. Evidence: `shots/localonly-open.png`.
-- **Blocked:** QEMU exited while the account form was open, then exited
-  again within 30 seconds of a restart through the controller. `qemu.log`
-  was empty and no new macOS QEMU crash report explained these exits.
-  The external `logs/qemu-exit-system.log` contains repeated kernel
-  `EXC_GUARD` messages for both VM process IDs (`type=0x5`, `flavor=0x1`,
-  `subcode=0x4000000`). The installed SDK names this virtual-memory flavor
-  `kGUARD_EXC_DEALLOC_GAP`; these messages alone do not prove the exit cause.
-  No account completion or SSH login was verified.
+- **Pass:** completed the local account and security questions, installed
+  guest tools, and verified the recorded password after restarting. The
+  account form's Tab order reaches Accessibility before Next; click Next
+  explicitly after filling the last answer. Setup credentials and any
+  screenshots showing security answers remain in private `notes/`.
+- **Pass:** installed the OpenSSH Server Feature on Demand, configured
+  automatic `sshd`, and installed the dedicated administrator public key
+  with only Administrators and SYSTEM granted access. The created firewall
+  rule was Private-only, so the NAT network initially timed out; setting
+  `OpenSSH-Server-In-TCP` to profile Any enabled the forwarded connection.
+  Host key login reports ARM64 and the intended local account. Evidence:
+  `logs/ssh-verification.log` and `shots/ssh-firewall-status.png`.
+- **Pass:** `exec`, SFTP uploads, status and screenshots work through the
+  helper. OpenSSH parses `UserKnownHostsFile` itself, so paths containing
+  spaces require quotes inside the `-o` argument. The helper now supplies
+  those quotes and stores the host key in the external state directory.
 
 The helper's `type` now sends explicit Shift chords for US punctuation:
 raw VNC typing had changed `:` to `;`, `_` to `-`, `+` to `=` and `*` to `8`.
 Actual `start ms-cxh:localonly` and quoted PowerShell commands verified the
-colon and quote handling. Bash syntax, ShellCheck, all shifted-symbol
+colon and quote handling. A long encoded command at the original fast key
+rate left keys repeating across apps; controller shutdown/restart recovered
+the guest. The helper now defaults to 50 ms between keys, and short commands
+plus a password login passed at that rate. Prefer SSH for scripts. After
+guest-tools installation, the on-screen keyboard cleared a stale Caps Lock
+state that VNC Caps Lock taps did not clear. Bash syntax, ShellCheck, all shifted-symbol
 mapping checks against a mock controller, rejected non-ASCII/control
 characters and power delegation passed; external
 `notes/helper-qemu-check/checks.log` records the mock checks.
 
 Native ARM64 builds, librime, TSF registration, settings UI, application
 input and CPU/memory measurements remain **not run**. The existing macOS
-VMs were left alone. Continue by completing the account/security questions,
-declining optional telemetry, enabling OpenSSH and verifying key login;
-then run the build and app matrix below. Credentials remain only in private
-external notes.
+VMs were left alone. Edge's first-run sync, automatic import, personalization
+and startup choices were declined, as was the OneDrive backup offer. Continue
+with the native toolchain and build, then the app matrix below. Credentials
+remain only in private external notes.
 
 ### Windows app matrix and evidence
 

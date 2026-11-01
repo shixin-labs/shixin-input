@@ -38,11 +38,10 @@ Delete an entry when it's fixed, and mention it in the commit.
   host, per-user registration exports, and backend/settings builds for
   x64/ARM64. Native CI jobs include the COM factory smoke test; portable
   client tests run on Linux and under sanitizers locally.
-- **Latest VM attempt (2026-10-31):** direct QEMU/HVF reached Windows 11
-  OOBE and the ARM64 virtio network adapter acquired a NAT address. The
-  local-account form opened, but QEMU subsequently exited twice without a
-  new crash report; completed account setup and SSH remain pending. Product
-  runtime checks have not run; see the
+- **Latest VM attempt (2026-10-31):** direct QEMU/HVF installed Windows 11
+  Pro ARM64, completed a local-account login and verified SSH public-key
+  access at 2048 MiB. Virtio networking and guest tools work. Native builds
+  and product runtime checks are next; see the
   [setup evidence](manual-tests.md#windows-qemu-setup-2026-10-31).
 - **Missing:** native library build automation, the front's `-added`
   answer for the 开始使用 guide, startup registration, a signed installer
