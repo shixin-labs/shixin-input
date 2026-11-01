@@ -1,0 +1,6 @@
+# Keep LF everywhere: golden test files (internal/*/testdata) are compared
+# byte for byte, and Windows checkouts would otherwise convert them to CRLF.
+* text=auto eol=lf
+*.png binary
+*.icns binary
+*.tiff binary

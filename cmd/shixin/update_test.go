@@ -78,7 +78,7 @@ func newFake(t *testing.T) *fakeTools {
 		t.Fatal(err)
 	}
 	return &fakeTools{
-		dmg: "/tmp/Shixin.dmg", volume: volume, installed: "/fake/Input Methods/Shixin.app",
+		dmg: "/tmp/Shixin.dmg", volume: volume, installed: filepath.FromSlash("/fake/Input Methods/Shixin.app"),
 		team: "TEAM123456", installedTeam: "TEAM123456",
 		plist: map[string]string{
 			"CFBundleIdentifier": bundleID, "CFBundleShortVersionString": "0.2.0", "CFBundleVersion": "20261101000000",

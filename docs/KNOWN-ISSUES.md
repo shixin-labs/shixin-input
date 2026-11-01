@@ -44,6 +44,10 @@ Delete an entry when it's fixed, and mention it in the commit.
   indicator, and the native auto-spacing implementation. Desktop app IDs
   without an explicit AppUserModelID still need mapping to the shared
   settings app's shell IDs; packaged/explicit IDs are supplied by TSF.
+- **Allocations over pipes:** the engine's connection to shixin-ai
+  allocates about 6 times per context-and-score over the Windows pipe
+  transport (`TestRemoteDoesNotAllocate`, skipped on Windows until fixed).
+  It's off the app's key path but must be zero before release.
 - **Security and validation:** AppContainer/low-integrity pipe access and
   Authenticode checks are required before release. Real text-store behavior,
   focus/security transitions, migration, DPI placement and mouse selection

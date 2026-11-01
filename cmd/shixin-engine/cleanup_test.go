@@ -88,6 +88,11 @@ func TestGenerationCleanupPreservesData(t *testing.T) {
 }
 
 func TestGenerationCleanupReplacedPaths(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		// It checks that the open root follows a renamed directory; Windows
+		// refuses to rename a directory with open handles at all.
+		t.Skip("Windows doesn't rename directories with open handles")
+	}
 	user := t.TempDir()
 	dir := filepath.Join(user, "generations")
 	cleanupFile(t, filepath.Join(dir, "gen-1/build/old.yaml"))

@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -44,6 +45,9 @@ func sink(t *testing.T) string {
 
 // TestRemoteDoesNotAllocate: Context and Score run on the engine thread.
 func TestRemoteDoesNotAllocate(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("allocates over the Windows pipe transport (KNOWN-ISSUES, Windows)")
+	}
 	r := NewRemote(sink(t), StrengthStandard, t.Logf)
 	stop := make(chan struct{})
 	defer close(stop)

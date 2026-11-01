@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -44,6 +45,11 @@ type fakeEngine struct {
 
 func fakeSocket(t *testing.T, precommit, change bool) (*fakeEngine, string) {
 	t.Helper()
+	if runtime.GOOS == "windows" {
+		// The fake engine is a Unix-socket server; menu capture is an
+		// offline evaluation tool run on macOS and Linux.
+		t.Skip("the fake engine listens on a Unix socket")
+	}
 	root, err := ipc.TempDir("sx-menu-test-")
 	if err != nil {
 		t.Fatal(err)
