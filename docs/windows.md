@@ -3,8 +3,9 @@
 Windows development builds include the C++ TSF DLL, a Go candidate/tray
 host, the shared engine and settings GUI, and offline tools. Both x64
 (`amd64`) and ARM64 (`arm64`) are build targets. This is an experimental
-front: registration and real typing have **not yet been verified in a
-Windows VM**. There is no signed Windows installer or updater yet.
+front: ARM64 native builds, headless checks, librime and per-user
+registration are verified in a Windows VM; real typing and app compatibility
+checks are in progress. There is no signed Windows installer or updater yet.
 
 ## Build and check
 
@@ -50,13 +51,39 @@ registering the IME. The portable tests can be built with
 
 ## Native dependencies
 
-Supply a same-architecture build of our pinned librime with
-`librime-shixin` merged and the dynamic plugin loader disabled; do not
-use a library with Lua enabled. The native library build is not automated
-by the Windows script yet. Put `rime.dll` and its DLL dependencies next
-to the executables, shared Rime data under `data/`, and optional compiled
-dictionaries under `prebuilt/`. The Go loader searches the library's own
-directory and System32, excluding the working directory and PATH.
+Build the pinned librime with statically linked dependencies and merged
+`librime-shixin`, with the external plugin loader disabled and no Lua:
+
+```powershell
+# Visual Studio 2022 C++, CMake, Git, tar and Python 3 on PATH; PowerShell 7.
+./scripts/fetch-rime-data.ps1
+./scripts/build-librime.ps1 -Arch arm64 -Test
+$out = 'build/windows-arm64'
+New-Item -ItemType Directory -Force "$out/data/opencc" | Out-Null
+Copy-Item build/rime-data/* "$out/data" -Recurse -Force
+Copy-Item build/librime-windows-arm64/out/share/opencc/* "$out/data/opencc" -Recurse -Force
+```
+
+Use `-Arch amd64` for x64. `build-librime.ps1` keeps the source submodule
+clean, builds under `build/librime-windows-<arch>/`, pins and checks the
+Boost archive, installs OpenCC conversion data, and copies `rime.dll` beside
+the development executables. `-Test` runs librime and Shixin's C++ tests.
+Python must allow imports from the script directory; a normal Python 3
+installation works. An isolated embeddable distribution needs its `._pth`
+configuration adjusted before OpenCC's sibling imports work.
+
+The development DLL exports the internal methods needed by librime's
+recovery tests. Its C++ development executables link
+[`binmode.obj`](https://learn.microsoft.com/en-us/cpp/c-runtime-library/fmode?view=msvc-170)
+so test fixtures write exact LF metadata. This fixes Windows test linkage
+and line-ending behavior through build configuration. The pinned fork is
+not edited. ARM64 builds and all C++ test targets passed in the VM.
+
+Put any additional same-architecture native DLL dependencies beside the
+executables, shared Rime data under `data/`, and optional compiled
+schemas under `prebuilt/`. The verified ARM64 librime imports only Windows
+system DLLs. The Go loader searches its library directory and System32,
+excluding the working directory and PATH.
 
 `shixin-ai.exe` looks for `llama.dll` and its dependencies next to itself;
 `SHIXIN_LLAMA` can select another directory. Windows GPU backend behavior
@@ -191,7 +218,8 @@ scripts/windows-vm.sh click 400 300
 scripts/windows-vm.sh stop
 ```
 
-`exec` encodes one literal PowerShell string as UTF-16LE. `put` and `get`
+`exec` encodes one literal PowerShell string as UTF-16LE and requests UTF-8
+output, preserving Chinese text through OpenSSH. `put` and `get`
 use SFTP; guest evidence must be saved under the external Windows state
 directory. `SHIXIN_WINDOWS_USER` and `SHIXIN_WINDOWS_SSH_PORT` override the
 account and SSH port. SSH uses a dedicated `known_hosts`, accepts first-use
@@ -295,7 +323,7 @@ and disable execution-speed throttling at startup.
   is added, and add startup registration. The shared settings app already
   shows Windows' guide steps and links 关于's updates to the release page
   (`cmd/shixin-settings/platform_windows.go`).
-- Automate native librime/llama builds, validate both architecture packages
+- Automate native llama builds, validate both architecture packages
   including emulation, and produce signed installers.
 - Complete signature/AppContainer checks and measure actual Windows key,
   text application, candidate placement and allocation budgets before release.

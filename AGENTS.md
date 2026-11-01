@@ -172,10 +172,11 @@ and tools that touch Rime use scratch user dirs, never the live one.
 
 | Task | Command |
 |---|---|
-| Fetch Rime data (rime-ice) into `build/rime-data` | `scripts/fetch-rime-data.sh` |
+| Fetch Rime data (rime-ice) into `build/rime-data` | `scripts/fetch-rime-data.sh` or Windows `./scripts/fetch-rime-data.ps1` |
 | Build (no cgo) | `CGO_ENABLED=0 go build ./...` |
 | Windows development build (PowerShell 7 + Visual Studio C++; no IME registration) | `./scripts/build-windows.ps1 -Arch amd64` or `-Arch arm64`; add `-Check` on the matching native Windows host for C++ tests, vet and short Go tests; `-SkipNative` builds only Go binaries |
 | Build our librime + librime-shixin (C++ tests with `--test`, sanitizers with `--asan`) | `scripts/build-librime.sh` → `build/librime/out/lib/librime.1.dylib` |
+| Build Windows librime + librime-shixin (MSVC, static dependencies, no Lua; C++ tests with `-Test`) | `./scripts/build-librime.ps1 -Arch arm64 -Test` → `build/windows-arm64/rime.dll` and `build/librime-windows-arm64/out/share/opencc` |
 | Build llama.cpp for shixin-ai (Metal, embedded shaders, no tools or network) | `scripts/build-llama.sh` → `build/llama/lib/libllama.dylib` |
 | Make the 8-bit model from ERNIE-4.5-0.3B-Base (Apache-2.0; weights downloaded into their own dir under `build/`) | `PYTHONPATH=third_party/llama.cpp/gguf-py python third_party/llama.cpp/convert_hf_to_gguf.py --outtype q8_0 --outfile build/models/ernie-4.5-0.3b-base-q8_0.gguf <hf snapshot dir>` |
 | Run the engine locally (dev: Homebrew librime, `build/rime-data`; without `-user`, `-settings` and `-socket` it uses the real Shixin user dir and refuses to start while an installed Shixin runs) | `go build -o build/bin/ ./cmd/shixin-engine ./cmd/shixin-builder && build/bin/shixin-engine -log -` |
