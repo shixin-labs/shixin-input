@@ -97,8 +97,8 @@ func (e *Engine) promote(schema string) error {
 		e.destroySession(spare)
 	}
 	e.pool = e.pool[:1]
-	// The macOS front uses one context. Do not build an unused replacement
-	// session immediately after FocusIn, delaying the first queued key.
+	// Do not build a replacement session immediately after FocusIn,
+	// delaying the first queued key. A larger attached pool is deferred.
 	e.opt.PoolSize = 0
 	e.realSchema = schema
 	e.schemas[schema] = sp

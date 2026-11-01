@@ -31,9 +31,12 @@ type Conn struct {
 	once sync.Once
 
 	// Engine thread only.
-	sessions map[uint32]*rime.Session
-	focus    map[uint32]focusState
-	sent     []bool // policies this client has
+	sessions        map[uint32]*rime.Session
+	focus           map[uint32]focusState
+	sent            []bool // policies this client has
+	focusedCtx      uint32
+	sharedASCII     bool // no-Remember mode shared by this front's contexts
+	sharedModeKnown bool
 }
 
 // focusState is what an input context last got focus in.

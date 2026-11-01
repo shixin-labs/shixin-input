@@ -21,14 +21,9 @@ Delete an entry when it's fixed, and mention it in the commit.
   stops the coordinator and worker and starts the new helper (verified in
   the VM).
 - **State:** composition, current switches and in-memory remembered app
-  modes reset to settings on takeover. Only the macOS front's single
-  context is prepared at activation; extra contexts use the cold session
+  modes reset to settings on takeover. Only one context is prepared at
+  activation; extra contexts use the cold session
   fallback rather than a fully attached standby pool.
-
-### One input context per front
-- **What:** the macOS front uses one engine session for all apps, so
-  switching apps clears the composition. Per-app default and remembered
-  modes now work on top of it (the engine applies them on `FocusIn`).
 
 ## Front and UI
 
@@ -71,28 +66,6 @@ Delete an entry when it's fixed, and mention it in the commit.
   need broader application coverage. The public ARM64X DLL has ARM64/x64 COM
   smoke coverage; broader emulated-app typing remains to test. 32-bit
   applications are not supported by the current packages. See [Windows development](windows.md).
-
-### Oversized candidate panels on macOS
-- **What:** normal horizontal and vertical panels are measured and clamped
-  to the caret screen's work area. A panel larger than that work area is
-  pinned to its origin; it cannot fit in full. The pre-created transparent
-  flyout also has a fixed 1400×560-point content area.
-- **Impact:** unusually long candidates/comments, ten vertical rows at
-  a large font on a small screen, or a font with unusually tall metrics
-  can still be clipped.
-- **Fix:** constrain the layout and add scrolling or another overflow UI.
-- **Verification:** placement has unit tests and works in the VM (the
-  panel flips above the caret at the bottom of the screen); real
-  multiple displays and Intel Macs are untested.
-
-### Candidate panel measurement on Linux
-- **What:** `candview.Measure` matches the laid-out panel on macOS, but
-  on Linux (CI, ubuntu-24.04) rows come out about 1.5 px short at small
-  font sizes, and much further off with no system fonts: MyGo's text
-  measurement and layout disagree under font fallback. `TestMeasure`
-  runs on macOS only.
-- **Fix (M4, before the fcitx5 front uses it):** make it match there, or
-  place the window from the previous frame's `Element.Bounds()`.
 
 ### Other apps not yet tested
 - **Tested so far:** TextEdit, Terminal, and form fields in Safari
@@ -157,22 +130,6 @@ Delete an entry when it's fixed, and mention it in the commit.
   `internal/client/testdata/spacing.txt`, using surrounding text where
   available. The Go and Windows TSF clients implement auto spacing.
 
-## Native translators
-
-### Time zone changes on Linux
-- **What:** `shixin_date_translator` loads the time zone once (`tzset` at
-  construction). macOS's libc notices zone changes itself; glibc doesn't,
-  so after travelling `sj` shows the old zone's time
-  until the engine restarts.
-- **Fix (M3/M4):** re-run `tzset` on the OS's time-zone-changed
-  notification, off the key path (on glibc it may read files).
-
-### Emoji among number and weekday candidates
-- **What:** rime-ice's `simplifier@emoji` has no `tags`, so it adds 🔟 /
-  1️⃣ between the `R` readings and `Mon.` / `Monday` between the weekdays.
-  rime-ice does the same. Limiting it to `abc` would also drop emoji for
-  other recognized input; decide when the filters are reworked.
-
 ## Tests
 
 ### Replay latency gates under parallel test runs
@@ -185,6 +142,11 @@ Delete an entry when it's fixed, and mention it in the commit.
 - **Why:** the other tests compete for the CPU. CI no longer runs the
   timing gates (`SHIXIN_PERF_TOLERANCE=off`): on GitHub's runners they
   failed the same way even at twice the budgets.
-- **Until fixed:** rerun `go test ./internal/engine -run TestReplay` alone
-  before treating a failure as a regression. A fix would run the latency
-  gates serially (`-p 1`) or skip them when other packages run alongside.
+- **Mitigation:** `scripts/ci.sh` and the documented full-suite commands
+  now serialize test packages (`-p 1`). Direct multi-package test runs also
+  need that flag when timing gates are enabled.
+- **Remaining:** an isolated replay on 2026-11-01 still hit a 12.46 ms
+  first-pass key in mixed/fuzzy pinyin (8 ms gate); the immediate isolated
+  recheck passed every gate. Package serialization removes test-package
+  competition but does not explain that first-key spike. Keep investigating
+  warm-up versus OS scheduling without raising or disabling the local gates.

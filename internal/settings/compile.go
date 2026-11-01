@@ -112,6 +112,9 @@ func Compile(s Settings) (map[string][]byte, error) {
 		}
 		list(&b, "engine/translators", ts)
 		list(&b, "engine/filters", filters)
+		// Keep emoji conversion for recognized input, but preserve the
+		// native translators' exact readings (十 must not become 🔟).
+		list(&b, "emoji/excluded_types", []string{"date", "number", "unicode", "calc"})
 		// rime-ice shows each candidate's pinyin as its comment for its
 		// corrector.lua, which Shixin doesn't run; Sogou shows none.
 		b.WriteString("  translator/spelling_hints: 0\n  translator/always_show_comments: false\n  translator/comment_format: []\n")

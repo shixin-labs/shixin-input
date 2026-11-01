@@ -40,6 +40,29 @@ every installed family).
 4. The engine's coordinator and worker keep their process IDs throughout:
    fonts never rebuild the engine.
 
+## Candidate panel overflow
+
+Automated: `go test ./cmd/shixin -run TestCandidate`,
+`go test ./internal/ui/candview -run 'Test(Measure|Overflow)'`.
+
+1. Set ten candidates and font size 28 on a small display. Use a tall font
+   such as Zapfino to exercise vertical overflow and a long custom phrase
+   or comment for horizontal overflow.
+2. In both layouts, highlight the last candidate with the keyboard. The
+   card must fit the screen and its flyout canvas, and reveal the selection.
+3. Scroll back to the first candidate and click it. Idle frames must keep
+   the manual scroll position; the chosen text must commit exactly once.
+4. Change the layout/font or move to a smaller display while composing.
+   The selected candidate must remain reachable. Repeat near screen edges.
+
+VM check (2026-11-01, macOS 26.6.2, 1024×768, 1×): ten candidates at
+28 points with Zapfino exercised vertical overflow; ten long custom phrases
+exercised horizontal overflow. Candidate 10 stayed visible; dragging each
+scrollbar back to candidate 1 preserved the manual position, and clicking
+it committed exactly `是` / `候选一测试长句` (clipboard assertions).
+The original guest settings were restored afterwards. Multiple displays
+and physical Retina/Intel hardware remain untested.
+
 ## Second- and third-candidate shortcuts
 
 Automated: `TestRimeIce`, `TestRimeIceOptions` and the replay with

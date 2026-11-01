@@ -159,6 +159,19 @@ func checkTranslators(t *testing.T, cl *client, scheme string) {
 		}
 		cl.key(policy.KeyEscape, 0)
 	}
+	// Emoji must not interleave native readings. Do not restrict the
+	// filter to abc: recognized symbols and other input still use it.
+	weekdayEnglish := regexp.MustCompile(`^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)`)
+	for _, code := range []string{"R1", "R10", week, "U31", "cC1+0"} {
+		r := cl.typ(code)
+		for _, c := range r.Candidates {
+			text := string(c.Text)
+			if strings.ContainsAny(text, "🔟\u20e3") || weekdayEnglish.MatchString(text) {
+				t.Errorf("%s: native reading converted by emoji filter: %q", code, text)
+			}
+		}
+		cl.key(policy.KeyEscape, 0)
+	}
 	cl.typ("R1001")
 	if r := cl.key(' ', 0); string(r.Commit) != "壹仟零壹" {
 		t.Errorf("R1001 + space: commit %q", r.Commit)
@@ -193,9 +206,24 @@ func TestRimeIceOptions(t *testing.T) {
 	s.Hotkeys["traditional"] = "Control+Shift+4"
 	s.Hotkeys["forget"] = "Control+Delete"
 	s.CandidateKeys = "alt"
-	s.Phrases = []settings.Phrase{{Code: "yx", Text: "shixin@example.com"}}
+	s.Phrases = []settings.Phrase{{Code: "yx", Text: "shixin@example.com"}, {Code: "em", Text: "笑脸"}}
 	e := rimeIceEngine(t, s)
 	defer e.Stop()
+	deployed, err := os.ReadFile(filepath.Join(e.opt.UserDataDir, "build", s.Scheme+".schema.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var config struct {
+		Emoji struct {
+			ExcludedTypes []string `yaml:"excluded_types"`
+		}
+	}
+	if err := yaml.Unmarshal(deployed, &config); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Join(config.Emoji.ExcludedTypes, ",") != "date,number,unicode,calc" {
+		t.Fatalf("native translator emoji exclusions lost in deploy: %v", config.Emoji.ExcludedTypes)
+	}
 	cl := dial(t, e)
 	if cl.res.Flags&ipc.ResultASCIIPunct == 0 {
 		t.Fatal("new session did not start with English punctuation")
@@ -234,6 +262,10 @@ func TestRimeIceOptions(t *testing.T) {
 		t.Error("idle ',' is ASK although its binding needs a menu")
 	}
 	checkCandidateShortcuts(t, cl, s.CandidateKeys, "shi", e.Native())
+	if r := cl.typ("em"); !hasCandidate(r, "😀") {
+		t.Error("emoji conversion lost for custom phrases")
+	}
+	cl.key(policy.KeyEscape, 0)
 
 	if r := cl.typ("yx"); firstText(r) != "shixin@example.com" {
 		t.Errorf("custom phrase: first candidate %q", firstText(r))

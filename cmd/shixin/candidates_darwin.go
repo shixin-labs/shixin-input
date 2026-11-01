@@ -17,9 +17,9 @@ import (
 )
 
 // The candidate window (DESIGN §3.6) is a flyout created once at startup
-// and only moved, shown and hidden afterwards. It is larger than any
-// candidate panel and transparent; the panel is drawn at its top-left
-// corner and sized to its content, so candidates never wrap. Clicks on the
+// and only moved, shown and hidden afterwards. It is transparent; the panel
+// is drawn at its top-left corner, with scrolling when its content exceeds
+// the screen or flyout bounds. Clicks on the
 // transparent part reach the window below. The panel is the same view the
 // settings app previews skins with (internal/ui/candview).
 const (
@@ -113,6 +113,12 @@ func candView(c *ui.Context) {
 	}
 	l := &cand.look
 	style := candview.Style{Skin: l.skin, Dark: l.dark(c), FontFamily: l.fontFamily, FontSize: l.fontSize, Vertical: l.vertical}
+	refreshCandidateScreens()
+	work := candidateRect{W: candWindowW, H: candWindowH}
+	if len(cand.screens) > 0 {
+		work = cand.screens[candidateScreenAt(candidateRect(cand.caret), cand.screens)].work
+	}
+	style.MaxWidth, style.MaxHeight = candidateCardBounds(work, candWindowW, candWindowH, shadowPad)
 	w, h := candview.Measure(c, &cand.state, &style)
 	if cand.shown {
 		positionCandidates(float64(w), float64(h))
@@ -134,15 +140,21 @@ var (
 	selVisibleFrame  = objc.RegisterName("visibleFrame")
 )
 
-// positionCandidates reads Cocoa work areas on the main thread. Refresh on
-// each view update so a moved Dock or a changed display arrangement is honored.
+// candView has already refreshed the work areas for this frame.
 func positionCandidates(width, height float64) {
-	positionCaretWindow(cand.flyout, cand.caret, width, height)
+	positionOnCandidateScreens(cand.flyout, cand.caret, width, height)
 }
 
 // positionCaretWindow shares the same screen selection and edge clamping for
 // candidates and the transient mode bubble. Main thread only.
 func positionCaretWindow(window *mygo.Window, rect nsRect, width, height float64) {
+	refreshCandidateScreens()
+	positionOnCandidateScreens(window, rect, width, height)
+}
+
+// Refresh on each view update so Dock and display arrangement changes are
+// honored. This runs on the UI frame, outside the app's key callback.
+func refreshCandidateScreens() {
 	list := send(uintptr(objc.GetClass("NSScreen")), selScreens)
 	n := send(list, selCount)
 	cand.screens = cand.screens[:0]
@@ -150,6 +162,9 @@ func positionCaretWindow(window *mygo.Window, rect nsRect, width, height float64
 		s := send(list, selObjectAtIndex, i)
 		cand.screens = append(cand.screens, candidateScreen{screenRect(s, selFrame), screenRect(s, selVisibleFrame)})
 	}
+}
+
+func positionOnCandidateScreens(window *mygo.Window, rect nsRect, width, height float64) {
 	if len(cand.screens) == 0 {
 		return
 	}

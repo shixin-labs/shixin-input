@@ -82,10 +82,7 @@ DateTranslator::DateTranslator(const Ticket& ticket) : Translator(ticket) {
       config->GetString(name_space_ + "/" + kCodes[i].key, &codes_[i].code);
   }
   // Load the time zone now rather than on the first rq.
-#ifndef _WIN32
-  tzset();
-#endif
-  (void)date_now();
+  init_date_clock();
 }
 
 an<Translation> DateTranslator::Query(const std::string& input, const Segment& segment) {

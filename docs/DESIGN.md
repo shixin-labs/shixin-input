@@ -322,8 +322,8 @@ The coordinator also watches settings.json, so edits outside Settings work.
    schema on its retained warm session. While holding the lock it changes
    the cached default schema list to real IDs (without saving it), so the
    switcher and future sessions never choose warm schemas after activation.
-   One session is ready at activation, matching the macOS front's single
-   context. Additional contexts use the existing cold session fallback;
+   One session is ready at activation. The macOS front retains up to 16
+   per-app contexts; additional contexts use the existing cold session fallback;
    preparing a larger real-schema pool is deferred. No deploy or file
    copying occurs on a serving engine thread. Only the lock holder may select a real schema.
 6. Each worker has a private endpoint. The public `engine.sock` is an
@@ -486,6 +486,10 @@ Results: `docs/spikes/m0-4-handoff.md`.
     A new string or layout may allocate on a UI-frame cache miss, outside
     the key callback. No text is logged or persisted by these caches.
   - Shaped text runs are cached per candidate string.
+  - The card is bounded by the caret screen's work area and the pre-created
+    flyout canvas. Oversized horizontal/vertical lists, comments and preedit
+    scroll in both directions. New results reveal the highlighted candidate;
+    idle frames preserve manual scrolling.
   - The glyph cache is pre-warmed with the ~3,500 most common hanzi and the
     UI fonts.
   - Fallback font lookup happens at startup, not on first use.
@@ -496,7 +500,11 @@ Results: `docs/spikes/m0-4-handoff.md`.
     the watcher goroutine before publishing it to the candidate window.
     Font-aware text/baseline measurements are retained in a bounded cache
     (512 entries, 256 KiB of key strings) so revisiting warmed pages does
-    not allocate. Rare glyphs may still miss the renderer's glyph cache on
+    not allocate. Each candidate row measures and paints the same retained
+    rich-text line, including label/comment sizes and gaps; separate flex
+    text boxes can disagree on baseline leading under DirectWrite fallback.
+    Normal and highlighted paint variants are retained with the measurement.
+    Rare glyphs may still miss the renderer's glyph cache on
     an asynchronous UI frame, outside key handling.
 - **Settings** is a separate process. Heavy pages (skin gallery, dictionary
   lists) can't affect the IMK main thread or the candidate window.
@@ -604,10 +612,19 @@ are a syllable there. Date candidates have quality 100 and come first, as
 in rime-ice. The pure parts (calculator, numerals, date formats, code
 points) have no librime dependency; they are unit-tested on their own and
 fuzzed (`test/parsers_fuzz.cc`).
+The compiler excludes the native `date`, `number`, `unicode` and `calc`
+candidate types from emoji conversion, so exact readings stay intact.
+Other candidates, including custom phrases and recognized input, retain
+emoji conversion; traditionalization still applies to native readings.
 On Windows the date clock converts the current OS instant with
 `FileTimeToLocalFileTime`, so time-zone changes take effect in existing
 sessions without refreshing the CRT's cached zone or reading files on the
-key path. Linux's zone-change notification support remains deferred.
+key path. On Linux the Go host refreshes libc's zone cache once per second
+in the background (including direct `/etc/localtime` replacements without
+timedated). A dedicated thread-safe export publishes only the current UTC
+offset; it accesses no Rime state. Date candidates use that atomic offset
+and a pure Gregorian conversion, avoiding libc's timezone lock and file I/O
+on the engine thread. The refresh stops when the library is finalized.
 
 ## 4. Key flow per platform
 
@@ -2170,6 +2187,13 @@ under the user, so none ever does. Instead:
 
 ## 8. Engine behavior
 
+- **Per-app contexts (macOS):** a bounded 16-entry LRU assigns stable engine
+  context IDs to recently focused apps. Reusing an ID fences old results with
+  a sequenced Clear before FocusIn; its reply cannot install a policy for
+  the previous app. Focus loss still finalizes displayed marked text in the
+  original field. Per-app engine sessions retain their other switches; with
+  mode remembering off, the current shared mode still follows focus (subject
+  to explicit app rules). No connection or wait is added on focus/key paths.
 - **Per-app default mode** (terminals and editors start in English), with the
   last mode remembered per app. Built: on `FocusIn` with a new app, the
   engine applies the app's remembered mode (with "remember each app's mode"
@@ -2192,6 +2216,8 @@ under the user, so none ever does. Instead:
   shared runners the same commit passed and failed by a few percent, so
   the timing gates run locally on real hardware before merging, while CI
   still fails on mispredicts and allocations.
+  Local multi-package checks use `go test -p 1` (including `scripts/ci.sh`)
+  so other test packages cannot compete with the replay's timing gates.
 - **No-Lua gate:** every deployed schema in CI is scanned, and any `lua_*`
   component fails the build. The engine also asserts at startup that no
   `lua` module is registered.
@@ -2268,7 +2294,7 @@ under the user, so none ever does. Instead:
   per-app rules and remembered modes replace the global mode. Fuzzy pinyin
   works in full pinyin and all seven supported double-pinyin schemes; its
   derivations run before double-pinyin spelling conversion. Remaining:
-  one input context per front.
+  a fully attached standby pool for all front contexts.
 
 **M0 spikes:**
 

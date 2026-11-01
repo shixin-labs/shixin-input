@@ -55,7 +55,7 @@ M1 (macOS MVP) is done; M2 (DESIGN §10) is in progress. Built so far:
   prebuilt dictionaries, and offline menu capture for evaluation.
 - **macOS front:** auto spacing, secure-field detection, candidate window
   placement, the caret mode bubble, committing inline text on focus loss,
-  and the double-click installer and in-place upgrader.
+  bounded per-app engine contexts, and the double-click installer and in-place upgrader.
 - **Settings app** (DESIGN §6; gaps in KNOWN-ISSUES): per-app modes,
   custom phrases, second/third-candidate shortcuts, the default
   punctuation style, a candidate font picker, forgetting learned words,
@@ -217,10 +217,10 @@ and tools that touch Rime use scratch user dirs, never the live one.
 
 | Task | Command |
 |---|---|
-| Test / vet / format | `go test ./...` · `go vet ./...` · `gofmt -l .` |
+| Test / vet / format (serialize packages for latency gates) | `go test -p 1 ./...` · `go vet ./...` · `gofmt -l .` |
 | All CI gates locally | `scripts/ci.sh go\|macos\|asan\|asan-full\|fuzz` (`SHIXIN_PERF_TOLERANCE` scales latency budgets; `off` disables them, as CI and the ASan runs do) |
 | librime and the engine under ASan/UBSan: per push without the long rime-ice runs, or every engine test | `scripts/ci.sh asan` · `scripts/ci.sh asan-full` |
-| Engine + client tests incl. real rime-ice deploy (slow) | `go test ./internal/...` (`-short` skips the rime-ice deploy and replay) |
+| Engine + client tests incl. real rime-ice deploy (slow) | `go test -p 1 ./internal/...` (`-short` skips the rime-ice deploy and replay) |
 | Tests against our librime (以词定字 etc.) | `SHIXIN_LIBRIME=… go test ./internal/engine` |
 | C++ tests of librime-shixin only (after a build) | `build/librime/out/plugins/shixin/shixin_test` |
 | Fuzz librime-shixin's parsers | `scripts/ci.sh fuzz` (libFuzzer where available; with Apple clang, `test/fuzz_driver.cc` feeds random and grammar-built inputs) |
@@ -252,7 +252,7 @@ and tools that touch Rime use scratch user dirs, never the live one.
 |---|---|
 | With a fake scorer: held results reordered, timeouts, superseded results, never-held keys, per-app context, zero allocations | `go test -v ./internal/engine -run TestRerank` · `go test ./internal/rerank` (`SHIXIN_TEST_RERANK=off` runs the engine tests and `BenchmarkKey` without it) |
 | Engine cost on rime-ice: export, hold and applying orders (简拼 p99 gate, in the replay corpus run) | `go test -v ./internal/engine -run TestReplay` |
-| shixin-ai: binding, scorer, reference agreement, accuracy and latency gates (run alone; the gate skips with `-short`), protocol and Remote | `go test -v ./internal/llama ./internal/ai ./internal/rerank` (the reference-agreement test needs `build/laya/abbr_ref.jsonl` from the 智能排序 spike's code, which lives outside this repository, and skips without it) |
+| shixin-ai: binding, scorer, reference agreement, accuracy and latency gates (run alone; the gate skips with `-short`), protocol and Remote | `go test -p 1 -v ./internal/llama ./internal/ai ./internal/rerank` (the reference-agreement test needs `build/laya/abbr_ref.jsonl` from the 智能排序 spike's code, which lives outside this repository, and skips without it) |
 | Model download from the published URLs (network; off by default) | `SHIXIN_TEST_NETWORK=1 go test ./internal/models` |
 | End to end: rime-ice menus, Remote, server and model in one child process | `go test -v ./internal/engine -run TestRerankEndToEnd` |
 

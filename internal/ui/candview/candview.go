@@ -26,6 +26,15 @@ type State struct {
 	onSelect     func(int)
 	reveal       bool
 	viewportSeen bool
+	viewport     extent
+	scroll       ui.ScrollState
+	geometry     panelGeometry
+}
+
+type panelGeometry struct {
+	font, locale string
+	size         float32
+	vertical     bool
 }
 
 // Measurements are retained across pages and font changes, with the same
@@ -38,31 +47,70 @@ type measurement struct {
 	row          bool
 }
 
-type extent struct{ w, h float32 }
+type extent struct {
+	w, h float32
+	line *candidateLine
+}
 
-func (st *State) measure(c *ui.Context, item Item, size float32, font string, row bool) (float32, float32) {
+// candidateLine retains the exact rich line used for both measurement and
+// painting. Independent label/text/comment boxes have different leading on
+// some fallback fonts, so their flex baseline height cannot be measured as
+// one rich line. Painting that retained line also avoids rebuilding joined
+// rich-text strings on every typing frame.
+type candidateLine struct {
+	item        Item
+	font        ui.Font
+	text, muted [2]ui.Color
+	draw        [2]func(*ui.Painter, ui.Rect)
+}
+
+func rowSpans(item Item, size float32, text, muted ui.Color) []ui.Span {
+	spans := []ui.Span{
+		{Text: item.Label, Size: size * 0.76, Color: muted},
+		{Text: "\uFFFC", ObjectWidth: size * 0.22},
+		{Text: item.Text, Size: size, Color: text},
+		{Text: "\uFFFC", ObjectWidth: size * 0.22},
+		{Text: item.Comment, Size: size * 0.76, Color: muted},
+	}
+	if item.Comment == "" {
+		spans = spans[:3]
+	}
+	return spans
+}
+
+func (line *candidateLine) painter(text, muted ui.Color, highlighted bool) func(*ui.Painter, ui.Rect) {
+	i := 0
+	if highlighted {
+		i = 1
+	}
+	if line.draw[i] == nil || line.text[i] != text || line.muted[i] != muted {
+		layout := ui.ShapeRichText(rowSpans(line.item, line.font.Size, text, muted), line.font, 0)
+		line.text[i], line.muted[i] = text, muted
+		line.draw[i] = func(p *ui.Painter, r ui.Rect) { p.TextLayout(layout, r.X, r.Y, text) }
+	}
+	return line.draw[i]
+}
+
+func (st *State) measure(c *ui.Context, item Item, size float32, font string, row bool) extent {
 	if font == "" {
 		font = c.Theme().Font
 	}
 	key := measurement{item, font, c.Locale(), size, row}
 	if e, ok := st.measured[key]; ok {
-		return e.w, e.h
+		return e
 	}
 	f := ui.Font{Family: font, Size: size, Lang: key.locale}
 	var w, h float32
 	if row {
-		// Baseline alignment takes the largest ascent AND descent across
-		// the label, candidate and comment, including fallback fonts. A
-		// single shaped line with these sizes has exactly that height.
-		w, h = ui.ShapeRichText([]ui.Span{
-			{Text: item.Label, Size: size * 0.76},
-			{Text: item.Text, Size: size},
-			{Text: item.Comment, Size: size * 0.76},
-		}, f, 0).Size()
+		w, h = ui.ShapeRichText(rowSpans(item, size, ui.Color{}, ui.Color{}), f, 0).Size()
 	} else {
 		// Context.MeasureText keeps the page's base font as a minimum
 		// line box. Shape with the element's own font and size instead.
 		w, h = ui.ShapeText(item.Text, f, 0).Size()
+	}
+	e := extent{w: w, h: h}
+	if row {
+		e.line = &candidateLine{item: item, font: f}
 	}
 	n := len(item.Label) + len(item.Text) + len(item.Comment) + len(font) + len(key.locale)
 	if n <= stringCacheBytes {
@@ -73,10 +121,10 @@ func (st *State) measure(c *ui.Context, item Item, size float32, font string, ro
 			clear(st.measured)
 			st.measureBytes = 0
 		}
-		st.measured[key] = extent{w, h}
+		st.measured[key] = e
 		st.measureBytes += n
 	}
-	return w, h
+	return e
 }
 
 // Style is how the panel looks.
@@ -92,21 +140,15 @@ type Style struct {
 // Labels are the default select-key labels.
 var Labels = [10]string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "0"}
 
-// Measure returns the visible card's size, excluding its shadow. Text uses
-// retained font-aware measurement, with the same sizes, gaps and padding as Draw.
+// naturalSize uses retained font-aware measurement with Draw's sizes, gaps
+// and padding, excluding the shadow.
 func naturalSize(c *ui.Context, st *State, style *Style) (width, height float32) {
 	size := max(style.FontSize, 10)
 	small, pad := size*0.76, size*0.35
 	for i := range st.Items {
 		it := &st.Items[i]
-		w, _ := st.measure(c, Item{Text: it.Label}, small, style.FontFamily, false)
-		tw, _ := st.measure(c, Item{Text: it.Text}, size, style.FontFamily, false)
-		w += tw + size*0.22
-		if it.Comment != "" {
-			cw, _ := st.measure(c, Item{Text: it.Comment}, small, style.FontFamily, false)
-			w += cw + size*0.22
-		}
-		_, h := st.measure(c, *it, size, style.FontFamily, true)
+		e := st.measure(c, *it, size, style.FontFamily, true)
+		w, h := e.w, e.h
 		w, h = w+2*pad, h+2*pad*0.45
 		if style.Vertical {
 			width, height = max(width, w), height+h
@@ -121,8 +163,8 @@ func naturalSize(c *ui.Context, st *State, style *Style) (width, height float32)
 		}
 	}
 	if st.Preedit != "" {
-		w, h := st.measure(c, Item{Text: st.Preedit}, small, style.FontFamily, false)
-		width, height = max(width, w+2*pad), height+h+pad*0.6
+		e := st.measure(c, Item{Text: st.Preedit}, small, style.FontFamily, false)
+		width, height = max(width, e.w+2*pad), height+e.h+pad*0.6
 	}
 	return width + 2*(pad+2) + 2, height + 2*(pad+1) + 2
 }
@@ -157,7 +199,12 @@ func Draw(c *ui.Context, st *State, style *Style, onSelect func(int)) ui.Element
 		h = min(h, style.MaxHeight)
 	}
 	overflow := w < naturalW || h < naturalH
-	reveal := st.reveal || !st.viewportSeen
+	font := style.FontFamily
+	if font == "" {
+		font = c.Theme().Font
+	}
+	geometry := panelGeometry{font: font, locale: c.Locale(), size: size, vertical: style.Vertical}
+	reveal := st.reveal || !st.viewportSeen || st.viewport != (extent{w: w, h: h}) || st.geometry != geometry
 	card := ui.Column(c).AlignSelf(ui.Start).Background(p.Background).Radius(size*0.6).Border(1, p.Border).
 		Shadow(0, 4, 16, 0, ui.RGBA(0, 0, 0, 0.16)).Padding(pad+1, pad+2).Gap(pad * 0.6)
 	if style.FontFamily != "" {
@@ -178,17 +225,15 @@ func Draw(c *ui.Context, st *State, style *Style, onSelect func(int)) ui.Element
 				it := &st.Items[i]
 				hl := i == st.Highlight
 				text, muted := p.Text, p.Muted
-				row := ui.Row(c).Gap(size*0.22).AlignItems(ui.Baseline).Padding(pad*0.45, pad).Radius(size * 0.4)
+				row := ui.Row(c).Padding(pad*0.45, pad).Radius(size * 0.4)
 				if hl {
 					row.Background(p.Highlight)
 					text, muted = p.OnHigh, p.OnHigh.Alpha(0.78)
 				}
+				e := st.measure(c, *it, size, style.FontFamily, true)
+				paint := e.line.painter(text, muted, hl)
 				row.Children(func() {
-					ui.Text(c, it.Label).FontSize(small).TextColor(muted).NoWrap()
-					ui.Text(c, it.Text).FontSize(size).TextColor(text).NoWrap()
-					if it.Comment != "" {
-						ui.Text(c, it.Comment).FontSize(small).TextColor(muted).NoWrap()
-					}
+					ui.Box(c).Size(e.w, e.h).Label(it.Text).Draw(paint)
 				})
 				if onSelect != nil {
 					row.OnClick(st.selectionHandler(i))
@@ -201,7 +246,7 @@ func Draw(c *ui.Context, st *State, style *Style, onSelect func(int)) ui.Element
 	}
 	if overflow {
 		card.Size(w, h).Children(func() {
-			ui.ScrollBoth(c).Size(max(1, w-2*(pad+2)-2), max(1, h-2*(pad+1)-2)).Children(func() {
+			ui.ScrollBoth(c).TrackScroll(&st.scroll).Size(max(1, w-2*(pad+2)-2), max(1, h-2*(pad+1)-2)).Children(func() {
 				ui.Column(c).Width(naturalW - 2*(pad+2) - 2).Gap(pad * 0.6).Children(content)
 			})
 		})
@@ -209,5 +254,7 @@ func Draw(c *ui.Context, st *State, style *Style, onSelect func(int)) ui.Element
 		card.Children(content)
 	}
 	st.reveal, st.viewportSeen = false, true
+	st.viewport = extent{w: w, h: h}
+	st.geometry = geometry
 	return card
 }

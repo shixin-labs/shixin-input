@@ -55,6 +55,10 @@ type Options struct {
 	Socket string
 	Kind   ipc.ClientKind
 	App    string // process identifier for Hello
+	// PerAppContexts keeps separate engine sessions for recently focused
+	// applications. The fixed-size LRU reuses context IDs, so it cannot grow
+	// the engine's session count as more apps are opened.
+	PerAppContexts bool
 	// Budget caps every wait on the app's thread (DESIGN R2). Default 8 ms.
 	Budget time.Duration
 	// Wake schedules Drain on the main thread. Called from background
@@ -91,26 +95,29 @@ type Client struct {
 	a   Applier
 
 	// Main thread only.
-	ctx         uint32
-	seq         uint32
-	app         string
-	cur         *policy.Policy // policy of the last applied state
-	spec        *policy.Policy // assumed policy while results are pending; nil: unknown
-	composing   bool
-	secure      bool
-	marked      []byte // last text actually sent to Applier.Preedit
-	clearSeq    uint32 // results before this fence belong to a finished composition
-	dropZero    bool   // ignore old FocusIn results until the clear fence arrives
-	shiftDown   bool
-	ctrlDown    bool
-	connected   bool
-	status      Status
-	timer       *time.Timer
-	keys        [256]sentKey
-	syncSeq     uint32
-	syncHandled bool
-	stats       Stats
-	sp          spacer
+	ctx          uint32
+	seq          uint32
+	app          string
+	cur          *policy.Policy // policy of the last applied state
+	spec         *policy.Policy // assumed policy while results are pending; nil: unknown
+	composing    bool
+	secure       bool
+	marked       []byte // last text actually sent to Applier.Preedit
+	clearSeq     uint32 // results before this fence belong to a finished composition
+	contextFence uint32 // target-context Clear reply is a fence, never a usable policy
+	dropZero     bool   // ignore old FocusIn results until the clear fence arrives
+	shiftDown    bool
+	ctrlDown     bool
+	connected    bool
+	status       Status
+	timer        *time.Timer
+	keys         [256]sentKey
+	syncSeq      uint32
+	syncHandled  bool
+	stats        Stats
+	sp           spacer
+	contexts     [16]appContext
+	contextTick  uint64
 
 	// Shared with the connection goroutine, without locks: the main
 	// thread never waits on the reader.
@@ -424,6 +431,33 @@ func (c *Client) sendSeq(m *outMsg, k sentKey) bool {
 // FocusIn tells the engine which app and kind of field has focus. The
 // local secure guard takes effect before the asynchronous reply. Main thread.
 func (c *Client) FocusIn(app string, secure bool) {
+	if c.opt.PerAppContexts {
+		ctx := c.appContext(app)
+		if ctx != c.ctx {
+			if c.composing || len(c.marked) != 0 {
+				// FocusIn may already refer to the new field (including a
+				// password). Only FocusOut, while the old proxy is valid,
+				// may commit its marked text. Drop late engine output here.
+				c.sendTracked(&outMsg{typ: ipc.TypeClear, key: ipc.Key{Ctx: c.ctx}})
+			}
+			c.a.Candidates(&emptyResult)
+			c.ctx = ctx
+			// Replies for the previous context are rejected by acceptResult.
+			// Its Clear fence must not suppress this context's FocusIn reply.
+			c.cur, c.spec = &policy.Passthrough, &policy.Passthrough
+			c.composing = false
+			c.marked = c.marked[:0]
+			c.shiftDown, c.ctrlDown = false, false
+			c.sp.on = false
+			// Context IDs are bounded and can be reused. Fence the target
+			// stream before FocusIn so a late reply from its previous owner
+			// cannot insert text or install an obsolete policy in this app.
+			// Keep the fence even if a full output queue kills the connection:
+			// its already-read results remain queued until Drain consumes them.
+			c.clearSeq, c.contextFence, c.dropZero = c.seq+1, c.seq+1, true
+			c.sendTracked(&outMsg{typ: ipc.TypeClear, key: ipc.Key{Ctx: ctx}})
+		}
+	}
 	c.sp.focus(app, c.app)
 	if c.secure != secure {
 		c.sp.on = false // wait for the new context's spacing setting
@@ -437,6 +471,31 @@ func (c *Client) FocusIn(app string, secure bool) {
 	}
 	c.app = app
 	c.post(&outMsg{typ: ipc.TypeFocusIn, key: ipc.Key{Ctx: c.ctx}, app: app, flag: secure})
+}
+
+type appContext struct {
+	app  string
+	used uint64
+}
+
+// appContext is a cold focus-path lookup with no allocation. IDs are stable
+// while an app remains in the bounded LRU; an evicted ID gets a normal FocusIn
+// for its new owner, after the old field was finalized by FocusOut.
+func (c *Client) appContext(app string) uint32 {
+	c.contextTick++
+	oldest := 0
+	for i := range c.contexts {
+		s := &c.contexts[i]
+		if s.used != 0 && s.app == app {
+			s.used = c.contextTick
+			return uint32(i + 1)
+		}
+		if s.used < c.contexts[oldest].used {
+			oldest = i
+		}
+	}
+	c.contexts[oldest] = appContext{app: app, used: c.contextTick}
+	return uint32(oldest + 1)
 }
 
 // SetSecure rechecks the field without a new app or proxy. A change sends
@@ -490,6 +549,9 @@ func (c *Client) acceptResult(r *ipc.Result, dropZero *bool) bool {
 		return false
 	}
 	*dropZero = false
+	if r.Seq == c.contextFence {
+		return false
+	}
 	return true
 }
 
@@ -550,6 +612,7 @@ func (c *Client) Drain() {
 			}
 		case evConnected:
 			c.dropZero = false
+			c.clearSeq, c.contextFence = 0, 0
 			c.connected = true
 			c.stats.Connects++
 			// Get the initial state and policy now, not on the first key:

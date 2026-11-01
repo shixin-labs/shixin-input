@@ -34,6 +34,11 @@ patch:
     - simplifier@emoji
     - simplifier@traditionalize
     - uniquifier
+  emoji/excluded_types:
+    - date
+    - number
+    - unicode
+    - calc
   translator/spelling_hints: 0
   translator/always_show_comments: false
   translator/comment_format: []

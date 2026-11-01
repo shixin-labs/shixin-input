@@ -181,12 +181,13 @@ func main() {
 		restartEngine()
 	}
 	core = client.New(client.Options{
-		Socket:      ipc.EnginePath(dir),
-		Kind:        ipc.KindMacOS,
-		App:         bundleID,
-		Wake:        wake,
-		Unreachable: sup.ensure,
-		Logf:        logf,
+		Socket:         ipc.EnginePath(dir),
+		Kind:           ipc.KindMacOS,
+		App:            bundleID,
+		PerAppContexts: true,
+		Wake:           wake,
+		Unreachable:    sup.ensure,
+		Logf:           logf,
 	}, frontApplier{})
 	core.Start(make(chan struct{}))
 

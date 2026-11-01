@@ -2,6 +2,26 @@ package main
 
 import "testing"
 
+func TestCandidateCardBounds(t *testing.T) {
+	for _, tt := range []struct {
+		work candidateRect
+		w, h float32
+	}{
+		{candidateRect{W: 1920, H: 1080}, 1376, 536},
+		{candidateRect{W: 800, H: 480}, 800, 480},
+		{candidateRect{W: 1000, H: 768}, 1000, 536},
+	} {
+		w, h := candidateCardBounds(tt.work, 1400, 560, 12)
+		if w != tt.w || h != tt.h {
+			t.Fatalf("work %+v: viewport %v×%v, want %v×%v", tt.work, w, h, tt.w, tt.h)
+		}
+		x, y := candidatePosition(candidateRect{X: tt.work.W - 1, Y: 1}, tt.work, float64(w), float64(h), tt.work.H, 12)
+		if float64(x)+12 < 0 || float64(x)+12+float64(w) > tt.work.W || float64(y)+12 < 0 || float64(y)+12+float64(h) > tt.work.H {
+			t.Fatalf("bounded card lies outside work area: %d,%d %v×%v", x, y, w, h)
+		}
+	}
+}
+
 func TestCandidatePosition(t *testing.T) {
 	work := candidateRect{0, 40, 1000, 740}
 	for _, tt := range []struct {

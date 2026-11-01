@@ -4,6 +4,8 @@
 // librime is not thread-safe: all calls must come from a single goroutine,
 // the engine thread (DESIGN §3.4). Hot-path methods on Session write into
 // caller-owned, reusable buffers and do not allocate.
+// The Linux date clock's dedicated refresh export is thread-safe, touches no
+// Rime state, and is the sole background native call.
 package rime
 
 import (
@@ -36,11 +38,12 @@ type Traits struct {
 
 // Lib is a loaded librime.
 type Lib struct {
-	handle uintptr
-	api    *cAPI
-	traits cTraits
-	keep   [][]byte // C strings referenced by traits; kept alive for librime
-	mods   []uintptr
+	handle        uintptr
+	api           *cAPI
+	traits        cTraits
+	keep          [][]byte // C strings referenced by traits; kept alive for librime
+	mods          []uintptr
+	stopDateClock func()
 
 	// args backs every call's argument slice. purego.SyscallN allocates the
 	// variadic array when called with literal arguments; passing a slice of
@@ -126,10 +129,17 @@ func (l *Lib) Setup(t Traits) {
 func (l *Lib) Initialize() {
 	purego.SyscallN(l.api.initialize, uintptr(unsafe.Pointer(&l.traits)))
 	runtime.KeepAlive(l)
+	l.stopDateClock = l.watchDateClock()
 }
 
 // Finalize stops the service and unloads modules.
-func (l *Lib) Finalize() { purego.SyscallN(l.api.finalize) }
+func (l *Lib) Finalize() {
+	if l.stopDateClock != nil {
+		l.stopDateClock()
+		l.stopDateClock = nil
+	}
+	purego.SyscallN(l.api.finalize)
+}
 
 // InitializeDeployer loads only the deployment service. It does not start
 // maintenance (which can upgrade user dictionaries) or create sessions.

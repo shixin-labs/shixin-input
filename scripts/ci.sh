@@ -35,9 +35,11 @@ go_gates() {
     if go list -deps "$p" | grep egoist/mygo >/dev/null; then echo "$p imports MyGo" >&2; exit 1; fi
   done
   step "unit tests"
-  go test -short ./...
+  # Package concurrency otherwise makes the real-hardware timing gates
+  # measure competing tests instead of the input engine.
+  go test -p 1 -short ./...
   step "race"
-  go test -race -short ./internal/...
+  go test -p 1 -race -short ./internal/...
 }
 
 macos_gates() {
@@ -47,9 +49,9 @@ macos_gates() {
   local lib="$ROOT/build/librime/out/lib/librime.1.dylib"
   step "llama.cpp for shixin-ai: binding layout (model tests skip without the model)"
   scripts/build-llama.sh
-  go test -count=1 ./internal/llama ./internal/ai
+  go test -p 1 -count=1 ./internal/llama ./internal/ai
   step "our librime: dictionary lock conflicts, 以词定字, rime-ice deploy (no Lua), prism reuse, replay corpus"
-  SHIXIN_LIBRIME="$lib" go test -count=1 ./internal/rime ./internal/engine ./internal/client ./internal/generation ./cmd/shixin-engine
+  SHIXIN_LIBRIME="$lib" go test -p 1 -count=1 ./internal/rime ./internal/engine ./internal/client ./internal/generation ./cmd/shixin-engine
   step "no Lua in the bundle"
   LIBRIME="$lib" scripts/bundle-macos.sh "$ROOT/build/ci/Shixin.app" >/dev/null
   if grep -rl "lua_" "$ROOT/build/ci/Shixin.app/Contents/Resources/rime-data/"*.custom.yaml 2>/dev/null; then exit 1; fi

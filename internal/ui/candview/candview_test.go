@@ -6,7 +6,6 @@ import (
 	"math"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -18,10 +17,6 @@ import (
 )
 
 func TestMeasure(t *testing.T) {
-	if runtime.GOOS != "darwin" {
-		// Only the macOS front places the window from Measure so far.
-		t.Skip("Measure doesn't match the layout with Linux font fallback (KNOWN-ISSUES)")
-	}
 	families := append([]string{""}, fonts.Families()...)
 	for _, family := range families {
 		for _, vertical := range []bool{false, true} {
@@ -150,7 +145,7 @@ func TestMeasurementCache(t *testing.T) {
 		style.FontFamily = family
 		tt.Frame()
 		bounds, _ := tt.Find("panel")
-		if runtime.GOOS == "darwin" && (math.Abs(float64(w-bounds.W)) > 1 || math.Abs(float64(h-bounds.H)) > 1) {
+		if math.Abs(float64(w-bounds.W)) > 1 || math.Abs(float64(h-bounds.H)) > 1 {
 			t.Fatalf("switch to %q: measured %v×%v, layout %v", family, w, h, bounds)
 		}
 	}

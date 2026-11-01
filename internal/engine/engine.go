@@ -570,6 +570,7 @@ func (e *Engine) handleMessage(r *request) {
 	if r.typ == ipc.TypeFocusOut {
 		if s := c.sessions[r.ctx]; s != nil {
 			e.flushHeld(s)
+			e.leaveApp(c.focus[r.ctx], s)
 			s.ClearComposition()
 		}
 		return
@@ -621,6 +622,7 @@ func (e *Engine) handleMessage(r *request) {
 // there. Cold path: it runs when the focus changes, not per key.
 func (e *Engine) focus(c *Conn, ctx uint32, s *rime.Session, app string, secure bool) {
 	f := c.focus[ctx] // f.app is the last app focused outside a secure field
+	wasSecure := f.secure
 	if secure {
 		if !f.secure {
 			e.leaveApp(f, s)
@@ -635,11 +637,21 @@ func (e *Engine) focus(c *Conn, ctx uint32, s *rime.Session, app string, secure 
 		s.SetOption("ascii_mode", f.beforeSecure)
 		f.secure = false
 	}
-	if app != f.app {
-		e.leaveApp(f, s)
+	if app != f.app || c.focusedCtx != ctx {
+		if previous := c.sessions[c.focusedCtx]; previous != nil {
+			e.leaveApp(c.focus[c.focusedCtx], previous)
+		}
+		// Entering the secure field already saved the displaced app. Its
+		// old mode may now be stale if that app reopened in another LRU slot.
+		if app != f.app && !wasSecure {
+			e.leaveApp(f, s)
+		}
 		english, ok := e.modes[app]
 		if !ok || !e.apps.Remember {
 			english, ok = e.apps.English[app]
+		}
+		if !ok && c.sharedModeKnown {
+			english, ok = c.sharedASCII, true
 		}
 		if ok && english != s.Option("ascii_mode") {
 			s.ClearComposition()
@@ -647,6 +659,7 @@ func (e *Engine) focus(c *Conn, ctx uint32, s *rime.Session, app string, secure 
 		}
 		f.app = app
 	}
+	c.focusedCtx = ctx
 	c.focus[ctx] = f
 }
 
@@ -668,6 +681,9 @@ func (e *Engine) read(s *rime.Session) {
 // send sends what read took as the result of request seq. With read, it
 // is the second half of the key path and must not allocate.
 func (e *Engine) send(c *Conn, ctx, seq uint32, handled bool) {
+	if c.focusedCtx == ctx && !c.focus[ctx].secure {
+		c.sharedASCII, c.sharedModeKnown = e.st.IsASCIIMode, true
+	}
 	res := &e.res
 	res.Ctx, res.Seq = ctx, seq
 	res.Flags = 0
