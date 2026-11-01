@@ -73,7 +73,9 @@ exec)
   [[ $# -eq 2 ]] || usage
   need_ssh
   # Pass literal PowerShell as UTF-16LE, without cmd.exe quote expansion.
-  encoded="$(printf '%s' "$2" | iconv -f UTF-8 -t UTF-16LE | base64 | tr -d '\r\n')"
+  # Windows PowerShell otherwise emits Chinese as '?' in the OEM code page.
+  # shellcheck disable=SC2016 # These are PowerShell variables, not shell variables.
+  encoded="$(printf '%s\n%s' '[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false); $OutputEncoding = [Console]::OutputEncoding; $ProgressPreference = "SilentlyContinue"' "$2" | iconv -f UTF-8 -t UTF-16LE | base64 | tr -d '\r\n')"
   ssh "${ssh_options[@]}" -p "$SSH_PORT" "$GUEST_USER@127.0.0.1" \
     "powershell.exe -NoLogo -NoProfile -NonInteractive -EncodedCommand $encoded"
   ;;
