@@ -195,9 +195,12 @@ Use a disposable Windows snapshot and the matching DLL, host, backend,
 and native libraries described in [Windows development](windows.md).
 Registration and unregistration must happen only in the VM. See
 [Windows VM setup](windows.md#windows-test-vm-on-macos) for host control and
-[Windows status](windows.md#status-2026-10-31) for verified coverage.
+[Windows status](windows.md#status-2026-11-01) for verified coverage.
 
-1. Register with `Shixin.exe -register`, start `Shixin.exe`, and select
+1. From an ordinary shell, register with `Shixin.exe -register`. Verify UAC
+   appears; cancelling must return failure without changing any keyboard or
+   COM/TIP registration. Approve a second run and verify machine registration
+   plus enablement for the original user. Start `Shixin.exe`, and select
    拾新 in Windows's language/input settings. Confirm registration appears
    for the intended architecture; test native ARM64 and x64 emulated apps
    separately before making architecture support claims.
@@ -229,12 +232,22 @@ Registration and unregistration must happen only in the VM. See
    below the visible card into the password field. The click must reach it,
    hide the menu, and leave subsequent literal keys out of the engine.
 8. Repeat in Word/Office, Chrome/Electron, Explorer and Start search.
-   Elevated/AppContainer tests remain gated on the documented security work.
-   Close test apps and unregister with `Shixin.exe -unregister`; confirm no
-   unrelated input sources or user dictionaries changed. Record the integrity
-   level and named TSF API when registration fails. A failed uninstall must
-   preserve the user COM class; a successful uninstall must remove the service
+   Confirm exact `你好` in Start search, with the DLL loaded in the
+   low-integrity SearchHost. Also run the capability-free transport test
+   (`go test -v ./internal/ipc -run TestInputPipeAppContainer`) on Windows.
+   Close test apps and, from an ordinary shell, unregister with
+   `Shixin.exe -unregister`; confirm no unrelated input sources or user
+   dictionaries changed. Also cancel an uninstall and verify the previous
+   keyboard list is unchanged. Record the integrity level and named TSF API
+   when registration fails. A failed uninstall must
+   preserve the machine COM class and user keyboard list; a successful uninstall
+   must remove the machine/user profile, COM class, service
    and categories without a subsequent spurious category-removal failure.
+   Repeat with an older HKCU COM entry and an already-disabled profile.
+   In the disposable VM, deny deletion of only Shixin's machine COM key, then
+   uninstall: TIP removal plus COM cleanup failure must leave the keyboard
+   disabled. Restore that key's permissions and retry; cleanup must succeed
+   without re-enabling the removed profile.
 
 ### Windows app matrix
 

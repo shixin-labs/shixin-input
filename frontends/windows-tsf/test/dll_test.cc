@@ -21,6 +21,9 @@ int wmain(int argc, wchar_t **argv) {
   auto unload = reinterpret_cast<HRESULT(WINAPI *)()>(
       GetProcAddress(dll, "DllCanUnloadNow"));
   CHECK(get && unload);
+  auto install = reinterpret_cast<HRESULT(WINAPI *)(BOOL, LPCWSTR)>(
+      GetProcAddress(dll, "DllInstall"));
+  CHECK(install && install(FALSE, L"invalid") == E_INVALIDARG);
   CHECK(unload() == S_OK);
   IClassFactory *factory = nullptr;
   CHECK(SUCCEEDED(get(shixin::kClass, IID_IClassFactory,

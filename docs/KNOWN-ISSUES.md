@@ -43,39 +43,23 @@ Delete an entry when it's fixed, and mention it in the commit.
   Application versions: Notepad 11.2607.14.0, Edge 156.0.4314.58,
   Explorer 10.0.26100.8117 and SearchHost 2608.25008.200.0 on Windows
   build 26300.9457. Settings and its Windows guide render; layout, theme
-  and punctuation changes can apply live. Compatibility failures below prevent
-  treating the port as ready. See the
-  [Windows status](windows.md#status-2026-10-31).
+  and punctuation changes can apply live. The remaining validation and
+  packaging work below prevent treating the port as ready. See the
+  [Windows status](windows.md#status-2026-11-01).
 - **Missing:** native llama build automation, the front's `-added`
   answer for the 开始使用 guide, startup registration, a signed installer
   and in-place updates (关于 links to the release page meanwhile), display attributes/mode
   indicator, and the native auto-spacing implementation. Desktop app IDs
   without an explicit AppUserModelID still need mapping to the shared
   settings app's shell IDs; packaged/explicit IDs are supplied by TSF.
-- **Security and validation:** AppContainer/low-integrity pipe access and
-  Authenticode checks are required before release. Real text-store behavior,
+- **Security and validation:** Authenticode checks are required before release.
+  AppContainer transport has capability-free sandbox coverage; Start search
+  typing also passes in the low-integrity ARM64 SearchHost. Real text-store
+  behavior,
   focus/security transitions, migration, DPI placement and mouse selection
-  need broader validation after the observed failures are fixed. ARM64
+  need broader application coverage. ARM64
   packaging must also address x64 emulated applications, which need a
   matching DLL. See [Windows development](windows.md).
-
-### Windows Start search still falls back to Latin text
-- **Fixed in ordinary fields:** Windows 11 Notepad and Explorer search
-  expose an input-scope property whose empty value query returns `E_FAIL`.
-  This previously marked the entire field secure. Empty unsupported scopes
-  now allow composition; explicit password/PIN/private scopes, native password
-  edits, disabled compartments and read-only contexts remain guarded.
-  Both fields passed exact copied `你好` at medium integrity with UAC on.
-- **Remaining:** Start search still passes `nihao ` through. In the same
-  Windows 11 ARM64 VM, SearchHost runs at low integrity (`0x1000`); module
-  inspection after a fresh start did not show the development DLL, and no
-  callback trace was produced. Notepad's trace
-  rules out activation, key-sink registration and edit-session lock failure
-  for its former fallback; these conclusions do not establish Start support.
-  The current profile advertises only the keyboard category, and the pipe
-  security does not support AppContainer clients. Isolate Store/immersive
-  activation categories and restricted-token transport before claiming
-  support; do not weaken password guards or enable broad pipe access.
 
 ### Windows low-memory lifecycle validation remains incomplete
 - At 2048 MiB, the first live layout rebuild returned `builder failed:
@@ -87,29 +71,6 @@ Delete an entry when it's fixed, and mention it in the commit.
   it did not immediately appear as literal fallback. Killing the worker
   did recover automatically and subsequent exact typing passed. These GUI
   observations do not measure the real application's 8 ms ASK budget.
-
-### Windows keyboard registration needs elevation
-- **Isolated in the VM:** at ordinary medium integrity with UAC enabled,
-  `ITfInputProcessorProfiles::Register` itself returns `0x80004005`, before
-  `AddLanguageProfile`, `EnableLanguageProfile` or category registration.
-  The same APIs succeed elevated and create the machine TIP. The COM class
-  remains under HKCU. Registration now names the failing API on stderr.
-- A working per-user-only TSF registration flow remains unresolved.
-  Writing a user COM class is insufficient; do not claim ordinary-user
-  support from an elevated installation. Windows documents the native TIP
-  registration under [HKLM](https://learn.microsoft.com/en-us/windows/win32/tsf/64-bit-platform-considerations).
-
-### Windows per-user unregistration remains unavailable
-- **Fixed:** elevated unregistration previously removed the service, then
-  redundantly called `ITfCategoryMgr::UnregisterCategory`, which returned
-  `E_FAIL` because `ITfInputProcessorProfiles::Unregister` already removes
-  every profile and category. It now returns success and removes the machine
-  TIP and user COM class. Actual API behavior was verified in the VM.
-- **Remaining:** at medium integrity, `ITfInputProcessorProfiles::Unregister`
-  returns `0x80004005` against the machine TIP. Its failure now preserves the
-  user COM class so that a failed uninstall leaves the input method usable.
-  This is not per-user uninstall support; the registration model above still
-  needs a supported solution. See [TSF cleanup semantics](https://learn.microsoft.com/en-us/windows/win32/tsf/text-service-registration).
 
 ### Oversized candidate panels
 - **What:** normal horizontal and vertical panels are measured and clamped

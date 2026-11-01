@@ -4,6 +4,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"flag"
 	"fmt"
 	"image/png"
@@ -13,7 +14,6 @@ import (
 	"path/filepath"
 	"sync"
 	"sync/atomic"
-	"syscall"
 	"time"
 	"unsafe"
 
@@ -85,17 +85,33 @@ func main() {
 	}
 	logger.Close()
 	if err != nil {
+		if errors.Is(err, errMachineRemoved) {
+			os.Exit(unregisterCleanupExitCode)
+		}
 		os.Exit(1)
 	}
 }
 
 func runWindows(logf func(string, ...any)) error {
-	register := flag.Bool("register", false, "register the adjacent TSF DLL (Windows test VM only)")
-	unregister := flag.Bool("unregister", false, "unregister the adjacent TSF DLL (Windows test VM only)")
+	register := flag.Bool("register", false, "register the adjacent TSF DLL (requests UAC; Windows test VM only)")
+	unregister := flag.Bool("unregister", false, "unregister the adjacent TSF DLL (requests UAC; Windows test VM only)")
+	system := flag.Bool("system-registration", false, "internal elevated machine registration step")
+	gate := flag.String("registration-gate", "", "internal user disablement gate")
 	flag.Parse()
+	if *gate != "" && (!*system || !*unregister) {
+		return fmt.Errorf("registration-gate requires the elevated unregister step")
+	}
 	if *register || *unregister {
 		if *register && *unregister {
 			return fmt.Errorf("choose register or unregister")
+		}
+		if *system {
+			if *gate != "" {
+				if err := waitRegistrationGate(*gate); err != nil {
+					return err
+				}
+			}
+			return registerWindowsSystem(*unregister)
 		}
 		if err := registerWindows(*unregister); err != nil {
 			return err
@@ -103,12 +119,16 @@ func runWindows(logf func(string, ...any)) error {
 		return nil
 	}
 
+	if *system {
+		return fmt.Errorf("system-registration requires register or unregister")
+	}
+
 	logf("host starting (version %s)", version)
 	dir, err := ipc.RuntimeDir()
 	if err != nil {
 		return err
 	}
-	listener, err := ipc.Listen(filepath.Join(dir, "ui.sock"))
+	listener, err := ipc.ListenInput(filepath.Join(dir, "ui.sock"))
 	if err != nil {
 		return err
 	}
@@ -378,29 +398,4 @@ func (h *windowsHost) position(c ipc.Caret, width, height float32) {
 	x = max(info.work.left, min(x, info.work.right-w))
 	y = max(info.work.top, min(y, info.work.bottom-hgt))
 	moveWindow.Call(handle, ^uintptr(0), uintptr(x), uintptr(y), 0, 0, 0x0001|0x0010) // TOPMOST, NOSIZE, NOACTIVATE
-}
-
-func registerWindows(remove bool) error {
-	exe, err := os.Executable()
-	if err != nil {
-		return err
-	}
-	h, err := windows.LoadLibraryEx(filepath.Join(filepath.Dir(exe), "shixin_tsf.dll"), 0, windows.LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR|windows.LOAD_LIBRARY_SEARCH_SYSTEM32)
-	if err != nil {
-		return err
-	}
-	defer windows.FreeLibrary(h)
-	name := "DllRegisterServer"
-	if remove {
-		name = "DllUnregisterServer"
-	}
-	proc, err := windows.GetProcAddress(h, name)
-	if err != nil {
-		return err
-	}
-	result, _, _ := syscall.SyscallN(proc)
-	if int32(result) < 0 {
-		return fmt.Errorf("%s failed: HRESULT 0x%08x", name, uint32(result))
-	}
-	return nil
 }

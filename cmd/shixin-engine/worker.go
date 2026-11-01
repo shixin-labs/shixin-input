@@ -143,7 +143,7 @@ func (w *worker) promote() error {
 	if err := w.e.Promote(w.s.Scheme); err != nil {
 		return err
 	}
-	l, err := ipc.Listen(c.socket)
+	l, err := ipc.ListenInput(c.socket)
 	if err != nil {
 		return err
 	}

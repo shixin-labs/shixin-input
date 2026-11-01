@@ -33,7 +33,9 @@ M1 (macOS MVP) is done; M2 (DESIGN §10) is in progress. Built so far:
   settings app and candidate views. x64/ARM64 builds and native tests are
   configured in CI. ARM64 VM builds and Edge typing have been exercised;
   Notepad, Explorer search/rename, Edge focus and candidate clicks have
-  also been exercised; Start search, per-user registration and release packaging remain open. See
+  also been exercised. Start search and registration/unregistration from an
+  ordinary shell (with UAC for the machine step) now pass; release packaging
+  remains open. See
   [`docs/windows.md`](docs/windows.md).
 
 - **Input:** full pinyin and seven double-pinyin layouts (including 自然码)
@@ -186,6 +188,7 @@ and tools that touch Rime use scratch user dirs, never the live one.
 | Build an isolated generation (output must not exist; no live user dir argument) | `build/bin/shixin-builder -lib "$SHIXIN_LIBRIME" -data build/rime-data -settings /path/to/snapshot.json -output /tmp/shixin-generation` (`-all` for packaging) |
 | Capture offline menus from public codes (warm-only scratch engine, no learning) | `go run ./tools/menu-capture -engine build/bin/shixin-engine -generation /tmp/shixin-generation -data build/rime-data -lib "$SHIXIN_LIBRIME" -profile SHA256 -input codes.jsonl -output menus.jsonl -limit 50` |
 | Portable TSF core tests (Go golden vectors, timeout/focus safety, queues, allocation and parser stress) | `cmake -S frontends/windows-tsf -B build/tsf-tests && cmake --build build/tsf-tests && ctest --test-dir build/tsf-tests --output-on-failure` |
+| Windows capability-free AppContainer input/discovery access, private-pipe and process/token restrictions (native Windows) | `go test -v ./internal/ipc -run TestInputPipeAppContainer` |
 | librime latency spike (needs rime data) | `go run ./spikes/m0-rime` (`-lua` for the Lua comparison) |
 | User dictionary handoff spike | `go run ./spikes/m0-handoff` (scratch copies under `build/spike/m0-handoff`) |
 

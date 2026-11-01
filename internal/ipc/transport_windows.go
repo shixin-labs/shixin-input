@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 	"unsafe"
@@ -44,7 +45,7 @@ func RuntimeDir() (string, error) {
 	}
 	// Elevated tokens may otherwise create directories owned by the local
 	// Administrators group. Assign this user's SID at creation as well.
-	private, err := windows.SecurityDescriptorFromString("O:" + sid + "D:P(A;OICI;FA;;;" + sid + ")(A;OICI;FA;;;SY)")
+	private, err := windows.SecurityDescriptorFromString(runtimeSecurity(sid))
 	if err != nil {
 		return "", err
 	}
@@ -102,6 +103,78 @@ func pipeName(path string) (string, error) {
 // Listen creates a byte-stream pipe using overlapped I/O. Another listener
 // cannot steal an active name (go-winio uses FILE_FLAG_FIRST_PIPE_INSTANCE).
 func Listen(path string) (net.Listener, error) {
+	return listenPipe(path, false)
+}
+
+// ListenInput permits restricted TSF clients to reach an input or candidate
+// endpoint. Control and AI pipes continue to use the private Listen DACL.
+func ListenInput(path string) (net.Listener, error) {
+	if err := allowSandboxIdentityQuery(); err != nil {
+		return nil, fmt.Errorf("ipc: allow sandbox server verification: %w", err)
+	}
+	return listenPipe(path, true)
+}
+
+// Restricted clients must authenticate the server without gaining process
+// control or token duplication rights. Windows' default process/token DACLs
+// omit package SIDs, even for PROCESS_QUERY_LIMITED_INFORMATION/TOKEN_QUERY.
+// Grant exactly those two read-only rights, preserving every existing ACE.
+func allowSandboxIdentityQuery() error {
+	packageSID, err := windows.CreateWellKnownSid(windows.WinBuiltinAnyPackageSid)
+	if err != nil {
+		return err
+	}
+	var pin runtime.Pinner
+	pin.Pin(packageSID)
+	defer pin.Unpin()
+	grant := func(handle windows.Handle, access windows.ACCESS_MASK) error {
+		old, err := windows.GetSecurityInfo(handle, windows.SE_KERNEL_OBJECT, windows.DACL_SECURITY_INFORMATION)
+		if err != nil {
+			return err
+		}
+		sd, err := windows.BuildSecurityDescriptor(nil, nil, []windows.EXPLICIT_ACCESS{{
+			AccessPermissions: access, AccessMode: windows.GRANT_ACCESS,
+			Trustee: windows.TRUSTEE{TrusteeForm: windows.TRUSTEE_IS_SID, TrusteeType: windows.TRUSTEE_IS_WELL_KNOWN_GROUP, TrusteeValue: windows.TrusteeValueFromSID(packageSID)},
+		}}, nil, old)
+		if err != nil {
+			return err
+		}
+		acl, _, err := sd.DACL()
+		if err != nil {
+			return err
+		}
+		return windows.SetSecurityInfo(handle, windows.SE_KERNEL_OBJECT, windows.DACL_SECURITY_INFORMATION, nil, nil, acl, nil)
+	}
+	if err := grant(windows.CurrentProcess(), windows.PROCESS_QUERY_LIMITED_INFORMATION); err != nil {
+		return err
+	}
+	var token windows.Token
+	if err := windows.OpenProcessToken(windows.CurrentProcess(), windows.TOKEN_QUERY|windows.READ_CONTROL|windows.WRITE_DAC, &token); err != nil {
+		return err
+	}
+	defer token.Close()
+	return grant(windows.Handle(token), windows.TOKEN_QUERY)
+}
+
+func runtimeSecurity(sid string) string {
+	// Packages may read discovery records, never replace them. Nothing in
+	// this directory contains typed text, candidates or user dictionaries.
+	return "O:" + sid + "D:P(A;OICI;FA;;;" + sid + ")(A;OICI;FA;;;SY)(A;OICI;GRGX;;;AC)"
+}
+
+func pipeSecurity(sid string, input bool) string {
+	// go-winio sets FILE_PIPE_REJECT_REMOTE_CLIENTS on every instance.
+	sd := "O:" + sid + "D:P(A;;GA;;;" + sid + ")"
+	if input {
+		// Restricted tokens need both their user SID and a package grant.
+		// Only data I/O/read-control, never WRITE_DAC/WRITE_OWNER. The low
+		// label permits writes by low-integrity clients, including SearchHost.
+		sd += "(A;;0x12008b;;;AC)S:(ML;;NW;;;LW)" // FILE_GENERIC_READ | FILE_WRITE_DATA
+	}
+	return sd
+}
+
+func listenPipe(path string, input bool) (net.Listener, error) {
 	name, err := pipeName(path)
 	if err != nil {
 		return nil, err
@@ -111,7 +184,7 @@ func Listen(path string) (net.Listener, error) {
 		return nil, err
 	}
 	return winio.ListenPipe(name, &winio.PipeConfig{
-		SecurityDescriptor: "D:P(A;;GA;;;" + sid + ")",
+		SecurityDescriptor: pipeSecurity(sid, input),
 		// go-winio still exposes a byte stream, and uses a zero-length
 		// message for CloseWrite. Migration needs that half-close so final
 		// accepted commits drain before the old worker disconnects.
@@ -182,20 +255,25 @@ func checkPeer(c net.Conn, server bool) error {
 		return err
 	}
 	var peerSession uint32
-	if err := windows.ProcessIdToSessionId(pid, &peerSession); err != nil {
-		return err
+	getSession := "GetNamedPipeClientSessionId"
+	if server {
+		getSession = "GetNamedPipeServerSessionId"
+	}
+	okSession, _, sessionErr := windows.NewLazySystemDLL("kernel32.dll").NewProc(getSession).Call(f.Fd(), uintptr(unsafe.Pointer(&peerSession)))
+	if okSession == 0 {
+		return fmt.Errorf("ipc: peer session: %w", sessionErr)
 	}
 	if session != peerSession {
 		return errors.New("ipc: peer is in another session")
 	}
 	p, err := windows.OpenProcess(windows.PROCESS_QUERY_LIMITED_INFORMATION, false, pid)
 	if err != nil {
-		return err
+		return fmt.Errorf("ipc: open peer process: %w", err)
 	}
 	defer windows.CloseHandle(p)
 	var token windows.Token
 	if err := windows.OpenProcessToken(p, windows.TOKEN_QUERY, &token); err != nil {
-		return err
+		return fmt.Errorf("ipc: open peer token: %w", err)
 	}
 	defer token.Close()
 	u, err := token.GetTokenUser()

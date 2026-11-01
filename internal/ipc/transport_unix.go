@@ -38,6 +38,10 @@ func RuntimeDir() (string, error) {
 // EnginePath is the default engine socket in dir.
 func EnginePath(dir string) string { return filepath.Join(dir, "engine.sock") }
 
+// ListenInput is equivalent to Listen on Unix; peer credentials protect
+// input endpoints just as they protect control endpoints.
+func ListenInput(path string) (*net.UnixListener, error) { return Listen(path) }
+
 // Listen listens on the Unix socket at path, replacing a stale socket file.
 // The caller must hold the engine lock, which makes the file stale by
 // definition if it exists.

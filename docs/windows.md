@@ -4,8 +4,8 @@ Windows development builds include the C++ TSF DLL, a Go candidate/tray
 host, the shared engine and settings GUI, and offline tools. Both x64
 (`amd64`) and ARM64 (`arm64`) are build targets. This is an experimental
 front: ARM64 native builds, librime, registration and Edge typing have been
-tested in a Windows VM, with substantial app compatibility failures. See
-the [status summary](#status-2026-10-31) and
+tested in a Windows VM, with further release validation still required. See
+the [status summary](#status-2026-11-01) and
 [known issues](KNOWN-ISSUES.md#windows-validation-and-release-support).
 There is no signed Windows installer or updater yet.
 
@@ -112,23 +112,25 @@ then register the DLL from its final development directory:
 ./build/windows-amd64/Shixin.exe
 ```
 
-The command invokes the adjacent DLL's standard registration exports.
-COM registration is written under the current user's Classes key, and TSF
-profile/category APIs register a Simplified Chinese keyboard profile.
-Errors propagate to the caller. Registration at a different DLL path is
-rejected while the existing class points elsewhere; unregister that copy
-before moving it. The command does not silently elevate or change the
-currently selected keyboard. Select 拾新 under Windows's language/input
-settings, then run the application checklist. The tray opens the same
-settings GUI as macOS, including a Windows first-run guide. The update
-installer still needs a Windows implementation.
+Run registration from an ordinary shell. Windows requires administrator
+approval for the machine text service, so the command requests UAC and waits
+for an isolated elevated child. That child writes COM registration under
+HKLM, registers the TSF profile disabled by default, advertises the keyboard
+and immersive categories, and grants packages read/execute access to the DLL.
+After success, the original caller uses `InstallLayoutOrTip` to add only its
+own keyboard. This keeps the profile with the invoking user even when UAC
+uses a different administrator account. Administrator approval is required;
+this is not a per-user-only TIP installation. See Microsoft's
+[IME installation requirements](https://learn.microsoft.com/en-us/windows/apps/develop/input/input-method-editor-requirements#ime-installation).
 
-The current registration is **not per-user-only**: ordinary medium-integrity
-registration failed in the VM, while an elevated command succeeded and
-created a machine TIP entry. Use an administrator shell only inside the
-disposable test VM if needed to continue runtime checks, then run the host
-and applications as ordinary desktop processes. See the
-[registration failure](KNOWN-ISSUES.md#windows-keyboard-registration-needs-elevation).
+A rejected UAC prompt or failed machine step returns an error before changing
+the caller's keyboard list. API failures retain named HRESULT diagnostics.
+An existing COM class pointing to another DLL is rejected; unregister that
+copy before moving the installation. A matching legacy HKCU class is removed
+after successful user enablement so it cannot shadow the machine class.
+Registration does not select the keyboard. Select 拾新 in Windows's input
+settings, then run the application checklist. The tray opens the shared
+settings GUI and Windows first-run guide. There is no Windows update installer yet.
 
 To remove the development profile in the VM:
 
@@ -140,12 +142,20 @@ Close apps using the DLL before deleting its files. An ARM64 DLL supports
 native ARM64 applications; the package strategy for x64 emulated apps,
 which require a matching DLL, still needs validation. The build script does
 not create logon startup entries; start `Shixin.exe` before typing tests.
-Elevated unregistration now returns success: the profile API removes its
-categories too, so no redundant category removal follows it. At medium
-integrity that API still fails against a machine TIP; the COM class is
-preserved on failure. Verify both user and machine state and preserve the
-named API/HRESULT diagnostics described in
-[known issues](KNOWN-ISSUES.md#windows-per-user-unregistration-remains-unavailable).
+Unregistration queries the caller's enabled state and requests UAC. After
+approval, the elevated child waits on a private event while the original
+caller disables its keyboard with the machine profile still present. The
+caller then releases the child to remove the machine profile. Windows can otherwise report success while leaving a stale keyboard
+in Settings. Cancellation leaves the keyboard list untouched. Machine failure
+restores a previously enabled keyboard; a user who did not enable it never gains one during rollback. TSF
+removes profiles and categories together, with no redundant category removal.
+Legacy HKCU COM entries are cleaned only after successful machine removal,
+including when the keyboard was already disabled. If the TIP was removed but
+machine COM cleanup failed, Shixin reports a cleanup error and keeps the
+keyboard disabled. Retrying uninstall cleans the remaining registration;
+it never re-enables a keyboard whose machine profile is gone. A failure
+before TIP removal restores the previously enabled keyboard, and a rollback
+failure is reported too.
 
 ## Collecting development logs
 
@@ -301,7 +311,7 @@ use the on-screen keyboard to clear a stale Caps Lock state if needed.
 `stop` requests ACPI shutdown, waits up to 60 seconds, then terminates QEMU;
 for normal shutdown, request `Stop-Computer` over SSH and confirm it stopped.
 
-## Status (2026-10-31)
+## Status (2026-11-01)
 
 - Windows 11 Pro ARM64 build 26300.9457 ran under QEMU/HVF with four cores;
   native builds used 6144 MiB, GUI checks used 2048 MiB.
@@ -313,7 +323,7 @@ for normal shutdown, request `Stop-Computer` over SSH and confirm it stopped.
   Settings rendered; live layout/theme/punctuation changes and worker recovery passed.
 - A subsequent medium-integrity check with UAC enabled verified exact `你好`
   in Notepad and Explorer search after fixing empty input-scope handling.
-  Start search still falls back to Latin text. Explorer rename with 自然码
+  Explorer rename with 自然码
   also passed exact `你好.txt` after normalizing the repeat count between
   the shell’s test-key and key-delivery callbacks.
 - Edge Ctrl+L now finalizes `ni hao` once: the client ends the marked range
@@ -327,14 +337,23 @@ for normal shutdown, request `Stop-Computer` over SSH and confirm it stopped.
   These final checks used Windows build 26300.9711 and Edge 156.0.4314.58.
   Default host/engine logs also retained startup failures and recovery without
   explicit log arguments.
-- Registration needing elevation remains.
+- Start search now commits exact `你好` in low-integrity SearchHost with
+  tracing disabled. Ordinary-shell registration and unregistration complete
+  through UAC; the original user's keyboard list is preserved on cancellation.
+  A capability-free AppContainer regression test verifies discovery reads,
+  input traffic and server identity checks, while rejecting control-pipe
+  access, discovery writes, process control/memory reads and token duplication.
   See [known issues](KNOWN-ISSUES.md#windows-validation-and-release-support).
-- x64/emulated apps, Office/Chrome, mixed DPI, GPU scoring and packaging remain unverified.
+- ARM64 and x64 core/COM tests pass; the x64 tests also ran under emulation.
+  Actual typing in x64/emulated applications, Office/Chrome, mixed DPI, GPU
+  scoring and packaging remain unverified.
 
 Debug native callback routing with `-DSHIXIN_TSF_TRACE=ON` in the TSF
 CMake configuration. This opt-in build queues fixed numeric records on the
 apartment and writes them only on the pipe worker, under
-`%USERPROFILE%\AppData\LocalLow\Shixin\tsf-<pid>-<thread>.log`.
+`%USERPROFILE%\AppData\LocalLow\Shixin\tsf-<pid>-<thread>.log`
+for desktop apps, or the package's redirected `AC\Shixin` directory for
+AppContainer apps.
 It includes activation, focus, input-scope and edit-request HRESULTs and
 key callback codes, so use it only for explicit development reproductions.
 The default build omits tracing.
@@ -391,7 +410,7 @@ through `pipeConn`, which reuses one preallocated operation per direction on
 go-winio's handle (go-winio allocates two objects per call), so they and
 deadline changes allocate nothing. The default discovery
 directory is `%LOCALAPPDATA%\Shixin\run-<SessionId>`, with a protected
-user/System DACL. Logical endpoints map to
+user/System DACL and package read-only access. Logical endpoints map to
 `\\.\pipe\shixin-<SessionId>-<UserSID>-<path-hash>`; the hash is the first
 16 bytes of SHA-256 over the lowercased absolute endpoint path, in UTF-8.
 `engine.sock` is a discovery record containing the absolute sibling `g-*`
@@ -400,11 +419,22 @@ Readers open it with `FILE_SHARE_DELETE` so the replacement never collides
 with a read; the publisher also retries a sharing violation for up to 1 s.
 Control, UI and AI endpoints map directly to pipes.
 
-Pipe DACLs currently allow only the current user. Go checks peer SID/session
-in both directions; native clients validate the server's SID/session and
-require a sibling `shixin-engine.exe` or `Shixin.exe` image, respectively.
-This development transport does not enable AppContainer/low-integrity
-clients or verify Authenticode signatures. Those are release requirements.
+Only the worker input and candidate pipes allow AppContainer clients.
+Their protected DACL grants the current user full access and packages only
+`FILE_GENERIC_READ | FILE_WRITE_DATA`; their low-integrity label permits
+SearchHost's data writes. This excludes creating server instances or changing
+pipe ownership/security. Control and AI endpoints stay user-only. All pipes
+reject remote clients. Go validates client SID/session, and native clients
+validate the server SID/session and sibling engine/host image path. The
+server permits packages only limited process query and token query rights,
+so sandbox clients can make those checks without process control, memory-read
+or token-duplication access. Session identity comes from the pipe rather than
+opening the peer with broader query permissions.
+
+The DLL's worker uses unredirected LocalAppData with `KF_FLAG_DONT_VERIFY`:
+the package can read Shixin's discovery subtree, although it cannot enumerate
+the private parent directory. Discovery records remain writable only by the
+user/System. Authenticode signature checks remain a release requirement.
 
 The engine lock uses nonblocking exclusive `LockFileEx`, released on handle
 close/process exit. Before dictionary attachment, LevelDB `LOCK` files must
@@ -418,8 +448,8 @@ and disable execution-speed throttling at startup.
 ## Remaining release work
 
 - Verify registration and real typing in Windows VMs: Notepad, Office,
-  Chrome/Electron, Explorer, Start search, then elevated and AppContainer
-  apps after the security work. Run the checklist in `manual-tests.md`.
+  Chrome/Electron, Explorer, Start search, and other elevated/AppContainer
+  applications. Start search is covered; broader compatibility remains open. Run the checklist in `manual-tests.md`.
 - Implement native auto spacing, composition display attributes and mode
   indication. Map desktop apps without explicit AppUserModelIDs to the
   shared picker IDs; packaged/explicit IDs are already reported.
@@ -429,5 +459,5 @@ and disable execution-speed throttling at startup.
   (`cmd/shixin-settings/platform_windows.go`).
 - Automate native llama builds, validate both architecture packages
   including emulation, and produce signed installers.
-- Complete signature/AppContainer checks and measure actual Windows key,
+- Complete signature checks and broader AppContainer validation; measure Windows key,
   text application, candidate placement and allocation budgets before release.

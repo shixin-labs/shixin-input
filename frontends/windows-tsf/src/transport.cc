@@ -92,7 +92,7 @@ bool trusted(HANDLE pipe, const std::wstring &directory,
   ULONG pid = 0;
   DWORD actual = 0;
   if (!GetNamedPipeServerProcessId(pipe, &pid) ||
-      !ProcessIdToSessionId(pid, &actual) || actual != session)
+      !GetNamedPipeServerSessionId(pipe, &actual) || actual != session)
     return false;
   Handle p(OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid));
   if (p.value == INVALID_HANDLE_VALUE || !p.value || user_sid(p.value) != sid)
@@ -221,13 +221,19 @@ void Transport::run() {
   if (sid.empty() || !ProcessIdToSessionId(GetCurrentProcessId(), &session))
     return;
   PWSTR local = nullptr;
-  if (FAILED(SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, nullptr, &local)))
+  // A packaged app's default LocalAppData points inside its sandbox. The
+  // discovery record belongs to the desktop user's host, not that package.
+  if (FAILED(SHGetKnownFolderPath(FOLDERID_LocalAppData,
+                                  KF_FLAG_NO_PACKAGE_REDIRECTION |
+                                      KF_FLAG_DONT_VERIFY,
+                                  nullptr, &local)))
     return;
   std::wstring runtime =
       std::wstring(local) + L"\\Shixin\\run-" + std::to_wstring(session);
 #ifdef SHIXIN_TSF_TRACE
   PWSTR low = nullptr;
-  SHGetKnownFolderPath(FOLDERID_LocalAppDataLow, 0, nullptr, &low);
+  SHGetKnownFolderPath(FOLDERID_LocalAppDataLow, KF_FLAG_DONT_VERIFY, nullptr,
+                       &low);
   std::wstring logdir = std::wstring(low ? low : local) + L"\\Shixin";
   CoTaskMemFree(low);
   CreateDirectoryW(logdir.c_str(), nullptr);
@@ -292,7 +298,8 @@ void Transport::run() {
                   sid, session);
     Handle pipe(name.empty()
                     ? INVALID_HANDLE_VALUE
-                    : CreateFileW(name.c_str(), GENERIC_READ | GENERIC_WRITE, 0,
+                    : CreateFileW(name.c_str(),
+                                  FILE_GENERIC_READ | FILE_WRITE_DATA, 0,
                                   nullptr, OPEN_EXISTING,
                                   FILE_FLAG_OVERLAPPED | SECURITY_SQOS_PRESENT |
                                       SECURITY_IDENTIFICATION,

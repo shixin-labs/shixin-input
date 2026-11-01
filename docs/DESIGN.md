@@ -779,9 +779,14 @@ appear after restarting the app.
   rejects stale clicks and assigns the engine sequence. The engine key
   stream is unchanged and receives no caret frames.
 - **Security:**
-  - Windows: the pipe DACL allows the user, `ALL APPLICATION PACKAGES` and
-    the low-integrity label. Clients check the server's PID, image path and
-    signature, to defeat pipe squatting.
+  - Windows: input and candidate pipes grant the user full access and
+    `ALL APPLICATION PACKAGES` only read/data-write access, with a low-integrity
+    label. Control and AI pipes stay user-only. Discovery records grant packages
+    read access only. All pipes reject remote clients and check peer SID/session;
+    clients also check the server image path. Input servers grant packages only
+    limited process query and token query rights so these checks work inside
+    AppContainer; no process control, memory reads or token duplication is
+    permitted. Authenticode checks remain required before release.
   - Unix: the peer's uid is checked via `SO_PEERCRED` / `getpeereid`.
 - A shared-memory ring transport is a possible later optimization. It isn't
   needed while R1 holds.
@@ -1172,10 +1177,30 @@ implements the candidate/tray host and engine supervisor, sharing the
 settings app and candidate views with macOS. x64/ARM64 builds and native
 COM smoke tests are configured in CI; the DLL has been cross-compiled for
 x64, and the portable core passes ASan/UBSan locally. Actual Windows typing
-and registration remain unverified. [Windows development](windows.md)
-describes limits and remaining release work. AppContainer access and
-Authenticode verification remain requirements before release.
+and registration have been exercised in the ARM64 VM, including Start search
+at low integrity. [Windows development](windows.md) describes verified coverage
+and remaining release work. Authenticode verification remains required before release.
 
+- **Registration:** an ordinary `Shixin.exe -register` invocation requests UAC
+  for an isolated machine step: HKLM COM registration,
+  `ITfInputProcessorProfileMgr::RegisterProfile` (disabled by default), and
+  keyboard/immersive categories. Back in the original caller, `InstallLayoutOrTip`
+  enables only that user's keyboard. Unregistration disables the caller's
+  keyboard while the machine profile still exists, after UAC approval and
+  before the elevated child passes a user/administrator-only event gate.
+  Cancellation leaves the keyboard list untouched; machine removal failure
+  restores the keyboard only if it was previously enabled and its machine TIP
+  still exists. Post-removal COM cleanup failures leave it disabled and support
+  cleanup retries. Legacy HKCU COM cleanup happens after successful removal,
+  including for disabled keyboards. Profile registration
+  and enablement use the Windows APIs.
+  This is a supported machine installation with user enablement, not a
+  registration that bypasses Windows' administrator requirement.
+- **Restricted apps:** the DLL grants packages read/execute access, and its
+  worker resolves unredirected LocalAppData without verifying its private
+  parent directory. Connection, discovery and identity checks stay off the
+  key path. It advertises immersive support without claiming UIless search
+  integration or secure-desktop support.
 - A C++17 in-proc COM server: `ITfTextInputProcessorEx`, `ITfKeyEventSink`,
   `ITfThreadMgrEventSink`, `ITfCompositionSink`, display attributes and input
   mode.
