@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Drive only the external-SSD Windows test VM. See docs/windows.md.
+# Drive the Windows QEMU test VM. See docs/windows.md.
 set -euo pipefail
-VMROOT="${SHIXIN_WINDOWS_VMROOT:-${SHIXIN_VMROOT:-/Volumes/Samsung SSD 990 Pro 2TB/vm}}"
+VMROOT="${SHIXIN_VMROOT:-$HOME/shixin-vm}"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 fail() { echo "windows-vm: $*" >&2; exit 1; }
 usage() {
@@ -9,14 +10,12 @@ usage() {
   exit 2
 }
 [[ $# -gt 0 ]] || usage
-# Resolve symlinks before creating anything: an absent SSD must never make
-# mkdir silently create VM storage on the internal disk.
-[[ -d "$VMROOT" ]] || fail "mount the external SSD first: $VMROOT"
+# Resolve an existing root before creating any state beneath it.
+[[ -d "$VMROOT" ]] || fail "VM root does not exist: $VMROOT (set SHIXIN_VMROOT)"
 VMROOT="$(cd "$VMROOT" && pwd -P)"
-case "$VMROOT" in /Volumes/*/vm) ;; *) fail 'VM root must be an existing /Volumes/<external disk>/vm directory' ;; esac
 S="$VMROOT/shixin/shixin-win11"
 VM="$VMROOT/qemu/shixin-win11"
-RUN="$VM/run.sh"
+RUN="$ROOT/scripts/windows-qemu.sh"
 KEY="$S/id_ed25519"
 SSH_PORT="${SHIXIN_WINDOWS_SSH_PORT:-2222}"
 GUEST_USER="${SHIXIN_WINDOWS_USER:-shixin}"
@@ -27,7 +26,7 @@ run_vm() {
   [[ -x "$RUN" ]] || fail "QEMU controller missing: $RUN (see docs/windows.md)"
   # A long burst can overrun the guest USB keyboard's report queue and
   # leave a key repeating. Keep setup input paced even on the 2 GiB guest.
-  VNCDOTOOL_DELAY="${SHIXIN_WINDOWS_KEY_DELAY:-50}" "$RUN" "$@"
+  SHIXIN_VMROOT="$VMROOT" VNCDOTOOL_DELAY="${SHIXIN_WINDOWS_KEY_DELAY:-50}" "$RUN" "$@"
 }
 need_ssh() { [[ -f "$KEY" ]] || fail 'run init-state and configure guest OpenSSH key authentication first'; }
 type_text() {
@@ -87,7 +86,7 @@ put)
 get)
   [[ $# -eq 3 ]] || usage
   need_ssh
-  # Collected guest artifacts must remain on the external SSD too.
+  # Keep collected guest artifacts together under the Windows state directory.
   parent="$(cd "$(dirname "$3")" && pwd -P)"
   case "$parent/" in "$S/"*) ;; *) fail "save guest files under $S" ;; esac
   scp "${ssh_options[@]}" -P "$SSH_PORT" "$GUEST_USER@127.0.0.1:$2" "$3"
