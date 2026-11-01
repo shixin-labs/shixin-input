@@ -52,6 +52,7 @@ type windowsHost struct {
 	display  presentation
 	sessions map[uint64]*windowsSession
 	queued   atomic.Bool
+	shown    bool
 	next     atomic.Uint64
 	state    candview.State
 	prefs    settings.Settings
@@ -136,11 +137,7 @@ func main() {
 					c.Close()
 				}
 				host.mu.Lock()
-				current := host.sessions[host.display.client]
-				changed := current != nil && current.pid != foregroundPID()
-				if changed {
-					host.display.hide(current.id)
-				}
+				changed := host.display.visibleIn(foregroundPID()) != host.shown
 				host.mu.Unlock()
 				if changed {
 					host.refresh()
@@ -159,7 +156,8 @@ func (h *windowsHost) refresh() {
 	h.window.Update(func() {
 		h.queued.Store(false)
 		h.mu.Lock()
-		visible := h.display.visible()
+		visible := h.display.visibleIn(foregroundPID())
+		h.shown = visible
 		if visible {
 			h.display.update.apply(&h.state)
 		}
@@ -241,13 +239,10 @@ func (h *windowsHost) serve(c net.Conn) {
 		if err != nil || len(payload) > 65531 {
 			return
 		}
+		// The foreground window can lag behind TSF's focus notification, so
+		// frames are never filtered here: presentation keeps only the focused
+		// session's menu and the foreground check happens when drawing.
 		h.mu.Lock()
-		if foregroundPID() != s.pid {
-			h.display.hide(s.id)
-			h.mu.Unlock()
-			h.refresh()
-			continue
-		}
 		switch typ {
 		case ipc.TypeFocusIn:
 			var f ipc.FocusIn
@@ -255,16 +250,14 @@ func (h *windowsHost) serve(c net.Conn) {
 				h.mu.Unlock()
 				return
 			}
-			h.display.focus(s.id, f.Ctx, f.Flags&ipc.FocusSecure != 0)
+			h.display.focus(s.id, s.pid, f.Ctx, f.Flags&ipc.FocusSecure != 0)
 		case ipc.TypeFocusOut:
 			var f ipc.FocusOut
 			if f.Decode(payload) != nil {
 				h.mu.Unlock()
 				return
 			}
-			if h.display.ctx == f.Ctx {
-				h.display.hide(s.id)
-			}
+			h.display.unfocus(s.id, f.Ctx)
 		case ipc.TypeResult:
 			if result.Decode(payload) != nil {
 				h.mu.Unlock()
@@ -290,7 +283,7 @@ func (h *windowsHost) choose(index int) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	s := h.sessions[h.display.client]
-	if s == nil || !h.display.visible() || s.pid != foregroundPID() {
+	if s == nil || !h.display.visibleIn(foregroundPID()) {
 		return
 	}
 	frame := (&ipc.Select{Ctx: h.display.ctx, Seq: h.display.seq, Index: uint32(index)}).Append(nil)
@@ -308,7 +301,7 @@ func (h *windowsHost) view(c *ui.Context) {
 	style := candview.Style{Skin: skin.Get(p.Skin), Dark: p.Theme == "dark" || p.Theme == "system" && c.Theme().Dark, FontFamily: p.FontFamily, FontSize: float32(p.FontSize), Vertical: p.Layout == "vertical"}
 	width, height := candview.Measure(c, &h.state, &style)
 	h.mu.Lock()
-	caret, valid := h.display.caret, h.display.visible()
+	caret, valid := h.display.caret, h.display.visibleIn(foregroundPID())
 	h.mu.Unlock()
 	if valid {
 		h.position(caret, width, height)

@@ -127,8 +127,9 @@ the worker after two seconds, without waiting on an app thread.
 
 Approved display fields, without commit text, and caret rectangles go
 from TSF to a separate `ui.sock` pipe. `Shixin.exe` validates the peer PID,
-foreground process and current context before presenting them, and keeps
-only the latest display. The shared candidate view supplies skins, layout,
+current context before accepting them, takes every FocusIn (the
+foreground window can lag behind TSF's notification), checks the foreground
+process when it draws, and keeps only the latest display. The shared candidate view supplies skins, layout,
 fonts and clicks. A click includes its displayed sequence; TSF rejects
 stale clicks rather than selecting from a different menu. Positioning uses
 screen pixels, monitor work areas and the host's DPI. Actual text-store,
