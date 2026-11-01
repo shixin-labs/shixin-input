@@ -1,0 +1,9 @@
+; COM server exports. The SDK declares these functions (combaseapi.h, olectl.h);
+; MSVC rejects __declspec(dllexport) on definitions that differ in linkage from
+; those declarations, so they are exported here for MSVC and MinGW alike.
+LIBRARY shixin_tsf
+EXPORTS
+  DllGetClassObject PRIVATE
+  DllCanUnloadNow PRIVATE
+  DllRegisterServer PRIVATE
+  DllUnregisterServer PRIVATE

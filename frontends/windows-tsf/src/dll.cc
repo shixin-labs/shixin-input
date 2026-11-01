@@ -57,9 +57,7 @@ extern "C" BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID) {
     shixin::module = instance;
   return TRUE;
 }
-extern "C" HRESULT __declspec(dllexport) WINAPI DllGetClassObject(REFCLSID cls,
-                                                                  REFIID iid,
-                                                                  void **p) {
+STDAPI DllGetClassObject(REFCLSID cls, REFIID iid, void **p) {
   if (!p)
     return E_POINTER;
   *p = nullptr;
@@ -72,6 +70,6 @@ extern "C" HRESULT __declspec(dllexport) WINAPI DllGetClassObject(REFCLSID cls,
   factory->Release();
   return hr;
 }
-extern "C" HRESULT __declspec(dllexport) WINAPI DllCanUnloadNow() {
+STDAPI DllCanUnloadNow() {
   return shixin::objects.load() == 0 ? S_OK : S_FALSE;
 }

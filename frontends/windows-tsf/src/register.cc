@@ -33,7 +33,7 @@ struct Com {
 };
 } // namespace
 } // namespace shixin
-extern "C" HRESULT __declspec(dllexport) WINAPI DllRegisterServer() {
+STDAPI DllRegisterServer() {
   using namespace shixin;
   Com com;
   if (!com.good())
@@ -103,7 +103,7 @@ extern "C" HRESULT __declspec(dllexport) WINAPI DllRegisterServer() {
     profiles->Release();
   return hr;
 }
-extern "C" HRESULT __declspec(dllexport) WINAPI DllUnregisterServer() {
+STDAPI DllUnregisterServer() {
   using namespace shixin;
   Com com;
   if (!com.good())
