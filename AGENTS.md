@@ -256,17 +256,18 @@ and tools that touch Rime use scratch user dirs, never the live one.
 | Installer diagnostics (in the installed bundle) | `Shixin -status [BUNDLE]` · `-added` · `-refresh` (System Settings' stale input source list) · `-repair` (stale menu and app caches, once added; refreshes running apps; waits for quit only as fallback) · `-cache-status` (running regular apps with stale caches, as JSON) · `-uninstall` |
 | Verify and apply a downloaded release (the settings app runs it; installs for real, **VM only**) | `Shixin -apply-update DMG -update-version V` (in the installed bundle; logs to `shixin.log`) |
 
-### Windows UTM VM
+### Windows QEMU VM
 
 See [Windows development](docs/windows.md#windows-test-vm-on-macos).
 All Windows VM state stays on an external volume, separate from the Tart VMs.
+The helper wraps `qemu/shixin-win11/run.sh`; it never invokes UTM or AppleScript.
 
 | Task | Command |
 |---|---|
 | Initialize external SSH key and evidence directories | `scripts/windows-vm.sh init-state` |
-| Start / request shutdown / inspect the Windows VM | `scripts/windows-vm.sh boot\|stop\|status` (`force-stop` only for a stuck guest) |
+| Start / request shutdown / inspect the Windows VM | `scripts/windows-vm.sh boot\|stop\|status` |
 | Run literal PowerShell in the guest / transfer a file | `scripts/windows-vm.sh exec 'COMMAND'` · `put LOCAL GUEST` · `get GUEST LOCAL` |
-| Guest screenshot / VNC input | `scripts/windows-vm.sh shot NAME` · `scripts/windows-vm.sh vnc ARGS` |
+| Guest screenshot / VNC input | `scripts/windows-vm.sh shot NAME` · `keys KEY...` · `type TEXT` · `click X Y` |
 
 ### The Tart VM
 

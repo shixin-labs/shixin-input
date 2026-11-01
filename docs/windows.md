@@ -124,55 +124,58 @@ logging behavior; record that evidence gap during restart tests.
 
 ## Windows test VM on macOS
 
-Use UTM's QEMU backend for Windows ARM64 on Apple silicon. Keep the VM
-bundle, installation media, downloads, credentials and captured evidence
-on an external volume. Set `SHIXIN_WINDOWS_VMROOT` to the existing `/Volumes/<disk>/vm` directory
-on the external volume (or use the helper's configured default). It never
-runs Tart.
+Use QEMU directly with HVF and an external-volume controller at
+`qemu/shixin-win11/run.sh`. The repository helper delegates VM power and
+VNC input to that controller; it does not invoke UTM or AppleScript.
+Keep disks, installation media, downloads, credentials and evidence on an
+external volume. Set `SHIXIN_WINDOWS_VMROOT` (or `SHIXIN_VMROOT`) to an
+existing `/Volumes/<disk>/vm` directory. It never runs Tart.
 
-Storage relative to that root:
-
-| Path | Contents |
+| Path relative to the VM root | Contents |
 |---|---|
-| `iso/` | Windows ARM64 installation ISO and guest-tools media |
-| `utm/shixin-win11.utm/` | VM bundle, disk, NVRAM and TPM state |
+| `iso/` | Windows ARM64 ISO and guest-tools ISO |
+| `qemu/shixin-win11/` | `run.sh`, `disk.qcow2`, `efivars.fd`, monitor socket, PID file, QEMU log and raw screenshots |
 | `shixin/shixin-win11/` | SSH key, `known_hosts`, separate `venv/`, `shots/`, `logs/`, `notes/`, `downloads/` |
 
-Create the VM with aarch64, UEFI, hypervisor enabled, TPM 2.0, 6144 MiB
-RAM, four cores and a 64 GiB NVMe disk. Use a removable USB/CD drive for
-the installer. Before installing, move any VM created in UTM's default
-location onto the external volume and open it there. With the VM stopped,
-set `QEMU.TPMDevice` to true in `config.plist` if the creation interface
-omits TPM, then reload its configuration. Configure an emulated NAT network
-with a TCP port forward from **127.0.0.1:22222** to guest port 22 and QEMU
-additional arguments `-vnc 127.0.0.1:5` for setup automation. These ports
-are local to the host; keep VNC bound to loopback. See UTM's
-[scripting reference](https://docs.getutm.app/scripting/reference/) and
-[Windows guide](https://docs.getutm.app/guides/windows/).
+The controller must support `start`, `stop`, `status`, `shot NAME`,
+`keys KEY...`, `type TEXT` and `click X Y`. `shot` writes
+`qemu/shixin-win11/shots/NAME.png`; the helper also copies it to the evidence
+`shots/` directory. Use aarch64 `virt`, HVF, UEFI pflash, four cores, a
+64 GiB NVMe disk, ramfb display and USB keyboard/tablet. Bind VNC to
+**127.0.0.1:5907**, and forward **127.0.0.1:2222** to guest SSH port 22.
+The guest uses 2048 MiB RAM normally. After a clean guest shutdown,
+`MEM=6144 scripts/windows-vm.sh boot` gives heavy native builds more memory.
 
-Finish Windows setup with a local `shixin` account, then install UTM's
-[Windows guest tools](https://docs.getutm.app/guest-support/windows/).
-If setup requires an account and offers no offline route, ask the operator;
-never supply an unrelated Microsoft account. Initialize the host-side state:
+QEMU 11.1's TPM device failed under HVF with `HV_BAD_ARGUMENT` in this
+setup. The disposable test guest uses Windows Setup's
+`HKLM\SYSTEM\Setup\LabConfig` values `BypassTPMCheck`,
+`BypassSecureBootCheck`, `BypassRAMCheck` and `BypassCPUCheck` (DWORD 1).
+It does not validate supported production Windows hardware. Leave the
+installer's “Press any key” prompt alone on reboot so the NVMe installation
+boots. An installation ISO can remain attached alongside the guest-tools CD.
+
+Finish setup with a local `shixin` account. On the network page,
+Shift+F10 and `start ms-cxh:localonly` opens the local account route on
+builds that support it. Decline optional telemetry and advertising. Install
+ARM64 virtio network drivers from the guest-tools CD before expecting NAT
+to work. Keep the account password only in the external private `notes/`.
+Initialize host state with:
 
 ```sh
 scripts/windows-vm.sh init-state
-# Install vncdotool in the VM's own external-volume venv, if absent.
-VMROOT="$SHIXIN_WINDOWS_VMROOT"
-S="$VMROOT/shixin/shixin-win11"
+S="$SHIXIN_WINDOWS_VMROOT/shixin/shixin-win11"
 python3 -m venv "$S/venv"
 mkdir -p "$S/tmp"
 TMPDIR="$S/tmp" PIP_CACHE_DIR="$S/downloads/pip-cache" \
   "$S/venv/bin/python" -m pip install vncdotool
 ```
 
-Inside the guest, enable OpenSSH Server and its firewall rule, start `sshd`
-and set it to start automatically. Authorize `id_ed25519.pub` from the host
-state directory. For an administrator account Windows uses
+Enable Windows OpenSSH Server, its firewall rule and automatic `sshd`
+startup in the guest. Authorize the external state's `id_ed25519.pub`.
+Administrator accounts use
 `C:\ProgramData\ssh\administrators_authorized_keys`, with inheritance
-removed and only Administrators and SYSTEM granted access; see Microsoft's
+removed and access limited to Administrators and SYSTEM; see Microsoft's
 [key setup instructions](https://learn.microsoft.com/en-us/windows-server/administration/openssh/openssh_keymanagement).
-Keep guest passwords in the private external state directory, never in Git.
 
 ```sh
 scripts/windows-vm.sh boot
@@ -181,21 +184,25 @@ scripts/windows-vm.sh exec '$PSVersionTable; Get-ComputerInfo -Property WindowsV
 scripts/windows-vm.sh put scripts/build-windows.ps1 C:/Users/shixin/build-windows.ps1
 scripts/windows-vm.sh get C:/Users/shixin/build.log "$S/logs/build.log"
 scripts/windows-vm.sh shot windows-desktop
-scripts/windows-vm.sh vnc key super-r type notepad key enter
-scripts/windows-vm.sh stop            # requests guest shutdown
-# Only if guest shutdown cannot complete:
-scripts/windows-vm.sh force-stop
+scripts/windows-vm.sh keys super-r
+scripts/windows-vm.sh type notepad
+scripts/windows-vm.sh keys enter
+scripts/windows-vm.sh click 400 300
+scripts/windows-vm.sh stop
 ```
 
-`exec` accepts one literal PowerShell string and encodes it as UTF-16LE
-before sending it to the guest. `put` and `get` use OpenSSH SFTP; downloaded
-guest files must go under the Windows state directory. The helper reads the
-VM UUID from the external bundle, so another VM with a similar name is not
-a target. `SHIXIN_WINDOWS_USER`, `SHIXIN_WINDOWS_SSH_PORT`,
-`SHIXIN_WINDOWS_VNC_PORT`, `SHIXIN_WINDOWS_VNCDO` and `SHIXIN_UTMCTL` override
-the account, ports and installed tools. SSH uses a dedicated `known_hosts`
-file, accepts first-use keys and rejects changed keys. First-use Automation
-permission prompts must be handled by the operator on the Mac.
+`exec` encodes one literal PowerShell string as UTF-16LE. `put` and `get`
+use SFTP; guest evidence must be saved under the external Windows state
+directory. `SHIXIN_WINDOWS_USER` and `SHIXIN_WINDOWS_SSH_PORT` override the
+account and SSH port. SSH uses a dedicated `known_hosts`, accepts first-use
+keys and rejects changed keys. The controller owns VNC configuration.
+
+The current vncdotool sends `_` as `-` with `type`: send underscores with
+`keys shift-minus`, and inspect screenshots after commands containing shifted
+symbols. Prefer SSH once it works. The external controller's current `stop`
+requests ACPI shutdown, waits up to 60 seconds and then terminates QEMU;
+request guest shutdown over SSH and confirm it completed before relying on
+that command for normal shutdown.
 
 ## Client and presentation architecture
 
