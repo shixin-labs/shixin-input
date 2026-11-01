@@ -46,7 +46,10 @@ Delete an entry when it's fixed, and mention it in the commit.
   and punctuation changes can apply live. The remaining validation below
   prevents treating the port as ready. See the
   [Windows status](windows.md#status-2026-11-01).
-- **Missing:** native llama build automation.
+- **智能排序 validation:** native llama/Vulkan build automation and signed
+  runtime packaging are implemented. GPU-less native tests cover the ABI
+  and unavailable-accelerator fallback; actual Windows GPU scoring and
+  latency still need hardware validation.
 - **Setup and input:** the guide queries per-user enablement with `-added`;
   successful registration adds logon startup, and unregistration removes
   this copy's startup command. TSF supplies composition display attributes;

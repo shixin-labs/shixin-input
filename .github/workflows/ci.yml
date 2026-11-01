@@ -30,6 +30,9 @@ jobs:
       - name: Windows frontend/backend build and native tests
         shell: pwsh
         run: ./scripts/build-windows.ps1 -Arch ${{ matrix.arch }} -Check
+      - name: Windows llama ABI and unavailable-GPU fallback
+        shell: pwsh
+        run: ./scripts/build-llama.ps1 -Arch ${{ matrix.arch }} -NoVulkan -Test
 
   linux:
     runs-on: ubuntu-24.04

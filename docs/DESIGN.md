@@ -1878,6 +1878,19 @@ Model choice:
   - Tokenization and the policy run on the CPU and take microseconds. So
     does reading the input embedding row, which llama.cpp keeps in host
     memory by design.
+- **Windows runtime.** The same scorer and settings page use a Vulkan build
+  of the pinned llama.cpp. The installer bundles five native runtime DLLs
+  and their MIT license plus the app-local Microsoft release CRT DLLs, whose
+  vendor signatures and versions are preserved. The split llama/ggml libraries
+  share one CRT so file handles remain valid across their boundary. The model
+  remains an opt-in download. The loader
+  resolves ggml exports from their owning DLLs and explicitly registers only
+  the adjacent CPU (host operations) and Vulkan backends. It never uses
+  ggml's working-directory/environment backend discovery. A missing Vulkan
+  runtime or unsupported GPU leaves ordinary Rime ranking; the model never
+  runs on the CPU. GPU-less x64/ARM64 CI checks parameter and batch ABIs and
+  the unavailable fallback; real GPU latency needs native hardware validation.
+  See `scripts/build-llama.ps1`.
 - **Per app.**
   - On `ContextUpdate` it prefills that app slot's context (the last 64
     tokens), then keeps its KV cache and next-token log-probs. A context

@@ -20,7 +20,7 @@ func stamp(dir, version, skip string) error {
 		return err
 	}
 	for _, file := range files {
-		if file.IsDir() || strings.EqualFold(file.Name(), skip) {
+		if file.IsDir() || strings.EqualFold(file.Name(), skip) || microsoftCRT(file.Name()) {
 			continue
 		}
 		ext := strings.ToLower(filepath.Ext(file.Name()))

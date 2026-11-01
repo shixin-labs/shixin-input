@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"shixin/internal/models"
+	"shixin/internal/process"
 	"shixin/internal/rerank"
 	"shixin/internal/settings"
 )
@@ -83,6 +84,7 @@ func superviseAI(socket, log string, logf func(string, ...any)) func() {
 				continue
 			}
 			cmd := exec.Command(path, "-lifeline", "-socket", socket, "-log", log)
+			process.Detach(cmd) // Windows helpers must not open a console.
 			in, err := cmd.StdinPipe()
 			if err == nil {
 				err = cmd.Start()

@@ -89,7 +89,8 @@ const (
 
 // Lib is a loaded llama.cpp.
 type Lib struct {
-	handle uintptr
+	handle       uintptr
+	dependencies []uintptr // Windows exports live in separate ggml DLLs.
 
 	backendInit             func()
 	modelDefaultParams      func() modelParams
@@ -151,6 +152,9 @@ func Load(dir string) (*Lib, error) {
 		return nil, fmt.Errorf("llama: dlopen: %w", err)
 	}
 	l := &Lib{handle: h}
+	if err := l.loadBackends(dir); err != nil {
+		return nil, err
+	}
 	for _, f := range []struct {
 		fn   any
 		name string
@@ -192,7 +196,7 @@ func Load(dir string) (*Lib, error) {
 		{&l.devName, "ggml_backend_dev_name"},
 		{&l.devDescription, "ggml_backend_dev_description"},
 	} {
-		sym, err := dynlib.Symbol(h, f.name)
+		sym, err := l.symbol(f.name)
 		if err != nil {
 			return nil, fmt.Errorf("llama: %s: %w", f.name, err)
 		}
@@ -200,6 +204,20 @@ func Load(dir string) (*Lib, error) {
 	}
 	l.backendInit()
 	return l, nil
+}
+
+func (l *Lib) symbol(name string) (uintptr, error) {
+	sym, err := dynlib.Symbol(l.handle, name)
+	if err == nil {
+		return sym, nil
+	}
+	// GetProcAddress does not search a DLL's dependencies, unlike dlsym.
+	for _, h := range l.dependencies {
+		if sym, e := dynlib.Symbol(h, name); e == nil {
+			return sym, nil
+		}
+	}
+	return 0, err
 }
 
 // Device is a ggml backend device.

@@ -281,6 +281,32 @@ Registration and unregistration must happen only in the VM. See
    shortcuts and startup, preserves scratch settings/dictionaries, and reports
    restart when needed. Reinstall and confirm preserved data is usable.
 
+### Windows 智能排序 (native GPU hardware)
+
+Use a signed installer with the Vulkan runtime libraries. All engine/tool
+tests use scratch dictionaries. A GPU-less VM validates only the unavailable
+fallback, not scoring accuracy or latency.
+
+1. Open 智能排序 in Settings. Download the model on request, cancel/retry,
+   and verify a corrupt or incomplete download is rejected. No download
+   starts merely because Shixin launched.
+2. Select 标准. Confirm the status reaches ready and the performance page
+   reports applied results. Commit `我们明天一起去`, then type `tw`; inspect
+   context-sensitive ranking, candidate selection, paging and learning.
+   Repeat in two apps to check their contexts remain separate.
+3. Change 保守/标准 and turn the feature off while typing. Changes apply
+   live; off retains ordinary Rime ranking. No console window should open.
+4. Check password/PIN fields and focus transitions: no context or candidate
+   request escapes a secure context. A crash or slow scorer preserves input;
+   a displayed candidate menu never changes order afterward.
+5. On a machine without a supported Vulkan GPU, enable the feature after
+   downloading the model. Settings reports no supported accelerator, typing
+   retains Rime's order, and the model never runs on the CPU.
+6. Run the required-accelerator binding/scoring tests and end-to-end command
+   in [Windows development](windows.md#native-dependencies). Record native
+   GPU/driver, scoring and prefill latency, engine result waits and fallback
+   counts before claiming performance support for that hardware.
+
 ### Windows app matrix
 
 After registration, run `Shixin.exe -added` in the invoking user's account:

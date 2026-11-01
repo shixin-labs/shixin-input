@@ -13,7 +13,8 @@ param(
     [string]$ManifestTool,
     [string]$Data,
     [string]$Librime,
-    [string]$OpenCC
+    [string]$OpenCC,
+    [string]$Llama
 )
 $ErrorActionPreference='Stop'
 if (-not $IsWindows) { throw 'Windows packaging requires native Windows and PowerShell 7' }
@@ -49,11 +50,19 @@ function Sign([string]$path) {
     & $SignTool @options $path | Out-Null; Check "sign $path"
     & $SignTool verify /pa /all $path | Out-Null; Check "verify $path"
 }
+function MicrosoftCRT([string]$name) {
+    return $crtNames -contains $name
+}
+function VerifyMicrosoftCRT([string]$path) {
+    $signature=Get-AuthenticodeSignature $path
+    if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notmatch 'O=Microsoft Corporation(?:,|$)') { throw "Invalid Microsoft runtime signature: $path" }
+}
 $savedOS=$env:GOOS; $savedArch=$env:GOARCH; $savedCGO=$env:CGO_ENABLED
 Push-Location $root
 try {
     if ((& go env GOHOSTARCH).Trim() -ne $Arch) { throw 'Build release packages on the matching native Windows architecture' }
     $env:GOOS='windows'; $env:GOARCH=$Arch; $env:CGO_ENABLED='0'
+    $crtNames=@(& go run ./tools/windows-package -crt-files); Check 'list Microsoft runtime files'
     $work=Join-Path $root "build/package-windows-$Arch"
     $payload=Join-Path $work 'payload'
     Remove-Item $payload -Recurse -Force -ErrorAction SilentlyContinue
@@ -88,6 +97,18 @@ try {
     if (-not $Data) { $Data=Join-Path $root 'build/rime-data' }
     if (-not (Test-Path "$Data/rime_ice.schema.yaml") -or -not (Test-Path "$OpenCC/s2t.json")) { throw 'Fetch Rime data and build librime/OpenCC first' }
     Copy-Item $Librime "$payload/rime.dll"
+    if (-not $Llama) {
+        & "$root/scripts/build-llama.ps1" -Arch $Arch -Test
+        $Llama=Join-Path $root "build/llama-windows-$Arch/lib"
+    }
+    foreach ($name in @('llama','ggml','ggml-base','ggml-cpu','ggml-vulkan')) {
+        Copy-Item "$Llama/$name.dll" $payload
+    }
+    foreach ($file in (Get-ChildItem $Llama -File -Filter '*.dll' | Where-Object { MicrosoftCRT $_.Name })) {
+        VerifyMicrosoftCRT $file.FullName
+        Copy-Item $file.FullName $payload
+    }
+    & go run ./tools/windows-package -check-llama $payload -arch $Arch; Check 'verify llama DLL architectures and imports'
     $runtimeData=Join-Path $payload 'data'
     New-Item -ItemType Directory $runtimeData | Out-Null
     & robocopy $Data $runtimeData /E /XD lua .git .github /XF '*.custom.yaml' weasel.yaml squirrel.yaml /NFL /NDL /NJH /NJS /NP | Out-Null
@@ -109,6 +130,8 @@ try {
     New-Item -ItemType Directory $licenses | Out-Null
     Copy-Item LICENSE "$licenses/Shixin (GPL-3.0-or-later).txt"
     Copy-Item third_party/librime/LICENSE "$licenses/librime (BSD-3-Clause).txt"
+    Copy-Item third_party/llama.cpp/LICENSE "$licenses/llama.cpp (MIT).txt"
+    Copy-Item "$Llama/licenses/Khronos-headers.txt" "$licenses/Khronos-headers.txt"
     Copy-Item "$Data/LICENSE" "$licenses/rime-ice.txt"
     Copy-Item (Join-Path (& go env GOROOT).Trim() 'LICENSE') "$licenses/Go.txt"
     foreach ($module in (& go list -m -f '{{.Path}}|{{.Dir}}' all)) {
@@ -129,9 +152,10 @@ try {
     foreach ($exe in (Get-ChildItem $payload -File -Filter *.exe)) {Manifest $exe.FullName}
     $skipVersion=if ($Arch -eq 'arm64') {'shixin_tsf.dll'} else {''}
     & go run ./tools/windows-package -stamp-dir $payload -version $Version -skip $skipVersion; Check 'stamp release file versions'
+    foreach ($file in (Get-ChildItem $payload -File -Filter '*.dll' | Where-Object { MicrosoftCRT $_.Name })) { VerifyMicrosoftCRT $file.FullName }
     & "$native/Release/shixin_dll_test.exe" "$payload/shixin_tsf.dll"; Check 'test stamped public TSF DLL'
     if ($Arch -eq 'arm64') { & "$x64/Release/shixin_dll_test.exe" "$payload/shixin_tsf.dll"; Check 'test stamped public TSF DLL from x64' }
-    foreach ($binary in (Get-ChildItem $payload -Recurse -File | Where-Object Extension -In @('.exe','.dll'))) { Sign $binary.FullName }
+    foreach ($binary in (Get-ChildItem $payload -Recurse -File | Where-Object { $_.Extension -in @('.exe','.dll') -and -not (MicrosoftCRT $_.Name) })) { Sign $binary.FullName }
     $msi=Join-Path $work 'Shixin.msi'
     & (Get-Process -Id $PID).Path -NoProfile -ExecutionPolicy Bypass -File "$root/packaging/windows/msi.ps1" -Payload $payload -Output $msi -Version $Version -Arch $Arch
     Check 'author MSI'

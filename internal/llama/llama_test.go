@@ -17,6 +17,9 @@ func testLib(t testing.TB) *Lib {
 		dir, _ = filepath.Abs("../../build/llama/lib")
 	}
 	if _, err := os.Stat(dir); err != nil {
+		if os.Getenv("SHIXIN_LLAMA") != "" || os.Getenv("SHIXIN_TEST_REQUIRE_ACCELERATOR") == "1" {
+			t.Fatal(err)
+		}
 		t.Skip("llama.cpp not built; run scripts/build-llama.sh")
 	}
 	l, err := Load(dir)
@@ -35,6 +38,9 @@ func testModel(t testing.TB) (*Lib, *Model) {
 		path, _ = filepath.Abs("../../build/models/ernie-4.5-0.3b-base-q8_0.gguf")
 	}
 	if _, err := os.Stat(path); err != nil {
+		if os.Getenv("SHIXIN_TEST_REQUIRE_ACCELERATOR") == "1" {
+			t.Fatal(err)
+		}
 		t.Skip("model missing; see DESIGN §7.2")
 	}
 	dev, ok := l.Accelerator()
@@ -77,7 +83,13 @@ func TestAccelerator(t *testing.T) {
 	l := testLib(t)
 	d, ok := l.Accelerator()
 	if !ok {
+		if os.Getenv("SHIXIN_TEST_REQUIRE_ACCELERATOR") == "1" {
+			t.Fatal("no accelerator: required for this validation run")
+		}
 		t.Skip("no GPU")
+	}
+	if os.Getenv("SHIXIN_TEST_NO_ACCELERATOR") == "1" {
+		t.Fatal("CPU-only fixture exposed an accelerator")
 	}
 	t.Logf("accelerator: %s (%s)", d.Name, d.Description)
 }

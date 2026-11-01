@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"testing"
@@ -8,6 +9,22 @@ import (
 
 	"golang.org/x/sys/windows"
 )
+
+func TestStampPreservesMicrosoftRuntime(t *testing.T) {
+	dir := t.TempDir()
+	data := []byte("vendor signature and version must remain unchanged")
+	path := filepath.Join(dir, "vcruntime140.dll")
+	if err := os.WriteFile(path, data, 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := stamp(dir, "0.2.0", ""); err != nil {
+		t.Fatal(err)
+	}
+	got, err := os.ReadFile(path)
+	if err != nil || !bytes.Equal(data, got) {
+		t.Fatalf("modified vendor runtime: %v", err)
+	}
+}
 
 func TestWindowsReleaseFileVersion(t *testing.T) {
 	exe, err := os.Executable()

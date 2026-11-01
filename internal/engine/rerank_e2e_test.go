@@ -28,6 +28,12 @@ func TestRerankEndToEnd(t *testing.T) {
 	}
 	llamaDir, _ := filepath.Abs("../../build/llama/lib")
 	model, _ := filepath.Abs("../../build/models/ernie-4.5-0.3b-base-q8_0.gguf")
+	if p := os.Getenv("SHIXIN_LLAMA"); p != "" {
+		llamaDir = p
+	}
+	if p := os.Getenv("SHIXIN_MODEL"); p != "" {
+		model = p
+	}
 	if !fileExists(model) || !fileExists(llamaDir) {
 		t.Skip("model or llama.cpp missing (DESIGN §7.2)")
 	}

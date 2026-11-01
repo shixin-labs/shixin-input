@@ -93,9 +93,59 @@ schemas under `prebuilt/`. The verified ARM64 librime imports only Windows
 system DLLs. The Go loader searches its library directory and System32,
 excluding the working directory and PATH.
 
-`shixin-ai.exe` looks for `llama.dll` and its dependencies next to itself;
-`SHIXIN_LLAMA` can select another directory. Windows GPU backend behavior
-and scoring latency remain unverified.
+Build the pinned llama.cpp for 智能排序 with an installed [Vulkan SDK](https://vulkan.lunarg.com/)
+(include its ARM64 components when targeting ARM64):
+
+```powershell
+./scripts/build-llama.ps1 -Arch arm64 -Test
+```
+
+The output is `build/llama-windows-<arch>/lib/`; the script also copies the
+llama/ggml DLLs and app-local Microsoft runtime DLLs beside the development
+binaries in `build/windows-<arch>`.
+It uses a shared MSVC runtime, baseline CPU instructions for host-side
+operations, embedded Vulkan shaders and no OpenMP or network tools.
+It does not install or download a Vulkan SDK.
+The split libraries must share the CRT because ggml opens files that llama
+reads/closes. Separate static CRTs have separate file descriptor tables and
+fail on model loading. Redistributable CRT DLLs come from the selected Visual
+Studio compiler's release redist tree; UCRT is supplied by supported Windows.
+
+`shixin-ai.exe` loads `llama.dll`, `ggml.dll`, `ggml-base.dll`,
+`ggml-cpu.dll` and `ggml-vulkan.dll` from its own directory;
+`SHIXIN_LLAMA` can select another directory for development. Backends are
+registered explicitly, without searching the current directory, PATH or
+`GGML_BACKEND_PATH`. The Vulkan loader and GPU driver come from Windows's
+system directory. The unsupported `GGML_VK_VISIBLE_DEVICES` override is
+cleared from both the Windows and shared-CRT environments before loading
+Vulkan, so it cannot select a software CPU device.
+CPU inference is never a fallback: without a supported
+GPU the scorer reports unavailable and typing keeps Rime's order.
+
+The shared 智能排序 page downloads the pinned Q8_0 ERNIE model only on
+request, verifies its size and SHA-256, and offers 保守/标准 strengths.
+The coordinator starts/stops the scorer live, and its private named pipe
+remains restricted to the user/session. The existing 16 ms result budget
+and slow-scorer fallback apply on Windows too.
+
+`-NoVulkan -Test` builds a separate fixture for GPU-less CI: it exercises
+the Windows ABI and checks that the scorer exits before loading a model.
+Release packaging always requires the Vulkan DLL. On a machine with a
+supported GPU and the pinned model, validate actual scoring and latency:
+
+```powershell
+$env:SHIXIN_MODEL = '<path to the pinned Q8_0 GGUF>'
+./scripts/build-llama.ps1 -Arch arm64 -Test -RequireAccelerator
+$env:SHIXIN_LLAMA = "$PWD/build/llama-windows-arm64/lib"
+$env:SHIXIN_LIBRIME = "$PWD/build/windows-arm64/rime.dll"
+go test -v ./internal/engine -run '^TestRerankEndToEnd$'
+```
+
+The required-accelerator check fails instead of silently skipping on a
+GPU-less machine. Actual Windows GPU scoring and latency still require
+hardware validation; a QEMU/HVF guest cannot establish these measurements.
+The self-contained scoring latency test uses public synthetic text; accuracy
+calibration against the larger spike corpus remains a separate optional test.
 
 Settings and live user data default to `%APPDATA%\Shixin\settings.json`
 and `%APPDATA%\Shixin\Rime`. Engine tests and tools must use scratch user
@@ -115,9 +165,10 @@ Use `-Arch amd64` for x64. The certificate must have an accessible private
 key in `CurrentUser/My` (or select `-CertificateStore LocalMachine`).
 `-SignTool` overrides SDK discovery; `-TimestampServer` selects the RFC 3161
 server (the default is DigiCert; an empty string disables timestamping for
-isolated VM tests). `-Data`, `-Librime` and `-OpenCC` override the normal
-build outputs. Every executable/DLL, the MSI and the outer installer are
-signed and verified. Verification uses cached Windows trust and revocation data;
+isolated VM tests). `-Data`, `-Librime`, `-OpenCC` and `-Llama` override the normal
+build outputs. Shixin-built executables/DLLs, the MSI and the outer installer
+are signed and verified; app-local Microsoft CRTs retain their verified vendor
+signatures and original file versions. Verification uses cached Windows trust and revocation data;
 missing trust information fails closed without fetching it. There is no unsigned release mode. Owned binaries receive Windows file versions
 `100.major.minor.patch`, independent of upstream library versions, so a rebuilt
 librime-shixin DLL advances with the Shixin release. MSI stores the actual
@@ -130,7 +181,14 @@ Rime/OpenCC data and license notices. Outputs are
 `build/dist/ShixinSetup-<arch>.exe`. Publish each installer as the matching
 GitHub release asset. The ARM64 installer includes native ARM64 and emulated
 x64 TSF DLLs behind one [ARM64X pure forwarder](https://learn.microsoft.com/en-us/windows/arm/arm64x-build#building-an-arm64x-pure-forwarder-dll); both public export paths are tested
-before packaging. Native llama build automation remains separate work.
+before packaging. The script builds llama.cpp with Vulkan unless `-Llama`
+supplies a prebuilt directory, including `licenses/Khronos-headers.txt`
+from the build. All five llama DLLs are bundled and signed.
+Architecture/import checks reject mismatches and unbundled dependencies,
+including missing transitive Visual C++ runtime DLLs or an OpenMP runtime.
+Microsoft CRTs are verified again after version stamping to ensure their
+vendor signatures remain intact. The model stays
+an optional Settings download and is not embedded in the installer.
 
 Opening the installer requests confirmation, then Windows requests UAC for
 machine installation. Files go to the protected `%ProgramFiles%\Shixin`
@@ -572,8 +630,10 @@ and disable execution-speed throttling at startup.
 - Verify registration and real typing in Windows VMs: Notepad, Office,
   Chrome/Electron, Explorer, Start search, and other elevated/AppContainer
   applications. Start search is covered; broader compatibility remains open. Run the checklist in `manual-tests.md`.
-- Automate native llama builds, complete native x64 installation and broader
+- Complete native x64 installation and broader
   emulated-app typing coverage, and validate a production signing certificate
   and timestamp service. Current packages do not support 32-bit applications.
+- Validate Vulkan inference, context-sensitive ranking and latency on native
+  Windows GPU hardware; GPU-less CI covers the ABI and unavailable fallback.
 - Complete broader AppContainer validation; measure Windows key,
   text application, candidate placement and allocation budgets before release.

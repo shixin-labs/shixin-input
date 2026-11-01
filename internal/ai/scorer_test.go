@@ -46,9 +46,15 @@ func testScorer(t testing.TB) *Scorer {
 		model, _ = filepath.Abs("../../build/models/ernie-4.5-0.3b-base-q8_0.gguf")
 	}
 	if _, err := os.Stat(model); err != nil {
+		if os.Getenv("SHIXIN_TEST_REQUIRE_ACCELERATOR") == "1" {
+			t.Fatal(err)
+		}
 		t.Skip("model missing; see DESIGN §7.2")
 	}
 	if _, err := os.Stat(dir); err != nil {
+		if os.Getenv("SHIXIN_LLAMA") != "" || os.Getenv("SHIXIN_TEST_REQUIRE_ACCELERATOR") == "1" {
+			t.Fatal(err)
+		}
 		t.Skip("llama.cpp not built; run scripts/build-llama.sh")
 	}
 	lib, err := llama.Load(dir)
@@ -57,6 +63,9 @@ func testScorer(t testing.TB) *Scorer {
 	}
 	s, err := New(lib, model)
 	if err == ErrNoAccelerator {
+		if os.Getenv("SHIXIN_TEST_REQUIRE_ACCELERATOR") == "1" {
+			t.Fatal(err)
+		}
 		t.Skip(err)
 	}
 	if err != nil {
@@ -96,6 +105,51 @@ func TestScoreFollowsContext(t *testing.T) {
 		}
 		if first := c.options[got[0]]; first != c.want {
 			t.Errorf("%q: #1 %q, want %q (order %v)", c.context, first, c.want, got)
+		}
+	}
+}
+
+// This public synthetic fixture keeps the latency gate runnable without the
+// external spike corpus. This one heavier menu has p95 budgets; its repeated
+// median is not the 300-item corpus's p50<=8ms gate, which remains separate.
+func TestScoringLatency(t *testing.T) {
+	if testing.Short() || raceEnabled {
+		t.Skip("latency gate: run alone, without -short or -race")
+	}
+	s := testScorer(t)
+	context := []byte("光大银行黄鹤楼支行的理财经理测算，结婚生子后的家庭开支会明显增加，所以我们建议年轻人尽早规划自己的财务，比如每个月固定存下一部分收入")
+	options := cands("太晚", "台湾", "抬碗", "体温", "天文", "同为", "图文", "条文", "庭外", "听闻", "体外", "调味", "突围", "探望", "贪玩", "退伍", "提问", "童玩", "图网", "糖丸")
+	perm := make([]uint8, rerank.MaxOptions)
+	var prefill, score []time.Duration
+	for i := range 35 {
+		// A new app evicts a slot and forces a fresh 64-token prefill.
+		app := 10000 + i
+		t0 := time.Now()
+		if err := s.Prefill(app, 1, context); err != nil {
+			t.Fatal(err)
+		}
+		t1 := time.Now()
+		if _, err := s.Score(app, options, Strengths[rerank.StrengthStandard], perm); err != nil {
+			t.Fatal(err)
+		}
+		if i >= 5 {
+			prefill = append(prefill, t1.Sub(t0))
+			score = append(score, time.Since(t1))
+		}
+	}
+	slices.Sort(prefill)
+	slices.Sort(score)
+	t.Logf("fixed-menu score p50: %v", score[len(score)/2])
+	for _, g := range []struct {
+		name        string
+		got, budget time.Duration
+	}{
+		{"prefill p95", prefill[len(prefill)*95/100], 20 * time.Millisecond},
+		{"score p95", score[len(score)*95/100], 15 * time.Millisecond},
+	} {
+		t.Logf("%s: %v", g.name, g.got)
+		if limit, over := perf.OverBudget(g.got, g.budget); over {
+			t.Errorf("%s %v, over budget %v", g.name, g.got, limit)
 		}
 	}
 }
