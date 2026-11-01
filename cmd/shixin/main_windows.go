@@ -39,6 +39,10 @@ var moveWindow = user32.NewProc("SetWindowPos")
 var dpiForWindow = user32.NewProc("GetDpiForWindow")
 var monitorFromRect = user32.NewProc("MonitorFromRect")
 var monitorInfo = user32.NewProc("GetMonitorInfoW")
+var setWindowRegion = user32.NewProc("SetWindowRgn")
+var gdi32 = windows.NewLazySystemDLL("gdi32.dll")
+var roundRectRegion = gdi32.NewProc("CreateRoundRectRgn")
+var deleteGDIObject = gdi32.NewProc("DeleteObject")
 
 type windowsSession struct {
 	id   uint64
@@ -53,6 +57,7 @@ type windowsHost struct {
 	sessions map[uint64]*windowsSession
 	queued   atomic.Bool
 	shown    bool
+	region   candidateRegion
 	next     atomic.Uint64
 	state    candview.State
 	prefs    settings.Settings
@@ -325,6 +330,18 @@ func (h *windowsHost) position(c ipc.Caret, width, height float32) {
 	dpi, _, _ := dpiForWindow.Call(handle)
 	if dpi == 0 {
 		dpi = 96
+	}
+	region := candidatePanelRegion(width, height, float32(h.prefs.FontSize), uint32(dpi))
+	if region != h.region {
+		rgn, _, _ := roundRectRegion.Call(uintptr(region.left), uintptr(region.top), uintptr(region.right), uintptr(region.bottom), uintptr(region.diameter), uintptr(region.diameter))
+		if rgn != 0 {
+			if ok, _, _ := setWindowRegion.Call(handle, rgn, 1); ok != 0 {
+				// Windows owns the region after SetWindowRgn succeeds.
+				h.region = region
+			} else {
+				deleteGDIObject.Call(rgn)
+			}
+		}
 	}
 	scale := float64(dpi) / 96
 	w, hgt := int32((float64(width)+24)*scale), int32((float64(height)+24)*scale)

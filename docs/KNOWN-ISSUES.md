@@ -76,15 +76,6 @@ Delete an entry when it's fixed, and mention it in the commit.
   activation categories and restricted-token transport before claiming
   support; do not weaken password guards or enable broad pipe access.
 
-### Windows candidate flyout intercepts clicks below its visible panel
-- **Repro:** in Edge, put a textarea above a password input. Compose
-  `nihao` in full pinyin, then click the password input below the visible
-  candidate panel. Even after six seconds, focus remains in the textarea;
-  subsequent keys continue composing there. Directly focusing the password
-  field when no menu is visible passes literal input correctly.
-- Candidate clicks themselves select a word and preserve typing focus.
-  The transparent flyout's input region needs investigation.
-
 ### Windows low-memory lifecycle validation remains incomplete
 - At 2048 MiB, the first live layout rebuild returned `builder failed:
   exit status 1`; the old engine stayed usable. The builder's diagnostics

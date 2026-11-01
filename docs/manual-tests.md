@@ -225,6 +225,9 @@ Registration and unregistration must happen only in the VM. See
    negative monitor origins and every work-area edge. Click a candidate
    while new results/focus changes arrive; an old menu must not select a
    word from its replacement. Candidates must not take keyboard focus.
+   Put a password field below a textarea, compose in the textarea, then click
+   below the visible card into the password field. The click must reach it,
+   hide the menu, and leave subsequent literal keys out of the engine.
 8. Repeat in Word/Office, Chrome/Electron, Explorer and Start search.
    Elevated/AppContainer tests remain gated on the documented security work.
    Close test apps and unregister with `Shixin.exe -unregister`; confirm no

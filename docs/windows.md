@@ -323,7 +323,10 @@ for normal shutdown, request `Stop-Computer` over SSH and confirm it stopped.
 - Edge Ctrl+L now finalizes `ni hao` once: the client ends the marked range
   with its pooled edit request before passing an unhandled app shortcut and
   invalidates pending replies. The exact copied text passed with UAC enabled.
-- Candidate click-region failures and registration needing elevation remain.
+- The candidate flyout clips its native region to the measured rounded card.
+  With a visible menu, clicking the password field below it passes literal
+  input; clicking the first candidate still commits exact `你好`.
+- Registration needing elevation remains.
   See [known issues](KNOWN-ISSUES.md#windows-validation-and-release-support).
 - x64/emulated apps, Office/Chrome, mixed DPI, GPU scoring and packaging remain unverified.
 
@@ -372,7 +375,9 @@ from TSF to a separate `ui.sock` pipe. `Shixin.exe` validates the peer PID,
 current context before accepting them, takes every FocusIn (the
 foreground window can lag behind TSF's notification), checks the foreground
 process when it draws, and keeps only the latest display. The shared candidate view supplies skins, layout,
-fonts and clicks. A click includes its displayed sequence; TSF rejects
+fonts and clicks. Its native rounded window region matches the measured card,
+so the rest of the prewarmed transparent canvas passes app clicks through.
+A click includes its displayed sequence; TSF rejects
 stale clicks rather than selecting from a different menu. Positioning uses
 screen pixels, monitor work areas and the host's DPI. Actual text-store,
 DPI and click behavior still needs VM verification.
