@@ -173,11 +173,11 @@ and tools that touch Rime use scratch user dirs, never the live one.
 
 | Task | Command |
 |---|---|
-| Fetch Rime data (rime-ice) into `build/rime-data` | `scripts/fetch-rime-data.sh` or Windows `./scripts/fetch-rime-data.ps1` |
+| Fetch Rime data (rime-ice) into `build/rime-data` | `scripts/fetch-rime-data.sh` or Windows `./scripts/fetch-rime-data.ps1` (`-URL` overrides the download) |
 | Build (no cgo) | `CGO_ENABLED=0 go build ./...` |
 | Windows development build (PowerShell 7 + Visual Studio C++; no IME registration) | `./scripts/build-windows.ps1 -Arch amd64` or `-Arch arm64`; add `-Check` on the matching native Windows host for C++ tests, vet and short Go tests; `-SkipNative` builds only Go binaries |
 | Build our librime + librime-shixin (C++ tests with `--test`, sanitizers with `--asan`) | `scripts/build-librime.sh` → `build/librime/out/lib/librime.1.dylib` |
-| Build Windows librime + librime-shixin (MSVC, static dependencies, no Lua; C++ tests with `-Test`) | `./scripts/build-librime.ps1 -Arch arm64 -Test` → `build/windows-arm64/rime.dll` and `build/librime-windows-arm64/out/share/opencc` |
+| Build Windows librime + librime-shixin (MSVC, static dependencies, no Lua; C++ tests with `-Test`; `-Generator` / `-Jobs` override discovered defaults) | `./scripts/build-librime.ps1 -Arch arm64 -Test` → `build/windows-arm64/rime.dll` and `build/librime-windows-arm64/out/share/opencc` |
 | Build llama.cpp for shixin-ai (Metal, embedded shaders, no tools or network) | `scripts/build-llama.sh` → `build/llama/lib/libllama.dylib` |
 | Make the 8-bit model from ERNIE-4.5-0.3B-Base (Apache-2.0; weights downloaded into their own dir under `build/`) | `PYTHONPATH=third_party/llama.cpp/gguf-py python third_party/llama.cpp/convert_hf_to_gguf.py --outtype q8_0 --outfile build/models/ernie-4.5-0.3b-base-q8_0.gguf <hf snapshot dir>` |
 | Run the engine locally (dev: Homebrew librime, `build/rime-data`; without `-user`, `-settings` and `-socket` it uses the real Shixin user dir and refuses to start while an installed Shixin runs) | `go build -o build/bin/ ./cmd/shixin-engine ./cmd/shixin-builder && build/bin/shixin-engine -log -` |
@@ -264,12 +264,16 @@ See [Windows development](docs/windows.md#windows-test-vm-on-macos).
 Set `SHIXIN_VMROOT` (default `~/shixin-vm`) to an existing directory.
 `scripts/windows-qemu.sh` controls QEMU/HVF; `scripts/windows-vm.sh` adds
 SSH, transfers and paced input. Windows state stays separate from Tart VMs.
+Both source `scripts/windows-env.sh`. `SHIXIN_WINDOWS_VM` selects the name
+and state directories (default `shixin-win11`). Resource, port, ISO, firmware
+and VNC-client overrides are listed in the [variables table](docs/windows.md#windows-test-vm-on-macos).
 
 | Task | Command |
 |---|---|
 | Initialize SSH key and test state directories | `scripts/windows-vm.sh init-state` |
-| Create/start QEMU / request shutdown / inspect the Windows VM | `scripts/windows-qemu.sh start\|stop\|status` |
+| Create/start QEMU / request shutdown / inspect the selected Windows VM | `scripts/windows-qemu.sh start\|stop\|status` |
 | Start / request shutdown / inspect through the SSH helper | `scripts/windows-vm.sh boot\|stop\|status` |
+| Set RAM / CPU / new disk size at boot | `SHIXIN_WINDOWS_MEM=6144 SHIXIN_WINDOWS_CPUS=4 SHIXIN_WINDOWS_DISK=64G scripts/windows-vm.sh boot` |
 | Run literal PowerShell in the guest / transfer a file | `scripts/windows-vm.sh exec 'COMMAND'` · `put LOCAL GUEST` · `get GUEST LOCAL` |
 | Guest screenshot / VNC input | `scripts/windows-vm.sh shot NAME` · `keys KEY...` · `type TEXT` · `click X Y` |
 

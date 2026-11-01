@@ -1,11 +1,18 @@
 # Build our pinned librime with static dependencies and merged native Shixin
 # components. Run in PowerShell 7 on Windows with Visual Studio C++, CMake,
 # Git, tar and Python on PATH. This never opens a user dictionary.
+# Environment: PATH (tool discovery, inherited); CMAKE_GENERATOR (CMake's
+# discovered native generator if unset). Arguments: Arch (arm64), Test (off),
+# Generator (CMAKE_GENERATOR, otherwise CMake discovers Visual Studio),
+# Jobs (logical processor count). All paths are relative to the repository.
 [CmdletBinding()]
 param(
     [ValidateSet('amd64', 'arm64')]
     [string]$Arch = 'arm64',
-    [switch]$Test
+    [switch]$Test,
+    [string]$Generator = $env:CMAKE_GENERATOR,
+    [ValidateRange(1, 2147483647)]
+    [int]$Jobs = [Environment]::ProcessorCount
 )
 $ErrorActionPreference = 'Stop'
 if (-not $IsWindows) { throw 'This script requires Windows' }
@@ -56,13 +63,14 @@ try {
     }
 
     # Match upstream build.bat's static CRT for every dependency and librime.
-    $common = @('-G', 'Visual Studio 17 2022', '-A', $target,
+    $common = @('-A', $target,
         '-DCMAKE_POLICY_VERSION_MINIMUM=3.5',
         '-DCMAKE_CONFIGURATION_TYPES=Release', '-DCMAKE_BUILD_TYPE=Release',
         '-DCMAKE_CXX_FLAGS_INIT=/utf-8',
         '-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded',
         "-DCMAKE_USER_MAKE_RULES_OVERRIDE=$source/cmake/c_flag_overrides.cmake",
         "-DCMAKE_USER_MAKE_RULES_OVERRIDE_CXX=$source/cmake/cxx_flag_overrides.cmake")
+    if ($Generator) { $common = @('-G', $Generator) + $common }
     $dependencies = @(
         @{ Name = 'glog'; Flags = @('-DBUILD_TESTING=OFF', '-DWITH_GFLAGS=OFF') },
         @{ Name = 'leveldb'; Flags = @('-DLEVELDB_BUILD_TESTS=OFF', '-DLEVELDB_BUILD_BENCHMARKS=OFF') },
@@ -78,7 +86,7 @@ try {
         $options = $common + @('-DBUILD_SHARED_LIBS=OFF', "-DCMAKE_INSTALL_PREFIX=$prefix") + $dependency.Flags
         & cmake -S (Join-Path $source "deps/$name") -B $build @options
         Check-Native "configure $name"
-        & cmake --build $build --config Release --target install --parallel 4
+        & cmake --build $build --config Release --target install --parallel $Jobs
         Check-Native "build $name"
     }
 
@@ -96,7 +104,7 @@ try {
         "-DBOOST_ROOT=$boost", "-DCMAKE_PREFIX_PATH=$prefix", "-DCMAKE_INSTALL_PREFIX=$out")
     & cmake -S $scratch -B $build @options
     Check-Native 'configure librime'
-    & cmake --build $build --config Release --target install --parallel 4
+    & cmake --build $build --config Release --target install --parallel $Jobs
     Check-Native 'build librime'
 
     $dll = Get-ChildItem $out -Recurse -File -Filter rime.dll | Select-Object -First 1

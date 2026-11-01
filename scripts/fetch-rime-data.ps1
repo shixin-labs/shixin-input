@@ -1,4 +1,6 @@
 # Windows equivalent of fetch-rime-data.sh. Downloads stay under build/.
+# Arguments: URL (rime-ice nightly full.zip release on GitHub, below).
+# No script-specific environment variables; paths derive from the repository.
 [CmdletBinding()]
 param(
     [string]$URL = 'https://github.com/iDvel/rime-ice/releases/download/nightly/full.zip'

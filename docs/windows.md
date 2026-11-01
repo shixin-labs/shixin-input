@@ -57,7 +57,7 @@ Build the pinned librime with statically linked dependencies and merged
 `librime-shixin`, with the external plugin loader disabled and no Lua:
 
 ```powershell
-# Visual Studio 2022 C++, CMake, Git, tar and Python 3 on PATH; PowerShell 7.
+# Visual Studio C++, CMake, Git, tar and Python 3 on PATH; PowerShell 7.
 ./scripts/fetch-rime-data.ps1
 ./scripts/build-librime.ps1 -Arch arm64 -Test
 $out = 'build/windows-arm64'
@@ -70,6 +70,12 @@ Use `-Arch amd64` for x64. `build-librime.ps1` keeps the source submodule
 clean, builds under `build/librime-windows-<arch>/`, pins and checks the
 Boost archive, installs OpenCC conversion data, and copies `rime.dll` beside
 the development executables. `-Test` runs librime and Shixin's C++ tests.
+Tools are resolved through PATH; CMake discovers the installed Visual Studio
+generator. `-Generator` overrides `CMAKE_GENERATOR` (unset by default); use a
+Visual Studio generator supporting `-A`. `-Jobs` defaults to the host's logical
+processor count. `fetch-rime-data.ps1 -URL` overrides the nightly rime-ice
+release URL shown in that script. Both scripts derive all working paths from
+the repository and require no fixed tool installation paths.
 Python must allow imports from the script directory; a normal Python 3
 installation works. An isolated embeddable distribution needs its `._pth`
 configuration adjusted before OpenCC's sibling imports work.
@@ -166,37 +172,61 @@ default logging behavior; account for that gap during restart tests.
 On Apple Silicon, use `scripts/windows-qemu.sh` for QEMU/HVF power and
 VNC control, and `scripts/windows-vm.sh` for SSH, transfers and paced input.
 Both use `SHIXIN_VMROOT` (default `~/shixin-vm`), which must already exist;
-neither creates the root. Choose storage with room for a 64 GiB guest disk.
-The Windows VM is separate from the Tart VMs.
+neither creates the root. Choose storage with room for the guest disk (64 GiB
+by default). The Windows VM is separate from the Tart VMs. Both helpers source
+`scripts/windows-env.sh` for defaults; no VM configuration is duplicated.
+
+| Environment variable | Default / meaning |
+|---|---|
+| `SHIXIN_VMROOT` | `$HOME/shixin-vm`; existing host storage root |
+| `SHIXIN_WINDOWS_VM` | `shixin-win11`; VM name and state-directory name (letters, digits, `_`, `-`) |
+| `SHIXIN_WINDOWS_USER` | `shixin`; guest SSH account |
+| `SHIXIN_WINDOWS_SSH_PORT` | `2222`; loopback port forwarded to guest SSH port 22 |
+| `SHIXIN_WINDOWS_VNC_PORT` | `5907`; loopback VNC port, 5900–65535; QEMU display is port minus 5900 |
+| `SHIXIN_WINDOWS_CPUS` | `4`; virtual CPU count |
+| `SHIXIN_WINDOWS_MEM` | `2048` MiB; falls back to legacy `MEM` when unset |
+| `MEM` | Legacy RAM alias; `SHIXIN_WINDOWS_MEM` takes precedence |
+| `SHIXIN_WINDOWS_DISK` | `64G`; size used only when creating a new disk |
+| `SHIXIN_WINDOWS_ISO` | `Windows11_ARM64.iso`; absolute path or filename relative to `$SHIXIN_VMROOT/iso` |
+| `SHIXIN_WINDOWS_TOOLS_ISO` | `utm-guest-tools.iso`; absolute path or filename relative to `$SHIXIN_VMROOT/iso` |
+| `SHIXIN_WINDOWS_VNCDO` | `$SHIXIN_VMROOT/shixin/$SHIXIN_WINDOWS_VM/venv/bin/vncdo`; executable path or command on PATH |
+| `SHIXIN_WINDOWS_KEY_DELAY` | `50` ms per key; applies to both helpers |
+| `QEMU_FIRMWARE` | Discovered on start via `$(brew --prefix qemu)/share/qemu/edk2-aarch64-code.fd`; set a firmware file path without Homebrew |
+| `HOME`, `PATH` | Inherited home directory and tool search path; `qemu-system-aarch64`, `qemu-img`, SSH tools and other utilities are found on PATH |
+
+Empty overrides use the defaults. SSH and VNC always bind to loopback. Change
+ports, firmware or resources after a clean shutdown; changing disk size does
+not resize an existing disk. Changing the VM name selects separate state.
 
 | Path relative to the VM root | Contents |
 |---|---|
 | `iso/` | Windows ARM64 ISO and guest-tools ISO |
-| `qemu/shixin-win11/` | `disk.qcow2`, `efivars.fd`, monitor socket, PID file, QEMU log and screenshots |
-| `shixin/shixin-win11/` | SSH key, `known_hosts`, `venv/`, screenshots, logs and private setup notes |
+| `qemu/$SHIXIN_WINDOWS_VM/` | `disk.qcow2`, `efivars.fd`, monitor socket, PID file, QEMU log and screenshots |
+| `shixin/$SHIXIN_WINDOWS_VM/` | SSH key, `known_hosts`, `venv/`, screenshots, logs and private setup notes |
 
 Install Homebrew QEMU and prepare the state and VNC client:
 
 ```sh
 brew install qemu
 export SHIXIN_VMROOT="$HOME/shixin-vm"
+export SHIXIN_WINDOWS_VM=shixin-win11
 mkdir -p "$SHIXIN_VMROOT/iso"
 scripts/windows-vm.sh init-state
-S="$SHIXIN_VMROOT/shixin/shixin-win11"
+S="$SHIXIN_VMROOT/shixin/$SHIXIN_WINDOWS_VM"
 python3 -m venv "$S/venv"
 "$S/venv/bin/python" -m pip install vncdotool
 ```
 
 Place a Windows 11 ARM64 installation ISO named `Windows11_ARM64.iso` and a
 virtio guest-tools ISO named `utm-guest-tools.iso` in `iso/`. Override their
-filenames with `SHIXIN_WINDOWS_ISO` and `SHIXIN_WINDOWS_TOOLS_ISO`.
-The controller uses firmware from
-`$(brew --prefix qemu)/share/qemu/edk2-aarch64-code.fd`. On first start it
+paths with `SHIXIN_WINDOWS_ISO` and `SHIXIN_WINDOWS_TOOLS_ISO`.
+The controller uses `QEMU_FIRMWARE` or discovers Homebrew's QEMU firmware;
+it reports a clear error if neither is available. On first start it
 creates the NVMe disk and writable UEFI variables. It uses aarch64 `virt`,
 HVF, four cores, ramfb and a USB keyboard/tablet. VNC binds to
 **127.0.0.1:5907**; **127.0.0.1:2222** forwards to guest SSH port 22.
 RAM defaults to 2048 MiB; after a clean shutdown, use
-`MEM=6144 scripts/windows-vm.sh boot` for heavy native builds.
+`SHIXIN_WINDOWS_MEM=6144 scripts/windows-vm.sh boot` for heavy native builds.
 
 ```sh
 scripts/windows-qemu.sh start

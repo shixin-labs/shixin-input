@@ -1,32 +1,35 @@
 #!/usr/bin/env bash
 # Drive the Windows QEMU test VM. See docs/windows.md.
+# Environment (defaults; shared in windows-env.sh): HOME (user home), PATH
+# (tool discovery), SHIXIN_VMROOT ($HOME/shixin-vm), SHIXIN_WINDOWS_VM
+# (shixin-win11), SHIXIN_WINDOWS_USER (shixin), SHIXIN_WINDOWS_SSH_PORT (2222),
+# SHIXIN_WINDOWS_VNC_PORT (5907), SHIXIN_WINDOWS_CPUS (4), SHIXIN_WINDOWS_MEM
+# (MEM or 2048 MiB), MEM (legacy alias), SHIXIN_WINDOWS_DISK (64G),
+# SHIXIN_WINDOWS_ISO (Windows11_ARM64.iso), SHIXIN_WINDOWS_TOOLS_ISO
+# (utm-guest-tools.iso); ISO paths are absolute or relative to $VMROOT/iso.
+# SHIXIN_WINDOWS_VNCDO ($VMROOT/shixin/$SHIXIN_WINDOWS_VM/venv/bin/vncdo),
+# SHIXIN_WINDOWS_KEY_DELAY (50 ms), QEMU_FIRMWARE
+# ($(brew --prefix qemu)/share/qemu/edk2-aarch64-code.fd; discovered on boot).
 set -euo pipefail
-VMROOT="${SHIXIN_VMROOT:-$HOME/shixin-vm}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 fail() { echo "windows-vm: $*" >&2; exit 1; }
+# shellcheck source=windows-env.sh
+# shellcheck source-path=SCRIPTDIR
+source "$ROOT/scripts/windows-env.sh"
 usage() {
   echo 'usage: windows-vm.sh init-state|boot|stop|status|exec POWERSHELL|put LOCAL GUEST|get GUEST LOCAL|shot NAME|keys KEY...|type TEXT|click X Y' >&2
   exit 2
 }
 [[ $# -gt 0 ]] || usage
-# Resolve an existing root before creating any state beneath it.
-[[ -d "$VMROOT" ]] || fail "VM root does not exist: $VMROOT (set SHIXIN_VMROOT)"
-VMROOT="$(cd "$VMROOT" && pwd -P)"
-S="$VMROOT/shixin/shixin-win11"
-VM="$VMROOT/qemu/shixin-win11"
 RUN="$ROOT/scripts/windows-qemu.sh"
 KEY="$S/id_ed25519"
-SSH_PORT="${SHIXIN_WINDOWS_SSH_PORT:-2222}"
-GUEST_USER="${SHIXIN_WINDOWS_USER:-shixin}"
 ssh_options=(-o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=10
   -o StrictHostKeyChecking=accept-new -o "UserKnownHostsFile=\"$S/known_hosts\""
   -i "$KEY")
 run_vm() {
   [[ -x "$RUN" ]] || fail "QEMU controller missing: $RUN (see docs/windows.md)"
-  # A long burst can overrun the guest USB keyboard's report queue and
-  # leave a key repeating. Keep setup input paced even on the 2 GiB guest.
-  SHIXIN_VMROOT="$VMROOT" VNCDOTOOL_DELAY="${SHIXIN_WINDOWS_KEY_DELAY:-50}" "$RUN" "$@"
+  "$RUN" "$@"
 }
 need_ssh() { [[ -f "$KEY" ]] || fail 'run init-state and configure guest OpenSSH key authentication first'; }
 type_text() {
@@ -61,7 +64,7 @@ init-state)
   [[ $# -eq 1 ]] || usage
   umask 077
   mkdir -p "$S"/{shots,logs,notes,downloads}
-  [[ -f "$KEY" ]] || ssh-keygen -q -t ed25519 -N '' -C shixin-win11-vm -f "$KEY"
+  [[ -f "$KEY" ]] || ssh-keygen -q -t ed25519 -N '' -C "$NAME-vm" -f "$KEY"
   echo "State: $S"
   echo "Guest authorized key: $KEY.pub"
   ;;
@@ -96,7 +99,7 @@ shot)
   case "$2" in ''|*[!a-zA-Z0-9_-]*) fail 'screenshot name may contain letters, digits, underscores and hyphens' ;; esac
   mkdir -p "$S/shots"
   run_vm shot "$2"
-  cp "$VM/shots/$2.png" "$S/shots/$2.png"
+  cp "$D/shots/$2.png" "$S/shots/$2.png"
   echo "$S/shots/$2.png"
   ;;
 keys) shift; [[ $# -gt 0 ]] || usage; run_vm keys "$@" ;;
