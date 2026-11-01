@@ -13,6 +13,9 @@ import (
 
 // Checking is the user's click, never automatic.
 func TestCheckUpdateOnlyOnClick(t *testing.T) {
+	saved := plat
+	plat.manualPreview = false
+	t.Cleanup(func() { plat = saved })
 	a, _, _ := testApp(t)
 	var calls atomic.Int32
 	release := make(chan struct{})
@@ -36,6 +39,30 @@ func TestCheckUpdateOnlyOnClick(t *testing.T) {
 		t.Errorf("phase %d after the click", a.upd.phase)
 	}
 	close(release)
+}
+
+func TestUnsignedPreviewManualUpdates(t *testing.T) {
+	saved, oldVersion := plat, version
+	plat.manualPreview, plat.selfUpdate = true, false
+	version = "0.2.0"
+	t.Cleanup(func() { plat, version = saved, oldVersion })
+	a, _, _ := testApp(t)
+	a.page = "about"
+	a.front = "installed-front"
+	a.upd = updateState{phase: updAvailable, rel: &shixupdate.Release{Version: "0.2.1", Newer: true}}
+	if a.canInstall() {
+		t.Fatal("unsigned preview can install an update")
+	}
+	tt := ui.NewTester(a.view, 880, 900)
+	if _, ok := tt.Find(T("s.u.download")); !ok {
+		t.Fatal("manual release link missing")
+	}
+	if _, ok := tt.Find(T("s.u.install")); ok {
+		t.Fatal("unsigned preview offers in-app installation")
+	}
+	if _, ok := tt.Find(T("s.u.check")); ok {
+		t.Fatal("preview queries a stable-only update feed")
+	}
 }
 
 func TestFinishCheck(t *testing.T) {

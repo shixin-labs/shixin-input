@@ -281,6 +281,28 @@ Registration and unregistration must happen only in the VM. See
    shortcuts and startup, preserves scratch settings/dictionaries, and reports
    restart when needed. Reinstall and confirm preserved data is usable.
 
+### Windows unsigned preview
+
+1. Build with `-UnsignedPreview`, using no certificate. `-verify` must say
+   `unsigned-preview (integrity only)`. The installer/MSI and Shixin binaries
+   must be unsigned; bundled Microsoft CRTs must retain vendor signatures.
+   Corrupt the embedded MSI and verify rejection before any installation.
+2. Run fresh install, cancellation, upgrade, forced rollback and uninstall
+   from the checklist above. Expect an unknown publisher at UAC and an
+   explicit unsigned-preview notice in setup. Preserve settings and scratch
+   dictionary data. Repeat with an app holding the TSF DLL open.
+3. 关于 must show manual updating and open the project's release list,
+   including previews. It must offer no in-app download/install action.
+   `Shixin.exe -apply-update` and setup handoff arguments must fail before
+   stopping anything, even when the proposed installer is signed.
+4. Try replacing a signed installation with the preview bootstrapper and
+   with its extracted MSI. Both must refuse before replacing files; an
+   expired, revoked or otherwise untrusted signature must also be refused.
+   Separately confirm signed builds still reject unsigned files.
+5. On a system whose application-control policy blocks unsigned software,
+   record that limitation. Do not disable global security policies to turn
+   an unsupported configuration into a passing result.
+
 ### Windows 智能排序 (native GPU hardware)
 
 Use a signed installer with the Vulkan runtime libraries. All engine/tool

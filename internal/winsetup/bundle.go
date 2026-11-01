@@ -1,4 +1,4 @@
-// Package winsetup describes the signed Windows bootstrapper's MSI payload.
+// Package winsetup describes the Windows bootstrapper's MSI payload.
 // It never changes settings or opens a user dictionary.
 package winsetup
 
@@ -19,7 +19,8 @@ const footerSize = 112
 var magic = [16]byte{'S', 'H', 'I', 'X', 'I', 'N', '-', 'M', 'S', 'I', '-', 'v', '1', 0, 0, 0}
 var releaseVersion = regexp.MustCompile(`^(0|[1-9][0-9]{0,2})\.(0|[1-9][0-9]{0,2})\.(0|[1-9][0-9]{0,4})$`)
 
-// Bundle locates the MSI inside the executable's authenticated overlay.
+// Bundle locates the MSI inside the executable's overlay. Signed builds
+// authenticate that overlay with Authenticode before reading it.
 type Bundle struct {
 	Version      string
 	Arch         string
@@ -37,8 +38,8 @@ func ValidVersion(v string) bool {
 	return err == nil && a <= 255 && b <= 255 && c <= 65535
 }
 
-// Read validates the payload boundaries and digest. The caller must also
-// verify Authenticode; a digest alone cannot identify a publisher.
+// Read validates payload boundaries and digest. Signed builds must additionally
+// verify Authenticode; an unsigned preview's digest identifies no publisher.
 func Read(r io.ReaderAt, size int64) (Bundle, error) {
 	var b Bundle
 	p, err := pe.NewFile(r)
@@ -111,8 +112,8 @@ func Read(r io.ReaderAt, size int64) (Bundle, error) {
 	return b, nil
 }
 
-// Append attaches a payload before signing the final bootstrapper. Both
-// input files must be unsigned/independently signed respectively.
+// Append attaches an MSI to an unsigned bootstrapper. Signed releases sign
+// the MSI first and bootstrapper afterward; previews leave both unsigned.
 func Append(exe, msi, version, arch string) error {
 	if !ValidVersion(version) || (arch != "amd64" && arch != "arm64") {
 		return errors.New("setup: invalid version or architecture")

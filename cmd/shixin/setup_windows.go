@@ -55,6 +55,9 @@ func prepareWindowsUpgrade() error {
 }
 
 func applyWindowsUpdate(path, announced string) error {
+	if winsetup.UnsignedPreview {
+		return errors.New("update: unsigned previews require manual installation from the release page")
+	}
 	if !winsetup.ValidVersion(announced) || !shixupdate.CanInstall(&shixupdate.Release{Version: announced, Newer: shixupdate.Newer(announced, version)}, version) {
 		return errors.New("update: expected a newer stable release")
 	}

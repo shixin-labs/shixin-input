@@ -229,6 +229,11 @@ func TestSnapshots(t *testing.T) {
 							plat = saved
 						}
 					}
+					saved := plat
+					plat.manualPreview, plat.selfUpdate = true, false
+					version = "0.2.0"
+					writeSnapshot(t, a, language.lang, dark, 900, "about-windows-unsigned-preview")
+					plat = saved
 					a.upd, version, a.front = updateState{}, oldVersion, ""
 				}
 				if pg.id == "general" {

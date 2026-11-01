@@ -16,6 +16,7 @@ type platform struct {
 	// selfUpdate: the front verifies and applies a downloaded release
 	// (-apply-update). Elsewhere 关于 links to the download page.
 	selfUpdate     bool
+	manualPreview  bool   // unsigned Windows previews link directly to releases
 	installingText string // optional platform-specific update handoff message
 	// inputSettings opens the OS's input-source settings; refresh runs the
 	// front's -refresh first (macOS's stale list, DESIGN §5.5).

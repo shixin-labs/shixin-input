@@ -1230,6 +1230,16 @@ and remaining release work. Signed Windows release packages and publisher verifi
   have the same signing public key. Files remain locked against replacement
   from verification through handoff/installation, and the extracted MSI is
   checked again against the signed payload digest.
+  An explicit `-UnsignedPreview` build uses the separate
+  `shixin_unsigned_preview` compile tag. It accepts only unsigned setup
+  executables, warns that publisher identity cannot be verified, and retains
+  the locked-file, payload-digest, architecture and Windows Installer checks.
+  The digest detects corruption, not publisher identity. Preview Settings
+  links directly to all releases for manual updates; the front and setup
+  reject in-app update handoffs. Both the bootstrapper and deferred MSI guard
+  reject replacing a signed installation, including an untrusted signature.
+  Signed builds retain mandatory Authenticode checks with no runtime bypass.
+  Microsoft runtime DLL signatures are preserved in both distributions.
   Windows Installer owns file replacement, machine registration, Start menu
   shortcuts, uninstall metadata and rollback. Major upgrades execute the new files and component ownership before removing
   the old product inside the same transaction, preserving the stable protected

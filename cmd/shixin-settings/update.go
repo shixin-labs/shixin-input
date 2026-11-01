@@ -139,6 +139,14 @@ func (a *app) applyUpdate(front, dmg, ver string) error {
 
 // updateGroup is 更新 on the 关于 page.
 func (a *app) updateGroup(c *ui.Context) {
+	if plat.manualPreview {
+		group(c, T("s.u.title"), T("s.u.preview"), func() {
+			row(c, fmt.Sprintf(T("s.u.current"), version), "", func() {
+				ui.Button(c, T("s.u.download")).OnClick(func() { go mygo.Shell.OpenExternal("https://github.com/shixin-labs/shixin-input/releases") })
+			})
+		})
+		return
+	}
 	u := &a.upd
 	p := colors(c)
 	t := c.Theme()

@@ -169,7 +169,8 @@ isolated VM tests). `-Data`, `-Librime`, `-OpenCC` and `-Llama` override the nor
 build outputs. Shixin-built executables/DLLs, the MSI and the outer installer
 are signed and verified; app-local Microsoft CRTs retain their verified vendor
 signatures and original file versions. Verification uses cached Windows trust and revocation data;
-missing trust information fails closed without fetching it. There is no unsigned release mode. Owned binaries receive Windows file versions
+missing trust information fails closed without fetching it. Signed releases
+are the default; unsigned previews use the separate build below. Owned binaries receive Windows file versions
 `100.major.minor.patch`, independent of upstream library versions, so a rebuilt
 librime-shixin DLL advances with the Shixin release. MSI stores the actual
 version and language metadata.
@@ -221,8 +222,48 @@ list after machine removal. Setup logs are in
 `packaging/windows/test-msi.ps1 -Arch arm64` checks package structure without
 installing and runs with `build-windows.ps1 -Check`. `ShixinSetup-<arch>.exe
 -verify` verifies a signed release without installing. Test certificates must
-be trusted only in a disposable VM; a public release needs a production
-code-signing certificate and release validation.
+be trusted only in a disposable VM. Signed public releases need a trusted
+production code-signing certificate; unsigned previews use the explicit
+build below. Both need release validation.
+
+### Unsigned preview packages
+
+An unsigned preview can be built without a signing certificate:
+
+```powershell
+./scripts/package-windows.ps1 -Version 0.2.0 -Arch arm64 -UnsignedPreview
+```
+
+Use `-Arch amd64` on native x64 Windows. Outputs are
+`build/dist/preview/ShixinSetup-<arch>-unsigned-preview.exe` and its
+`.sha256` checksum file. This separate build compiles the
+`shixin_unsigned_preview` tag into the installer, maintenance helper,
+front and Settings. It does not change the signed build's verification
+policy and cannot be enabled by a runtime flag or environment variable.
+
+Windows may display an unknown-publisher warning or block unsigned code
+under application-control policies. Download only from the official release
+page and compare the published SHA-256 checksum. That checksum detects
+corruption; it does not authenticate a publisher. `-verify` explicitly
+reports an unsigned preview and checks integrity only. Microsoft's bundled
+runtime DLLs retain their valid vendor signatures.
+
+Setup, UAC, rollback, protected installation paths, settings/dictionary
+preservation, and restart handling are shared with signed releases. The
+preview refuses to replace a signed installation, even if its certificate
+is untrusted. Updates are manual: 关于 opens the release list, and
+`-apply-update` and installer handoffs are disabled. A later signed release
+with a higher MSI version can replace a preview manually. Installing the
+same version requires uninstall/reinstall, which preserves user data.
+
+ARM64 VM validation covers fresh installation, manual upgrade with a held
+TSF DLL and a restart request, forced registration rollback, uninstall with
+user data preserved, corrupted-payload rejection, and direct-MSI refusal
+over a certificate-bearing executable. All 119 installed payload files and
+the Microsoft runtime signatures were checked after install and upgrade.
+
+Native x64 installation and physical-GPU ranking validation remain release
+checks; emulated x64 tests and a GPU-less ARM64 VM do not establish them.
 
 ## Registration and manual use: Windows VM only
 

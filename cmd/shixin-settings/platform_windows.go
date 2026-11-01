@@ -3,6 +3,8 @@ package main
 import (
 	"os"
 	"path/filepath"
+
+	"shixin/internal/winsetup"
 )
 
 var plat = platform{
@@ -20,7 +22,8 @@ var plat = platform{
 	},
 	// Windows reports enablement without macOS's cache-repair operation.
 	added:          true,
-	selfUpdate:     true,
+	selfUpdate:     !winsetup.UnsignedPreview,
+	manualPreview:  winsetup.UnsignedPreview,
 	installingText: "s.u.installing.win",
 	inputSettings:  "ms-settings:regionlanguage",
 	guide:          windowsGuide,

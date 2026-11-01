@@ -251,6 +251,7 @@ var settingsCatalog = map[string][2]string{
 	"s.b.privacy":            {"隐私", "Privacy"},
 	"s.b.privacy.text":       {"拾新不收集任何数据。只有你主动操作时才会联网：下载智能排序模型，以及检查和下载更新（来自 GitHub）。你输入的内容只在本机处理，日志中从不记录输入的文字。", "Shixin collects no data. It goes online only when you ask: to download the 智能排序 model, and to check for and download updates (from GitHub). What you type is processed on this computer only, and typed text is never logged."},
 	"s.u.title":              {"更新", "Updates"},
+	"s.u.preview":            {"未签名预览版。请从官方发布页手动下载安装更新。", "Unsigned preview. Download and install updates manually from the official release page."},
 	"s.u.note":               {"只在你点击时联网检查，拾新不会自动检查更新。", "Shixin checks only when you click; it never checks by itself."},
 	"s.u.current":            {"当前版本 %s", "Current version %s"},
 	"s.u.check":              {"检查更新", "Check for Updates"},

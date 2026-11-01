@@ -1,4 +1,6 @@
-// Command shixin-setup installs the signed MSI embedded in its executable.
+// Command shixin-setup installs the MSI embedded in its executable. Signed
+// releases verify Authenticode; explicitly compiled previews warn and use
+// manual downloads instead of installing updates from inside the app.
 // The payloadless copy installed beside Shixin is its uninstaller.
 package main
 
@@ -31,7 +33,7 @@ func message(text string, kind uint32) bool {
 
 func main() {
 	remove := flag.Bool("uninstall", false, "uninstall Shixin, preserving settings and learned words")
-	verify := flag.Bool("verify", false, "verify this signed release without installing")
+	verify := flag.Bool("verify", false, "check this release without installing (preview: integrity only)")
 	ready := flag.Uint64("handoff-ready", 0, "internal update handoff event")
 	parent := flag.Uint64("handoff-parent", 0, "internal wait-only updater process handle")
 	checkStopped := flag.Bool("check-stopped", false, "internal MSI process drain check")
@@ -42,7 +44,7 @@ func main() {
 			var f *os.File
 			f, err = winsetup.LockedFile(exe)
 			if err == nil {
-				_, err = winsetup.Publisher(f)
+				_, err = winsetup.SetupPublisher(f)
 				f.Close()
 			}
 		}
@@ -52,7 +54,10 @@ func main() {
 			if err == nil {
 				err = winsetup.CheckUnmanaged(dir)
 				if err == nil {
-					err = winsetup.WaitProcesses(dir, time.Second)
+					err = winsetup.CheckPreviewTarget(dir)
+					if err == nil {
+						err = winsetup.WaitProcesses(dir, time.Second)
+					}
 				}
 			}
 		}
@@ -64,6 +69,10 @@ func main() {
 	}
 	if (*ready == 0) != (*parent == 0) || (*ready != 0 && (*remove || *verify)) {
 		fmt.Fprintln(os.Stderr, "invalid update handoff")
+		os.Exit(1)
+	}
+	if winsetup.UnsignedPreview && *ready != 0 {
+		fmt.Fprintln(os.Stderr, "unsigned previews require manual installation")
 		os.Exit(1)
 	}
 	if flag.NArg() != 0 {
@@ -92,7 +101,7 @@ func run(remove, verify bool, ready, parent windows.Handle) (err error) {
 		return err
 	}
 	defer self.Close()
-	publisher, err := winsetup.Publisher(self)
+	publisher, err := winsetup.SetupPublisher(self)
 	if err != nil {
 		return err
 	}
@@ -134,8 +143,15 @@ func run(remove, verify bool, ready, parent windows.Handle) (err error) {
 		return errors.New("setup: Windows 10 or later is required")
 	}
 	if verify {
-		fmt.Fprintf(os.Stdout, "%s %s\n", bundle.Version, bundle.Arch)
+		label := ""
+		if winsetup.UnsignedPreview {
+			label = " unsigned-preview (integrity only)"
+		}
+		fmt.Fprintf(os.Stdout, "%s %s%s\n", bundle.Version, bundle.Arch, label)
 		return nil
+	}
+	if err := winsetup.CheckPreviewTarget(dir); err != nil {
+		return err
 	}
 	if !remove && code == "" {
 		if err := winsetup.CheckUnmanaged(dir); err != nil {
@@ -166,6 +182,9 @@ func run(remove, verify bool, ready, parent windows.Handle) (err error) {
 		return errors.New("setup: Shixin is not installed by Windows Installer")
 	}
 	prompt := i18n.T("setup.confirm")
+	if winsetup.UnsignedPreview {
+		prompt = i18n.T("setup.confirm.preview")
+	}
 	if remove {
 		prompt = i18n.T("setup.remove")
 	}
@@ -215,14 +234,16 @@ func run(remove, verify bool, ready, parent windows.Handle) (err error) {
 			return err
 		}
 		if st.Size() != bundle.Size || !bytes.Equal(hash.Sum(nil), bundle.SHA256[:]) {
-			return errors.New("setup: the extracted MSI differs from the signed bundle")
+			return errors.New("setup: the extracted MSI differs from the embedded bundle")
 		}
-		signer, err := winsetup.Publisher(payload)
-		if err != nil {
-			return err
-		}
-		if signer != publisher {
-			return errors.New("setup: the MSI has a different publisher key")
+		if !winsetup.UnsignedPreview {
+			signer, err := winsetup.Publisher(payload)
+			if err != nil {
+				return err
+			}
+			if signer != publisher {
+				return errors.New("setup: the MSI has a different publisher key")
+			}
 		}
 	} else {
 		msi = code

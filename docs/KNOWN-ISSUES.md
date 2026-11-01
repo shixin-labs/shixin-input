@@ -57,6 +57,9 @@ Delete an entry when it's fixed, and mention it in the commit.
   IDs also match executable paths, with ambiguous aliases left unresolved.
 - **Security and validation:** production-certificate/timestamp behavior and
   complete installation on native x64 Windows still need release validation.
+  A separate unsigned-preview package supports manual installation and
+  updates while signing approval is pending. Windows security policies may
+  block it; its integrity checks do not authenticate the publisher.
   AppContainer transport has capability-free sandbox coverage; Start search
   typing also passes in the low-integrity ARM64 SearchHost. Real text-store
   behavior,

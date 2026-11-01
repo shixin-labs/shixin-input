@@ -16,7 +16,9 @@ are planned ([milestones](docs/DESIGN.md#10-milestones)).
 
 Windows x64 and ARM64 development builds include a TSF frontend and
 candidate/tray host, with the same settings GUI. Windows VM validation and
-release packaging are pending. See [Windows development](docs/windows.md).
+release validation remain in progress. Signed installer tooling is available;
+an explicit unsigned preview build supports manual installation and updates
+while public signing is pending. See [Windows development](docs/windows.md).
 
 ## Install (macOS)
 

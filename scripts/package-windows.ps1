@@ -1,4 +1,4 @@
-# Produce one Authenticode-signed Windows installer with bundled data.
+# Produce a signed Windows installer, or an explicitly unsigned manual preview.
 # Requires native Windows, PowerShell 7, Go, Visual Studio C++, Windows SDK,
 # fetched Rime data and our matching build-librime.ps1 output. Uses only
 # installed SDK tools and Windows Installer; never downloads executable tools.
@@ -6,7 +6,8 @@
 param(
     [Parameter(Mandatory)][string]$Version,
     [ValidateSet('amd64','arm64')][string]$Arch = 'amd64',
-    [Parameter(Mandatory)][ValidatePattern('^[0-9A-Fa-f]{40}$')][string]$CertificateThumbprint,
+    [ValidatePattern('^[0-9A-Fa-f]{40}$')][string]$CertificateThumbprint,
+    [switch]$UnsignedPreview,
     [ValidateSet('CurrentUser','LocalMachine')][string]$CertificateStore = 'CurrentUser',
     [string]$TimestampServer = 'http://timestamp.digicert.com',
     [string]$SignTool,
@@ -21,9 +22,13 @@ if (-not $IsWindows) { throw 'Windows packaging requires native Windows and Powe
 if ($Version -notmatch '^(0|[1-9][0-9]{0,2})\.(0|[1-9][0-9]{0,2})\.(0|[1-9][0-9]{0,4})$' -or
     [int]$Matches[1] -gt 255 -or [int]$Matches[2] -gt 255 -or [int]$Matches[3] -gt 65535) { throw 'Use a stable MSI version: major.minor.build (255.255.65535 maximum)' }
 $root=Split-Path $PSScriptRoot -Parent
-$certificate=Get-Item "Cert:/$CertificateStore/My/$CertificateThumbprint"
-if (-not $certificate.HasPrivateKey) { throw 'The signing certificate has no accessible private key' }
-if (-not ($certificate.EnhancedKeyUsageList.ObjectId -contains '1.3.6.1.5.5.7.3.3')) { throw 'The certificate must allow code signing' }
+if ($UnsignedPreview -and $CertificateThumbprint) { throw 'Choose unsigned preview or certificate signing, not both' }
+if (-not $UnsignedPreview) {
+    if (-not $CertificateThumbprint) { throw 'Set CertificateThumbprint for a signed release, or explicitly select -UnsignedPreview' }
+    $certificate=Get-Item "Cert:/$CertificateStore/My/$CertificateThumbprint"
+    if (-not $certificate.HasPrivateKey) { throw 'The signing certificate has no accessible private key' }
+    if (-not ($certificate.EnhancedKeyUsageList.ObjectId -contains '1.3.6.1.5.5.7.3.3')) { throw 'The certificate must allow code signing' }
+}
 if (-not $SignTool -or -not $ManifestTool) {
     $kits=(Get-ItemProperty 'HKLM:/SOFTWARE/Microsoft/Windows Kits/Installed Roots').KitsRoot10
     $sdk=Get-ChildItem (Join-Path $kits 'bin') -Directory | Where-Object Name -Match '^10\.' | Sort-Object {[version]$_.Name} -Descending | Select-Object -First 1
@@ -44,6 +49,7 @@ function Manifest([string]$path) {
     [IO.File]::WriteAllBytes($path,$bytes)
 }
 function Sign([string]$path) {
+    if ($UnsignedPreview) { return }
     $options=@('sign','/sha1',$CertificateThumbprint,'/fd','SHA256','/s','My','/d','拾新输入法 Shixin Input','/du','https://github.com/shixin-labs/shixin-input')
     if ($CertificateStore -eq 'LocalMachine') { $options+='/sm' }
     if ($TimestampServer) { $options+=@('/tr',$TimestampServer,'/td','SHA256') }
@@ -63,17 +69,20 @@ try {
     if ((& go env GOHOSTARCH).Trim() -ne $Arch) { throw 'Build release packages on the matching native Windows architecture' }
     $env:GOOS='windows'; $env:GOARCH=$Arch; $env:CGO_ENABLED='0'
     $crtNames=@(& go run ./tools/windows-package -crt-files); Check 'list Microsoft runtime files'
-    $work=Join-Path $root "build/package-windows-$Arch"
+    $suffix=if ($UnsignedPreview) {'-unsigned-preview'} else {''}
+    $work=Join-Path $root "build/package-windows-$Arch$suffix"
     $payload=Join-Path $work 'payload'
     Remove-Item $payload -Recurse -Force -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Force $payload | Out-Null
     Set-Content (Join-Path $root 'build/go.mod') 'module shixin/build' -Encoding ascii
     $flags="-s -w -X main.version=$Version"
+    $buildOptions=@()
+    if ($UnsignedPreview) { $buildOptions=@('-tags','shixin_unsigned_preview') }
     foreach ($name in @('shixin-engine','shixin-builder','shixin-ai')) {
-        & go build -trimpath -ldflags $flags -o (Join-Path $payload "$name.exe") "./cmd/$name"; Check "build $name"
+        & go build @buildOptions -trimpath -ldflags $flags -o (Join-Path $payload "$name.exe") "./cmd/$name"; Check "build $name"
     }
     foreach ($entry in @(@('shixin','Shixin'),@('shixin-settings','shixin-settings'),@('shixin-setup','ShixinSetup'))) {
-        & go build -trimpath -ldflags "$flags -H windowsgui" -o (Join-Path $payload ($entry[1]+'.exe')) "./cmd/$($entry[0])"; Check "build $($entry[0])"
+        & go build @buildOptions -trimpath -ldflags "$flags -H windowsgui" -o (Join-Path $payload ($entry[1]+'.exe')) "./cmd/$($entry[0])"; Check "build $($entry[0])"
     }
     $target=if ($Arch -eq 'arm64') {'ARM64'} else {'x64'}
     $native=Join-Path $root "build/tsf-$Arch"
@@ -161,12 +170,15 @@ try {
     Check 'author MSI'
     Sign $msi
     $dist=Join-Path $root 'build/dist'
+    if ($UnsignedPreview) { $dist=Join-Path $dist 'preview' }
     New-Item -ItemType Directory -Force $dist | Out-Null
-    $setup=Join-Path $dist "ShixinSetup-$Arch.exe"
-    & go build -trimpath -ldflags "$flags -H windowsgui" -o $setup ./cmd/shixin-setup; Check 'build bootstrapper'
+    $setup=Join-Path $dist "ShixinSetup-$Arch$suffix.exe"
+    & go build @buildOptions -trimpath -ldflags "$flags -H windowsgui" -o $setup ./cmd/shixin-setup; Check 'build bootstrapper'
     Manifest $setup
-    & go run ./tools/windows-package -exe $setup -msi $msi -version $Version -arch $Arch; Check 'attach signed MSI'
+    & go run ./tools/windows-package -exe $setup -msi $msi -version $Version -arch $Arch; Check 'attach MSI'
     Sign $setup
+    $hash=(Get-FileHash $setup -Algorithm SHA256).Hash.ToLowerInvariant()
+    "$hash  $([IO.Path]::GetFileName($setup))" | Set-Content "$setup.sha256" -Encoding ascii
     Write-Host "Release installer: $setup"
 } finally {
     $env:GOOS=$savedOS; $env:GOARCH=$savedArch; $env:CGO_ENABLED=$savedCGO

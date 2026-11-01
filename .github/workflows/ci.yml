@@ -33,6 +33,9 @@ jobs:
       - name: Windows llama ABI and unavailable-GPU fallback
         shell: pwsh
         run: ./scripts/build-llama.ps1 -Arch ${{ matrix.arch }} -NoVulkan -Test
+      - name: Unsigned preview isolation and manual updates
+        shell: pwsh
+        run: go test -short -tags shixin_unsigned_preview ./internal/winsetup ./cmd/shixin-setup ./cmd/shixin ./cmd/shixin-settings
 
   linux:
     runs-on: ubuntu-24.04
