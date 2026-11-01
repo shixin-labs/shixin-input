@@ -262,8 +262,23 @@ user data preserved, corrupted-payload rejection, and direct-MSI refusal
 over a certificate-bearing executable. All 119 installed payload files and
 the Microsoft runtime signatures were checked after install and upgrade.
 
-Native x64 installation and physical-GPU ranking validation remain release
-checks; emulated x64 tests and a GPU-less ARM64 VM do not establish them.
+The manually dispatched `Windows release packages` workflow builds both
+architectures on matching native runners and uploads installers only after
+lifecycle validation. Both jobs use the same dictionary snapshot. Build
+metadata records the source/submodule commits and dictionary checksum.
+The workflow builds its shader compiler, headers and Vulkan import library
+from pinned source with `scripts/build-vulkan-tools.ps1`; it installs no GPU
+driver and runs no downloaded executable tools.
+
+`packaging/windows/test-install.ps1 -Arch amd64 -Version 0.2.0 -DisposableVM`
+requires an elevated disposable Windows VM with no existing Shixin state.
+It checks real installed bytes, registration, an isolated installed-engine
+replay, signed-target protection, forced rollback, held-DLL upgrade and
+uninstall, preserving scratch settings and dictionary fixtures. The hosted
+x64 runner uses Windows Server 2025; the ARM64 runner uses Windows 11.
+Consumer x64 GUI/UAC interaction, broader app typing and physical-GPU ranking
+still need manual validation. Emulation and GPU-less VMs do not establish
+GPU scoring or latency.
 
 ## Registration and manual use: Windows VM only
 

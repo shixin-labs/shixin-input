@@ -55,8 +55,12 @@ Delete an entry when it's fixed, and mention it in the commit.
   this copy's startup command. TSF supplies composition display attributes;
   the host shows confirmed mode changes beside the caret. Saved desktop app
   IDs also match executable paths, with ambiguous aliases left unresolved.
-- **Security and validation:** production-certificate/timestamp behavior and
-  complete installation on native x64 Windows still need release validation.
+- **Security and validation:** production-certificate/timestamp behavior
+  still needs release validation. The Windows release workflow builds full
+  x64/ARM64 packages and checks installation, per-user registration,
+  installed-engine replay, rollback, held-DLL upgrades and uninstall on
+  disposable native runners (Windows Server 2025 x64 and Windows 11 ARM64).
+  GUI/UAC behavior on consumer x64 Windows still needs manual coverage.
   A separate unsigned-preview package supports manual installation and
   updates while signing approval is pending. Windows security policies may
   block it; its integrity checks do not authenticate the publisher.

@@ -5,7 +5,7 @@ Guidance for contributors and coding agents working in this repository.
 ## Project
 
 拾新输入法 (Shixin Input) is a cross-platform Chinese input method (macOS
-now; Windows and Linux planned) built on librime, with Sogou-level
+and Windows previews; Linux planned) built on librime, with Sogou-level
 usability. Documents:
 
 - [`docs/DESIGN.md`](docs/DESIGN.md): the design. Read it before making
@@ -41,6 +41,9 @@ M1 (macOS MVP) is done; M2 (DESIGN §10) is in progress. Built so far:
   per-user logon startup. TSF composition attributes and the host's mode
   indicator share the existing result/caret stream. Desktop picker IDs
   resolve to executable aliases for per-app rules off the engine thread.
+  Version 0.2.0 publishes unsigned x64/ARM64 previews with manual updates.
+  The release workflow builds and checks installers on disposable native
+  Windows runners; physical-GPU scoring remains unvalidated.
   See
   [`docs/windows.md`](docs/windows.md).
 
@@ -198,6 +201,9 @@ and tools that touch Rime use scratch user dirs, never the live one.
 | Capture offline menus from public codes (warm-only scratch engine, no learning) | `go run ./tools/menu-capture -engine build/bin/shixin-engine -generation /tmp/shixin-generation -data build/rime-data -lib "$SHIXIN_LIBRIME" -profile SHA256 -input codes.jsonl -output menus.jsonl -limit 50` |
 | Signed Windows installer (matching native host and SDK code-signing certificate; empty `-TimestampServer` for isolated VM tests) | `./scripts/package-windows.ps1 -Version x.y.z -Arch arm64 -CertificateThumbprint <thumbprint>` → `build/dist/ShixinSetup-arm64.exe` (amd64 supported) |
 | Windows unsigned preview (manual updates; no signing key) | `./scripts/package-windows.ps1 -Version 0.2.0 -Arch arm64 -UnsignedPreview` → `build/dist/preview/ShixinSetup-arm64-unsigned-preview.exe` + SHA-256; `-Arch amd64` on native x64; test isolation with `go test -tags shixin_unsigned_preview ./internal/winsetup ./cmd/shixin-setup ./cmd/shixin ./cmd/shixin-settings` |
+| Build Vulkan SDK tools from pinned source (native MSVC; no driver installation) | `./scripts/build-vulkan-tools.ps1 -Arch amd64` → `build/vulkan-tools-amd64/sdk`; set `VULKAN_SDK` to that path |
+| Installer lifecycle check (**elevated disposable Windows VM only**, requires a real unsigned package) | `./packaging/windows/test-install.ps1 -Arch amd64 -Version 0.2.0 -DisposableVM` |
+| Build and validate both native Windows packages (uploads artifacts; does not publish) | `gh workflow run windows-release.yml -f version=0.2.0` |
 | Windows MSI authoring checks (no install) / signed release verification | `./packaging/windows/test-msi.ps1 -Arch arm64` · `ShixinSetup-arm64.exe -verify` |
 | Portable TSF core and auto-spacing tests (Go wire/spacing vectors, timeout/focus safety, queues, allocation, latency and parser stress) | `cmake -S frontends/windows-tsf -B build/tsf-tests && cmake --build build/tsf-tests && ctest --test-dir build/tsf-tests --output-on-failure` |
 | Native Windows core/COM, composition attributes and deferred edit/selection tests | `ctest --test-dir build/tsf-arm64 -C Release --output-on-failure` (use the configured native TSF build directory; includes `shixin_service_test`) |

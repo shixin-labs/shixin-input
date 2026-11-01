@@ -84,8 +84,14 @@ try {
     if (-not $vc) { throw 'Cannot locate the compiler Visual C++ redistributables' }
     $redistVersion = (Get-Content "$vc/Auxiliary/Build/Microsoft.VCRedistVersion.default.txt").Trim()
     $crtArch = if ($Arch -eq 'arm64') { 'arm64' } else { 'x64' }
-    $crt = "$vc/Redist/MSVC/$redistVersion/$crtArch/Microsoft.VC143.CRT"
-    if (-not (Test-Path $crt)) { throw "Install the Visual C++ $crtArch release redistributables" }
+    $crtRoot = "$vc/Redist/MSVC/$redistVersion/$crtArch"
+    if (-not (Test-Path $crtRoot)) { throw "Install the Visual C++ $crtArch release redistributables" }
+    # VS 2022 uses VC143; VS 2026 uses a newer toolset directory. Resolve
+    # the one release CRT in this compiler's selected redist, never a system
+    # directory or an unrelated Visual Studio installation.
+    $crtDirectories = @(Get-ChildItem $crtRoot -Directory -Filter 'Microsoft.VC*.CRT')
+    if ($crtDirectories.Count -ne 1) { throw "Expected one release CRT under $crtRoot" }
+    $crt = $crtDirectories[0].FullName
     $crtFiles = Get-ChildItem $crt -File -Filter '*.dll'
     $machine = if ($Arch -eq 'arm64') { 0xaa64 } else { 0x8664 }
     foreach ($file in $crtFiles) {

@@ -2,7 +2,7 @@
 
 拾新是一款基于 [Rime](https://rime.im/) 引擎的中文输入法，目标是像搜狗拼音一样好用：
 装上就能打字，所有选项都在设置程序里，无需编辑 YAML，而且打字永不卡顿。
-目前支持 macOS，Windows 与 Linux 在计划中。
+目前支持 macOS；Windows x64 与 ARM64 提供未签名预览版，Linux 在计划中。
 
 Shixin is a Chinese pinyin input method built on
 [librime](https://github.com/rime/librime) with the
@@ -11,14 +11,15 @@ easy to use as Sogou Pinyin: install it, choose options in a real settings
 app, and type. Nobody edits YAML, and **typing never stalls**: the app you
 type in never waits on the engine, whatever the engine is doing.
 
-**Status:** pre-release. macOS works and is in daily use; Windows and Linux
-are planned ([milestones](docs/DESIGN.md#10-milestones)).
+**Status:** macOS works and is in daily use. Windows x64 and ARM64 are available as
+unsigned previews; Linux is planned
+([milestones](docs/DESIGN.md#10-milestones)).
 
 Windows x64 and ARM64 development builds include a TSF frontend and
-candidate/tray host, with the same settings GUI. Windows VM validation and
-release validation remain in progress. Signed installer tooling is available;
-an explicit unsigned preview build supports manual installation and updates
-while public signing is pending. See [Windows development](docs/windows.md).
+candidate/tray host, with the same settings GUI. The 0.2.0 downloads are
+unsigned previews. Physical-GPU scoring and broader application coverage
+remain unvalidated. See
+[Windows development](docs/windows.md).
 
 ## Install (macOS)
 
@@ -36,6 +37,38 @@ Requires macOS 13 or later on Apple silicon.
 安装：从 [Releases](https://github.com/shixin-labs/shixin-input/releases/latest)
 下载 `Shixin.dmg`，打开后双击「拾新」即可安装（无需拖到“应用程序”），再按
 「开始使用」向导在系统设置中添加拾新。
+
+## Install (Windows unsigned preview)
+
+Requires administrator approval and Windows 10 or later on x64, or
+Windows 11 on ARM64. 32-bit applications are not supported.
+
+| Windows architecture | Installer |
+|---|---|
+| Intel/AMD x64 | `ShixinSetup-amd64-unsigned-preview.exe` |
+| ARM64 | `ShixinSetup-arm64-unsigned-preview.exe` |
+
+1. Download the matching installer above and its `.sha256` file
+   from [0.2.0](https://github.com/shixin-labs/shixin-input/releases/tag/v0.2.0).
+2. Use `Get-FileHash <installer-file> -Algorithm SHA256` and compare
+   with the published checksum. The checksum detects corruption; it does
+   not authenticate the publisher.
+3. Open the installer and follow its guide. The installer is **unsigned**:
+   Windows cannot verify its publisher, and some security policies block it.
+   Setup requests UAC approval, preserves settings and learned words during
+   upgrades, and may request a restart.
+4. Choose 拾新 with Windows-Space. Updates are manual; Settings → About
+   opens the release list. Uninstall through Windows Installed Apps.
+
+Windows 安装：需要 x64 版 Windows 10 或更新版本，或 ARM64 版 Windows 11，
+以及管理员批准。从
+[0.2.0](https://github.com/shixin-labs/shixin-input/releases/tag/v0.2.0)
+下载对应架构的安装包并核对 SHA-256，再打开安装包完成安装。安装包未签名，
+Windows 无法验证发布者；部分安全策略会阻止运行。更新需手动下载安装，
+设置和学到的词语会保留。暂不支持 32 位应用。
+
+智能排序 is off by default. The Vulkan runtime and unavailable-GPU fallback
+are tested, but Windows GPU scoring and latency still need hardware validation.
 
 ## Features (macOS)
 

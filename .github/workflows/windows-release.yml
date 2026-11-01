@@ -1,0 +1,142 @@
+name: Windows release packages
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'MSI release version (major.minor.build)'
+        type: string
+        required: true
+        default: '0.2.0'
+
+permissions:
+  contents: read
+
+env:
+  SHIXIN_PERF_TOLERANCE: 'off'
+
+jobs:
+  dictionary:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Download one dictionary snapshot for both architectures
+        run: |
+          mkdir -p build/downloads
+          curl --fail --location --retry 3 https://github.com/iDvel/rime-ice/releases/download/nightly/full.zip -o build/downloads/rime-ice-full.zip
+      - uses: actions/upload-artifact@v7
+        with:
+          name: rime-data-source
+          path: build/downloads/rime-ice-full.zip
+          if-no-files-found: error
+          retention-days: 14
+
+  package:
+    needs: dictionary
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-2025
+            arch: amd64
+          - runner: windows-11-arm
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          persist-credentials: false
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: Cache source-built Vulkan tools
+        id: vulkan
+        uses: actions/cache/restore@v6
+        with:
+          path: build/vulkan-tools-${{ matrix.arch }}/sdk
+          key: vulkan-tools-${{ matrix.runner }}-${{ matrix.arch }}-${{ hashFiles('scripts/build-vulkan-tools.ps1') }}
+      - name: Build Vulkan headers, import library and shader compiler
+        if: steps.vulkan.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: ./scripts/build-vulkan-tools.ps1 -Arch $env:SHIXIN_ARCH
+        env:
+          SHIXIN_ARCH: ${{ matrix.arch }}
+      - name: Cache validated Vulkan build tools
+        if: steps.vulkan.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: build/vulkan-tools-${{ matrix.arch }}/sdk
+          key: vulkan-tools-${{ matrix.runner }}-${{ matrix.arch }}-${{ hashFiles('scripts/build-vulkan-tools.ps1') }}
+      - name: Build native runtime and test bindings
+        shell: pwsh
+        env:
+          SHIXIN_ARCH: ${{ matrix.arch }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $env:VULKAN_SDK="$PWD/build/vulkan-tools-$env:SHIXIN_ARCH/sdk"
+          ./scripts/build-llama.ps1 -Arch $env:SHIXIN_ARCH -Test
+      - name: Build native librime and test components
+        shell: pwsh
+        env:
+          SHIXIN_ARCH: ${{ matrix.arch }}
+        run: ./scripts/build-librime.ps1 -Arch $env:SHIXIN_ARCH -Test
+      - name: Fetch dictionary source
+        uses: actions/download-artifact@v8
+        with:
+          name: rime-data-source
+          path: build/downloads
+      - name: Extract shared dictionary snapshot
+        shell: pwsh
+        run: |
+          Expand-Archive build/downloads/rime-ice-full.zip build/rime-data
+          Remove-Item build/rime-data/lua -Recurse -Force -ErrorAction SilentlyContinue
+      - name: Package unsigned release
+        shell: pwsh
+        env:
+          SHIXIN_ARCH: ${{ matrix.arch }}
+          SHIXIN_VERSION: ${{ inputs.version }}
+        run: ./scripts/package-windows.ps1 -Arch $env:SHIXIN_ARCH -Version $env:SHIXIN_VERSION -UnsignedPreview -Llama "$PWD/build/llama-windows-$env:SHIXIN_ARCH/lib"
+      - name: Validate on disposable native Windows
+        shell: pwsh
+        env:
+          SHIXIN_ARCH: ${{ matrix.arch }}
+          SHIXIN_VERSION: ${{ inputs.version }}
+        run: ./packaging/windows/test-install.ps1 -Arch $env:SHIXIN_ARCH -Version $env:SHIXIN_VERSION -DisposableVM
+      - name: Record build provenance
+        shell: pwsh
+        env:
+          SHIXIN_ARCH: ${{ matrix.arch }}
+          SHIXIN_VERSION: ${{ inputs.version }}
+        run: |
+          $info=[ordered]@{
+            version=$env:SHIXIN_VERSION
+            architecture=$env:SHIXIN_ARCH
+            source=(& git rev-parse HEAD).Trim()
+            librime=(& git -C third_party/librime rev-parse HEAD).Trim()
+            llama=(& git -C third_party/llama.cpp rev-parse HEAD).Trim()
+            dictionary_sha256=(Get-FileHash build/downloads/rime-ice-full.zip -Algorithm SHA256).Hash.ToLowerInvariant()
+            unsigned_preview=$true
+            gpu_scoring_validated=$false
+          }
+          $info | ConvertTo-Json | Set-Content "build/dist/preview/build-info-$env:SHIXIN_ARCH.json" -Encoding utf8NoBOM
+      - name: Upload validated release assets
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-${{ matrix.arch }}-${{ inputs.version }}
+          path: |
+            build/dist/preview/*.exe
+            build/dist/preview/*.sha256
+            build/dist/preview/build-info-*.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Upload validation logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-${{ matrix.arch }}-validation
+          path: |
+            build/install-test-*/**/*.log
+            build/install-test-*/verify.*
+            build/install-test-*/front.err
+          if-no-files-found: ignore
+          retention-days: 14
