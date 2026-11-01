@@ -22,7 +22,9 @@ usage() {
   echo 'usage: windows-qemu.sh start|stop|status|shot NAME|keys KEY...|type TEXT|click X Y' >&2
   exit 2
 }
-vnc() { VNCDOTOOL_DELAY="$KEY_DELAY" "$VNCDO" -s "127.0.0.1::$VNC_PORT" "$@"; }
+# Keep the connection alive long enough to flush the final key/button release.
+# vncdotool inserts delays between commands, but not after a final key/click.
+vnc() { VNCDOTOOL_DELAY="$KEY_DELAY" "$VNCDO" -s "127.0.0.1::$VNC_PORT" "$@" pause 0.1; }
 read_pid() {
   local pid
   pid="$(cat "$D/qemu.pid" 2>/dev/null)" || return 1
