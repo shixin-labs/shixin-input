@@ -228,6 +228,28 @@ evidence storage, see [Windows VM setup](windows.md#windows-test-vm-on-macos).
    Close test apps and unregister with `Shixin.exe -unregister`; confirm no
    unrelated input sources or user dictionaries changed.
 
+### Windows VM preparation attempt (2026-10-31)
+
+Status: **blocked before Windows installation**. UTM 5.0.8 launched, but
+`utmctl list` did not return and an AppleScript `get UTM version` request
+ended with `AppleEvent timed out (-1712)`. Host screen capture also failed
+with `could not create image from display`; no screenshot was produced.
+The operator must inspect UTM's startup UI and handle any pending macOS
+Automation prompt before retrying. The specific cause is not confirmed.
+
+The external Windows state directory has a dedicated SSH key and vncdotool
+venv, setup notes, and `logs/utm-startup.log`. The official guest-tools ISO
+is staged under `iso/`, with a locally recorded SHA-256 in
+`notes/guest-tools.sha256`. The storage README describes the Windows folders.
+The VM helper passed Bash syntax, ShellCheck and mocked UUID routing,
+literal PowerShell encoding, transfer-path and screenshot-name checks;
+`notes/helper-check/checks.log` records those host-only checks.
+
+No VM bundle was created and no Windows installation, ARM64 native build,
+TSF registration, settings UI or app typing check ran. Those checklist items
+remain **not run**, including librime's Windows ARM64 build and CPU/memory
+measurements. The existing macOS VMs were left alone.
+
 ### Windows app matrix and evidence
 
 For each run record the source commit, Windows build, guest architecture,
