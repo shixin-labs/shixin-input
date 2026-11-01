@@ -74,7 +74,7 @@ func releaseJSON(tag, digest, extra string) string {
 	}
 	return fmt.Sprintf(`{"tag_name":%q,"body":"Fixes\r\n- one","draft":false,"prerelease":false,"assets":[
 		{"name":"Shixin.zip","browser_download_url":"https://x/zip","size":5},
-		{"name":"Shixin.dmg","browser_download_url":"https://x/Shixin.dmg","size":1234%s}%s]}`, tag, d, extra)
+		{"name":%q,"browser_download_url":"https://x/Shixin.dmg","size":1234%s}%s]}`, tag, AssetName, d, extra)
 }
 
 func TestTrimNotes(t *testing.T) {
@@ -113,7 +113,7 @@ func TestParseRelease(t *testing.T) {
 		}
 	}
 	long := strings.Repeat("字", MaxNotes+50)
-	r, err = ParseRelease([]byte(fmt.Sprintf(`{"tag_name":"v1.0.0","body":%q,"assets":[{"name":"Shixin.dmg","size":1,"browser_download_url":"https://x"}]}`, long)))
+	r, err = ParseRelease([]byte(fmt.Sprintf(`{"tag_name":"v1.0.0","body":%q,"assets":[{"name":%q,"size":1,"browser_download_url":"https://x"}]}`, long, AssetName)))
 	if err != nil || len([]rune(r.Notes)) != MaxNotes+1 {
 		t.Errorf("notes: %d runes, %v", len([]rune(r.Notes)), err)
 	}

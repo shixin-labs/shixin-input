@@ -299,6 +299,7 @@ func main() {
 			Vibrancy:       mygo.VibrancySidebar,
 			Content:        ui.View(a.view),
 		})
+		a.setupQuit()
 		go a.loadApps()
 		go a.pollStats()
 		go a.pollAdded()

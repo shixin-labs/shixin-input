@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"os"
 	"os/exec"
@@ -261,5 +262,77 @@ func TestStopForUpgrade(t *testing.T) {
 	defer release()
 	if err := engine.UserLocksFree(s.c.user); err != nil {
 		t.Fatal(err)
+	}
+}
+
+// An installer must receive its reply before coordinator exit, and must not
+// attach a replacement until both coordinator and user-dictionary locks clear.
+func TestCoordinatorStopForUpgrade(t *testing.T) {
+	s, _ := fixture(t)
+	sig := make(chan os.Signal, 1)
+	done := make(chan error, 1)
+	go func() { done <- runCoordinator(s.c, t.Logf, sig) }()
+	stopped := false
+	t.Cleanup(func() {
+		if !stopped {
+			sig <- syscall.SIGTERM
+			select {
+			case <-done:
+			case <-time.After(15 * time.Second):
+				t.Error("coordinator did not stop")
+			}
+		}
+	})
+	deadline := time.Now().Add(40 * time.Second)
+	for {
+		c, err := ipc.Dial(s.c.socket+".control", 10*time.Millisecond)
+		if err == nil {
+			c.Close()
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("coordinator not ready")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	// A client which abandons its accepted request must not stop the
+	// coordinator later, after another host has recovered from the timeout.
+	abandoned, err := ipc.Dial(s.c.socket+".control", time.Second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	abandoned.SetDeadline(time.Now().Add(time.Second))
+	if err = json.NewEncoder(abandoned).Encode(lifecycle.Request{Version: lifecycle.Version, Op: lifecycle.OpStop}); err != nil {
+		t.Fatal(err)
+	}
+	var reply lifecycle.Reply
+	if err = json.NewDecoder(abandoned).Decode(&reply); err != nil {
+		t.Fatal(err)
+	}
+	abandoned.Close() // deliberately no commit byte
+	select {
+	case err := <-done:
+		stopped = true
+		t.Fatalf("abandoned stop terminated coordinator: %v", err)
+	case <-time.After(100 * time.Millisecond):
+	}
+	if err := lifecycle.Stop(s.c.socket + ".control"); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case err := <-done:
+		stopped = true
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(15 * time.Second):
+		t.Fatal("stop did not release coordinator")
+	}
+	for _, dir := range []string{s.c.user, filepath.Join(s.c.user, "supervisor")} {
+		release, err := engine.Lock(dir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		release()
 	}
 }

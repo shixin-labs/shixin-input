@@ -28,8 +28,6 @@ import (
 const (
 	// Repo is the GitHub repository whose latest release is offered.
 	Repo = "shixin-labs/shixin-input"
-	// AssetName is the disk image attached to every release.
-	AssetName = "Shixin.dmg"
 	// MaxNotes bounds the release notes kept, in characters.
 	MaxNotes = 1500
 )

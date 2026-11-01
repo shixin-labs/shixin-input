@@ -295,7 +295,7 @@ func checkPeer(c net.Conn, server bool) error {
 		}
 		peer := windows.UTF16ToString(image[:n])
 		trusted := false
-		for _, expected := range []string{exe, filepath.Join(filepath.Dir(exe), "shixin-engine.exe"), filepath.Join(filepath.Dir(exe), "shixin-ai.exe")} {
+		for _, expected := range []string{exe, filepath.Join(filepath.Dir(exe), "shixin-engine.exe"), filepath.Join(filepath.Dir(exe), "shixin-ai.exe"), filepath.Join(filepath.Dir(exe), "Shixin.exe"), filepath.Join(filepath.Dir(exe), "shixin-settings.exe")} {
 			if strings.EqualFold(peer, expected) {
 				trusted = true
 			}

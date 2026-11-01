@@ -1,0 +1,6 @@
+EXPORTS
+ DllCanUnloadNow = shixin_tsf_x64.DllCanUnloadNow
+ DllGetClassObject = shixin_tsf_x64.DllGetClassObject
+ DllRegisterServer = shixin_tsf_x64.DllRegisterServer
+ DllUnregisterServer = shixin_tsf_x64.DllUnregisterServer
+ DllInstall = shixin_tsf_x64.DllInstall

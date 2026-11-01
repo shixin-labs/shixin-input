@@ -56,3 +56,28 @@ if(WIN32)
     target_link_options(shixin_tsf PRIVATE -static-libgcc -static-libstdc++)
   endif()
 endif()
+
+# One 64-bit COM path serves native ARM64 and emulated x64 clients. This is
+# Microsoft's ARM64X pure-forwarder recipe; the two real backends stay thin
+# ordinary ARM64/x64 DLLs built and tested independently.
+# https://learn.microsoft.com/en-us/windows/arm/arm64x-build#building-an-arm64x-pure-forwarder-dll
+option(SHIXIN_TSF_ARM64X "Build the ARM64X release forwarder (ARM64 MSVC only)" OFF)
+set(SHIXIN_TSF_VERSION_RESOURCE "" CACHE FILEPATH "Optional link-time ARM64X version resource")
+if(SHIXIN_TSF_ARM64X)
+  if(NOT MSVC OR NOT CMAKE_GENERATOR_PLATFORM STREQUAL "ARM64")
+    message(FATAL_ERROR "The ARM64X forwarder requires the MSVC ARM64 toolchain")
+  endif()
+  set(fwd "${CMAKE_CURRENT_BINARY_DIR}/forwarder")
+  file(MAKE_DIRECTORY "${fwd}")
+  set(native_def "${CMAKE_CURRENT_SOURCE_DIR}/src/forwarder_arm64.def")
+  set(x64_def "${CMAKE_CURRENT_SOURCE_DIR}/src/forwarder_x64.def")
+  add_custom_command(OUTPUT "${fwd}/shixin_tsf.dll"
+    COMMAND "${CMAKE_CXX_COMPILER}" /nologo /c "/Fo${fwd}/empty_arm64.obj" "${CMAKE_CURRENT_SOURCE_DIR}/src/forwarder_empty.cc"
+    COMMAND "${CMAKE_CXX_COMPILER}" /nologo /c /arm64EC "/Fo${fwd}/empty_x64.obj" "${CMAKE_CURRENT_SOURCE_DIR}/src/forwarder_empty.cc"
+    COMMAND "${CMAKE_LINKER}" /lib /nologo /machine:x64 "/def:${x64_def}" "/out:${fwd}/x64.lib"
+    COMMAND "${CMAKE_LINKER}" /lib /nologo /machine:arm64 "/def:${native_def}" "/out:${fwd}/arm64.lib"
+    COMMAND "${CMAKE_LINKER}" /dll /nologo /noentry /machine:arm64x /DYNAMICBASE /NXCOMPAT "/defArm64Native:${native_def}" "/def:${x64_def}" "${fwd}/empty_arm64.obj" "${fwd}/empty_x64.obj" "${fwd}/arm64.lib" "${fwd}/x64.lib" ${SHIXIN_TSF_VERSION_RESOURCE} "/out:${fwd}/shixin_tsf.dll"
+    DEPENDS src/forwarder_empty.cc "${native_def}" "${x64_def}" ${SHIXIN_TSF_VERSION_RESOURCE}
+    VERBATIM)
+  add_custom_target(shixin_tsf_forwarder DEPENDS "${fwd}/shixin_tsf.dll")
+endif()

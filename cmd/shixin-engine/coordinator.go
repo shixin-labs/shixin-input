@@ -298,7 +298,11 @@ func (s *coordinator) apply(next settings.Settings) error {
 	return nil
 }
 
-type applyRequest struct{ done chan error }
+type applyRequest struct {
+	done   chan error
+	stop   bool
+	commit chan bool
+}
 
 func runCoordinator(c config, logf func(string, ...any), sig <-chan os.Signal) error {
 	release, err := engine.Lock(filepath.Join(c.user, "supervisor"))
@@ -398,6 +402,23 @@ func runCoordinator(c config, logf func(string, ...any), sig <-chan os.Signal) e
 				return err
 			}
 		case r := <-requests:
+			if r.stop {
+				// A queued request may outlive its caller during a build.
+				// Do not stop a worker until the caller receives the reply
+				// and explicitly confirms that it is still preparing an upgrade.
+				r.done <- nil
+				committed := false
+				select {
+				case committed = <-r.commit:
+				case <-time.After(5 * time.Second):
+				}
+				if !committed {
+					continue
+				}
+				_, err := s.active.stop()
+				s.active = nil
+				return err
+			}
 			next, err := settings.Load(c.settings)
 			if err == nil {
 				ai.set(next.Rerank)
@@ -433,17 +454,22 @@ func acceptControl(l net.Listener, requests chan<- applyRequest, stop <-chan str
 			c.SetDeadline(time.Now().Add(90 * time.Second))
 			var req lifecycle.Request
 			err := json.NewDecoder(io.LimitReader(c, 4096)).Decode(&req)
-			if err == nil && (req.Version != lifecycle.Version || req.Op != lifecycle.OpApply) {
+			if err == nil && (req.Version != lifecycle.Version || (req.Op != lifecycle.OpApply && req.Op != lifecycle.OpStop)) {
 				err = errors.New("unsupported lifecycle request")
 			}
+			var r applyRequest
 			if err == nil {
-				r := applyRequest{done: make(chan error, 1)}
+				r = applyRequest{done: make(chan error, 1), stop: req.Op == lifecycle.OpStop, commit: make(chan bool, 1)}
 				select {
 				case requests <- r:
 					select {
 					case err = <-r.done:
 					case <-stop:
-						err = errors.New("coordinator stopped")
+						select {
+						case err = <-r.done:
+						default:
+							err = errors.New("coordinator stopped")
+						}
 					}
 				default:
 					err = errors.New("settings apply queue full")
@@ -453,7 +479,17 @@ func acceptControl(l net.Listener, requests chan<- applyRequest, stop <-chan str
 			if err != nil {
 				reply.Error = err.Error()
 			}
-			json.NewEncoder(c).Encode(reply)
+			sent := json.NewEncoder(c).Encode(reply)
+			if r.stop && r.commit != nil {
+				var ack [1]byte
+				c.SetReadDeadline(time.Now().Add(5 * time.Second))
+				committed := false
+				if sent == nil && err == nil {
+					_, readErr := io.ReadFull(c, ack[:])
+					committed = readErr == nil && ack[0] == 1
+				}
+				r.commit <- committed
+			}
 		}()
 	}
 }

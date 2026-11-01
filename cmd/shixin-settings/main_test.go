@@ -222,6 +222,12 @@ func TestSnapshots(t *testing.T) {
 						a.upd = st.state
 						a.page = pg.id
 						writeSnapshot(t, a, language.lang, dark, 900, "about-"+st.name)
+						if st.name == "upd-installing" {
+							saved := plat
+							plat.installingText = "s.u.installing.win"
+							writeSnapshot(t, a, language.lang, dark, 900, "about-windows-upd-installing")
+							plat = saved
+						}
 					}
 					a.upd, version, a.front = updateState{}, oldVersion, ""
 				}

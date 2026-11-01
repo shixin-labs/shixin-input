@@ -13,6 +13,22 @@ constexpr HRESULT kUnregisterCleanupFailure = static_cast<HRESULT>(0x8004a001u);
 const GUID kCategories[] = {GUID_TFCAT_TIP_KEYBOARD,
                             GUID_TFCAT_TIPCAP_IMMERSIVESUPPORT,
                             GUID_TFCAT_DISPLAYATTRIBUTEPROVIDER};
+// ARM64X's public DLL forwards into an architecture-specific sibling.
+// COM has one 64-bit registration and must always point at the public DLL.
+DWORD registration_path(std::array<wchar_t, 32768> &path) {
+  auto n = GetModuleFileNameW(module, path.data(), DWORD(path.size()));
+  if (!n || n == path.size())
+    return 0;
+  auto slash = wcsrchr(path.data(), L'\\');
+  if (!slash)
+    return 0;
+  constexpr wchar_t name[] = L"shixin_tsf.dll";
+  const auto offset = size_t(slash + 1 - path.data());
+  if (offset + std::size(name) > path.size())
+    return 0;
+  std::copy(std::begin(name), std::end(name), path.data() + offset);
+  return DWORD(offset + std::size(name) - 1);
+}
 HRESULT allow_sandbox_load(const wchar_t *path) {
   BYTE sid[SECURITY_MAX_SID_SIZE]{};
   DWORD size = sizeof(sid);
@@ -121,7 +137,7 @@ STDAPI DllRegisterServer() {
   if (!com.good())
     return com.status;
   std::array<wchar_t, 32768> path{};
-  auto n = GetModuleFileNameW(module, path.data(), DWORD(path.size()));
+  auto n = registration_path(path);
   if (!n || n == path.size())
     return E_FAIL;
   auto key = class_key();
@@ -190,7 +206,7 @@ STDAPI DllUnregisterServer() {
   if (!com.good())
     return com.status;
   std::array<wchar_t, 32768> path{};
-  auto n = GetModuleFileNameW(module, path.data(), DWORD(path.size()));
+  auto n = registration_path(path);
   if (!n || n == path.size())
     return E_FAIL;
   bool existing = false;
@@ -258,7 +274,7 @@ STDAPI DllInstall(BOOL install, LPCWSTR command) {
     return FAILED(hr) ? hr : (enabled ? S_OK : S_FALSE);
   }
   std::array<wchar_t, 32768> current{};
-  auto n = GetModuleFileNameW(module, current.data(), DWORD(current.size()));
+  auto n = registration_path(current);
   if (!n || n == current.size())
     return E_FAIL;
   bool legacy = false;

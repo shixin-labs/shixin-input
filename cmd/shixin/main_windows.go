@@ -23,12 +23,14 @@ import (
 
 	"shixin/internal/i18n"
 	"shixin/internal/ipc"
+	"shixin/internal/lifecycle"
 	"shixin/internal/logx"
 	"shixin/internal/settings"
 	"shixin/internal/ui/brand"
 	"shixin/internal/ui/candview"
 	"shixin/internal/ui/fonts"
 	"shixin/internal/ui/skin"
+	"shixin/internal/winsetup"
 )
 
 var version = "dev"
@@ -103,7 +105,54 @@ func runWindows(logf func(string, ...any)) error {
 	unregister := flag.Bool("unregister", false, "unregister the adjacent TSF DLL (requests UAC; Windows test VM only)")
 	system := flag.Bool("system-registration", false, "internal elevated machine registration step")
 	gate := flag.String("registration-gate", "", "internal user disablement gate")
+	prepare := flag.Bool("prepare-upgrade", false, "stop this user/session host, settings and engine for installation")
+	userRegister := flag.Bool("user-register", false, "enable the installed machine profile for this user")
+	userUnregister := flag.Bool("user-unregister", false, "disable this user profile and logon startup")
+	apply := flag.String("apply-update", "", "verified Windows release installer")
+	updateVersion := flag.String("update-version", "", "announced release version")
+	preserveStartup := flag.Bool("preserve-startup", false, "keep the existing logon command during a profile restore")
+	registrationReady := flag.String("registration-ready", "", "internal MSI administrator-approval acknowledgement")
 	flag.Parse()
+	if *registrationReady != "" && (*gate == "" || !*system || !*unregister) {
+		return fmt.Errorf("registration-ready requires gated system removal")
+	}
+	if *preserveStartup && !*userRegister {
+		return fmt.Errorf("preserve-startup requires user-register")
+	}
+	cold := 0
+	for _, on := range []bool{*prepare, *userRegister, *userUnregister, *apply != ""} {
+		if on {
+			cold++
+		}
+	}
+	if cold > 0 {
+		if cold != 1 || *added || *startup || *register || *unregister || *system || *gate != "" {
+			return fmt.Errorf("choose one Windows setup operation")
+		}
+		switch {
+		case *prepare:
+			return prepareWindowsUpgrade()
+		case *userRegister:
+			if err := installWindowsUser(false); err != nil {
+				return err
+			}
+			if *preserveStartup {
+				return nil
+			}
+			return windowsStartup(false)
+		case *userUnregister:
+			if err := installWindowsUser(true); err != nil {
+				return err
+			}
+			return cleanupWindowsUser()
+		case *apply != "":
+			return applyWindowsUpdate(*apply, *updateVersion)
+		}
+	}
+	if *updateVersion != "" {
+		return fmt.Errorf("update-version requires apply-update")
+	}
+
 	if *added {
 		if *register || *unregister || *system || *gate != "" || *startup {
 			return fmt.Errorf("added cannot be combined with registration or startup")
@@ -129,7 +178,11 @@ func runWindows(logf func(string, ...any)) error {
 		}
 		if *system {
 			if *gate != "" {
-				if err := waitRegistrationGate(*gate); err != nil {
+				if *registrationReady != "" {
+					if err := winsetup.WaitApproval(*gate, *registrationReady); err != nil {
+						return err
+					}
+				} else if err := waitRegistrationGate(*gate); err != nil {
 					return err
 				}
 			}
@@ -205,6 +258,20 @@ func runWindows(logf func(string, ...any)) error {
 		host.window = mygo.NewFlyout(mygo.FlyoutOptions{Tray: tray, Hidden: true, Width: 1400, Height: 560, Shadow: false, Content: ui.View(host.view)})
 		host.newModeWindow(tray)
 		go host.accept()
+		control, err := lifecycle.ServeQuit(filepath.Join(dir, "host.stop"), func() (func(), error) {
+			return func() {
+				supervisor.mu.Lock()
+				supervisor.disabled = true
+				supervisor.mu.Unlock()
+				host.window.Update(func() { mygo.App.Quit() })
+			}, nil
+		})
+		if err != nil {
+			startupErr = err
+			mygo.App.Quit()
+			return
+		}
+		mygo.App.OnBeforeQuit(func(*mygo.QuitEvent) { control.Close() })
 		go settings.Watch(path, time.Second, nil, func(s settings.Settings) {
 			fonts.Warm(s.FontFamily, float32(s.FontSize))
 			host.window.Update(func() { host.prefs = s; host.window.Invalidate() })

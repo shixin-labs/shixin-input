@@ -54,6 +54,13 @@ func T(key string) string {
 
 // catalog maps keys to {Chinese, English}.
 var catalog = map[string][2]string{
+	"setup.title":       {"拾新输入法安装", "Shixin Input Setup"},
+	"setup.confirm":     {"安装或升级拾新输入法？请先完成当前输入。设置和学到的词语会保留。Windows 将请求管理员批准；某些升级需要重启电脑。", "Install or upgrade Shixin Input? Finish your current composition first. Settings and learned words will be preserved. Windows will request administrator approval; some upgrades require a restart."},
+	"setup.remove":      {"卸载拾新输入法？设置和学到的词语会保留。Windows 将请求管理员批准。", "Uninstall Shixin Input? Settings and learned words will be preserved. Windows will request administrator approval."},
+	"setup.failed":      {"安装未完成：\n%s", "Setup did not finish:\n%s"},
+	"setup.restart":     {"请重启电脑以完成卸载。", "Restart Windows to complete removal."},
+	"setup.reboot":      {"安装已完成。请重启电脑以完成替换正在使用的文件，之后即可使用新版本。", "Installation completed. Restart Windows to finish replacing files that are in use and use the new version."},
+	"setup.removed":     {"拾新输入法已卸载，设置和词库已保留。", "Shixin Input was uninstalled. Settings and dictionaries were preserved."},
 	"app.name":          {"拾新", "Shixin"},
 	"mode.chinese":      {"中", "中"},
 	"mode.english":      {"英", "En"},

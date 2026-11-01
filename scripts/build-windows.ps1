@@ -28,6 +28,8 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'build Windows settings app failed' }
     & go build -ldflags '-H windowsgui' -o (Join-Path $out 'Shixin.exe') ./cmd/shixin
     if ($LASTEXITCODE -ne 0) { throw 'build Windows candidate host failed' }
+    & go build -ldflags '-H windowsgui' -o (Join-Path $out 'ShixinSetup.exe') ./cmd/shixin-setup
+    if ($LASTEXITCODE -ne 0) { throw 'build Windows setup helper failed' }
     if (-not $SkipNative) {
         if (-not $IsWindows) { throw 'Native TSF builds require Windows and the Visual Studio C++ toolchain; use -SkipNative for Go cross-builds' }
         $target = if ($Arch -eq 'arm64') { 'ARM64' } else { 'x64' }
@@ -51,6 +53,7 @@ try {
         if ($LASTEXITCODE -ne 0) { throw 'go vet failed' }
         & go test -short -timeout 5m ./...
         if ($LASTEXITCODE -ne 0) { throw 'go test failed' }
+        & (Join-Path $root 'packaging/windows/test-msi.ps1') -Arch $Arch
     }
     Write-Host "Built Windows development binaries ($Arch) in $out"
 } finally {

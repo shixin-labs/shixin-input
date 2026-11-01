@@ -31,7 +31,7 @@ go_gates() {
   step "build (CGO_ENABLED=0)"
   CGO_ENABLED=0 go build ./...
   step "no MyGo in engine packages"
-  for p in ./cmd/shixin-engine ./cmd/shixin-builder ./cmd/shixin-ai ./internal/engine ./internal/generation ./internal/lifecycle ./internal/rime ./internal/ipc ./internal/policy ./internal/client ./internal/settings ./internal/rerank ./internal/ai ./internal/llama ./internal/models ./internal/netclient ./internal/update ./internal/dynlib ./internal/process; do
+  for p in ./cmd/shixin-engine ./cmd/shixin-builder ./cmd/shixin-ai ./internal/engine ./internal/generation ./internal/lifecycle ./internal/rime ./internal/ipc ./internal/policy ./internal/client ./internal/settings ./internal/rerank ./internal/ai ./internal/llama ./internal/models ./internal/netclient ./internal/update ./internal/winsetup ./internal/dynlib ./internal/process; do
     if go list -deps "$p" | grep egoist/mygo >/dev/null; then echo "$p imports MyGo" >&2; exit 1; fi
   done
   step "unit tests"

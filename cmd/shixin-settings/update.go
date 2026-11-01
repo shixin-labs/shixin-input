@@ -206,7 +206,11 @@ func (a *app) updateGroup(c *ui.Context) {
 			})
 		case updInstalling:
 			block(c, func() {
-				ui.Text(c, T("s.u.installing")).FontSize(12.5).TextColor(p.muted).LineHeight(1.4)
+				key := "s.u.installing"
+				if plat.installingText != "" {
+					key = plat.installingText
+				}
+				ui.Text(c, T(key)).FontSize(12.5).TextColor(p.muted).LineHeight(1.4)
 			})
 		}
 		if u.rel != nil && u.rel.Newer && u.rel.Notes != "" {

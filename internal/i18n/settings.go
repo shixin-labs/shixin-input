@@ -265,6 +265,7 @@ var settingsCatalog = map[string][2]string{
 	"s.u.install":            {"下载并安装", "Download and Install"},
 	"s.u.downloading":        {"正在下载 %d%%", "Downloading %d%%"},
 	"s.u.installing":         {"正在验证并安装…设置窗口会关闭，并在更新后重新打开。", "Verifying and installing… Settings will close and reopen when the update is done."},
+	"s.u.installing.win":     {"正在验证安装程序…请按安装程序提示操作，可能需要重启电脑。", "Verifying Setup… Follow the installer; Windows may need a restart."},
 	"s.u.failed":             {"更新失败", "Update failed"},
 	"s.u.retry":              {"重试", "Retry"},
 }

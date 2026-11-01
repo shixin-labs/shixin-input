@@ -1198,7 +1198,7 @@ COM smoke tests are configured in CI; the DLL has been cross-compiled for
 x64, and the portable core passes ASan/UBSan locally. Actual Windows typing
 and registration have been exercised in the ARM64 VM, including Start search
 at low integrity. [Windows development](windows.md) describes verified coverage
-and remaining release work. Authenticode verification remains required before release.
+and remaining release work. Signed Windows release packages and publisher verification are described below.
 
 - **Registration:** an ordinary `Shixin.exe -register` invocation requests UAC
   for an isolated machine step: HKLM COM registration,
@@ -1222,6 +1222,53 @@ and remaining release work. Authenticode verification remains required before re
   startup. `-added` queries the current user's enabled profile without
   starting the host, selecting a keyboard or changing registration. The
   settings guide polls it without opening a console or running macOS repair.
+- **Install and upgrade:** `scripts/package-windows.ps1` produces
+  `ShixinSetup-amd64.exe` or `ShixinSetup-arm64.exe`. A signed Go bootstrapper
+  contains a separately signed MSI and authenticated version, architecture,
+  size and SHA-256 metadata. Windows' Authenticode policy verifies both, with
+  cached trust/revocation data and no automatic network access. The MSI must
+  have the same signing public key. Files remain locked against replacement
+  from verification through handoff/installation, and the extracted MSI is
+  checked again against the signed payload digest.
+  Windows Installer owns file replacement, machine registration, Start menu
+  shortcuts, uninstall metadata and rollback. Major upgrades execute the new files and component ownership before removing
+  the old product inside the same transaction, preserving the stable protected
+  `%ProgramFiles%\Shixin` path used by IPC peer authentication. The directory
+  grants users and application packages read/execute access; only administrators
+  and SYSTEM may write. Settings, generations and user dictionaries stay in
+  the user's profile and are never installer components.
+  Before signing, every owned executable/DLL receives a Windows file version
+  `100.major.minor.patch` and the release's product version. The leading value
+  separates Shixin's version ordering from upstream DLL versions; rebuilding
+  librime-shixin advances the packaged file even when librime's API version
+  stays the same. MSI records the actual file version and resource language.
+  The ARM64 package uses an ARM64X pure-forwarder `shixin_tsf.dll`, dispatching
+  to adjacent ARM64/x64 backends. Both architectures use the same canonical
+  COM registration and native ARM64 host/engine. ARM64 requires Windows 11;
+  x64 requires Windows 10 or later.
+  The bootstrapper runs as the original caller. After machine installation
+  succeeds, only a first install enables that user's profile and adds logon
+  startup. Upgrades preserve disabled profiles and existing startup commands.
+  Uninstall disables a previously enabled profile before removing the machine
+  TIP; failure restores enablement. Successful uninstall removes only this
+  installation's unmodified startup command and preserves all user data.
+  Its payloadless maintenance copy supplies the Installed Apps uninstaller.
+  Before replacing files, private lifecycle endpoints flush settings, quit
+  the host and stop/wait for the coordinator and worker. A queued stop is
+  committed only after the caller acknowledges the reply, so an abandoned
+  request cannot stop a recovered engine later. Preparation failures restart
+  the old host. No application containing the TSF DLL is forcibly closed;
+  Windows may defer locked-file replacement until restart. The installer
+  reports that requirement and never restarts the machine itself.
+- **In-app updates:** 关于 selects the native Windows release asset. The
+  installed front checks a newer stable version, announced version, architecture,
+  Authenticode trust and the installed publisher's public-key identity before
+  starting the installer. A ready event and wait-only parent process handle
+  are inherited by the verified child: it locks/verifies itself, acknowledges
+  readiness, then waits for the installed updater process to exit before MSI
+  runs. This avoids keeping the installed executable locked during its own
+  upgrade. Unsigned development builds cannot update themselves. Changing the
+  publisher's signing key requires a separately installed trusted release.
 - **Restricted apps:** the DLL grants packages read/execute access, and its
   worker resolves unredirected LocalAppData without verifying its private
   parent directory. Connection, discovery and identity checks stay off the

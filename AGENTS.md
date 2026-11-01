@@ -34,8 +34,8 @@ M1 (macOS MVP) is done; M2 (DESIGN §10) is in progress. Built so far:
   configured in CI. ARM64 VM builds and Edge typing have been exercised;
   Notepad, Explorer search/rename, Edge focus and candidate clicks have
   also been exercised. Start search and registration/unregistration from an
-  ordinary shell (with UAC for the machine step) now pass; release packaging
-  remains open. Auto spacing uses TSF text ranges and the shared spacing
+  ordinary shell (with UAC for the machine step) now pass. Signed MSI/bootstrapper
+  packaging and in-app upgrades use Windows Installer rollback and restart handling. Auto spacing uses TSF text ranges and the shared spacing
   vectors; Edge boundaries, live disabling and Backspace suppression pass.
   The Windows guide queries profile enablement; registration configures
   per-user logon startup. TSF composition attributes and the host's mode
@@ -73,6 +73,7 @@ M1 (macOS MVP) is done; M2 (DESIGN §10) is in progress. Built so far:
 | `cmd/shixin-builder` | Offline config/dictionary compiler |
 | `cmd/shixin` | macOS front / Windows candidate host: IMK, candidate window, input menu, installer, supervisor |
 | `cmd/shixin-settings` | Settings app |
+| `cmd/shixin-setup`, `internal/winsetup`, `packaging/windows` | Signed Windows bootstrapper, publisher/payload verification and MSI authoring |
 | `cmd/shixin-ai` | 智能排序 scorer |
 | `internal/{rime,engine,policy,ipc,client,keymap,settings,generation,lifecycle,perf,logx,i18n,rerank,ai,llama,models,netclient,update}` | Shared packages (DESIGN §5.1) |
 | `internal/ui/{brand,candview,fonts,modeview,skin}` | MyGo views shared by the front and the settings app |
@@ -137,7 +138,7 @@ works. Before writing hot-path code, re-read DESIGN §3. In short:
   `internal/engine`, `internal/rime`, `internal/ipc`, `internal/policy`,
   `internal/client`, `internal/settings`, `internal/generation`,
   `internal/lifecycle`, `internal/rerank`, `internal/ai`, `internal/llama`,
-  `internal/models`, `internal/netclient`, `internal/update`,
+  `internal/models`, `internal/netclient`, `internal/update`, `internal/winsetup`,
   `internal/dynlib` and `internal/process` **must not import MyGo** (`scripts/ci.sh go`
   checks). MyGo is only for UI processes (`cmd/shixin`,
   `cmd/shixin-settings`, `internal/ui/...`).
@@ -194,6 +195,8 @@ and tools that touch Rime use scratch user dirs, never the live one.
 | Build an isolated generation (output must not exist; no live user dir argument) | `build/bin/shixin-builder -lib "$SHIXIN_LIBRIME" -data build/rime-data -settings /path/to/snapshot.json -output /tmp/shixin-generation` (`-all` for packaging) |
 | Rebuild with private compiled-resource copies / safe stage diagnostics | Add `-reuse-generation /path/to/warm-only-generation` / `-status-file /path/to/new-private-file` to `shixin-builder`; neither accepts a live user dictionary |
 | Capture offline menus from public codes (warm-only scratch engine, no learning) | `go run ./tools/menu-capture -engine build/bin/shixin-engine -generation /tmp/shixin-generation -data build/rime-data -lib "$SHIXIN_LIBRIME" -profile SHA256 -input codes.jsonl -output menus.jsonl -limit 50` |
+| Signed Windows installer (matching native host and SDK code-signing certificate; empty `-TimestampServer` for isolated VM tests) | `./scripts/package-windows.ps1 -Version x.y.z -Arch arm64 -CertificateThumbprint <thumbprint>` → `build/dist/ShixinSetup-arm64.exe` (amd64 supported) |
+| Windows MSI authoring checks (no install) / signed release verification | `./packaging/windows/test-msi.ps1 -Arch arm64` · `ShixinSetup-arm64.exe -verify` |
 | Portable TSF core and auto-spacing tests (Go wire/spacing vectors, timeout/focus safety, queues, allocation, latency and parser stress) | `cmake -S frontends/windows-tsf -B build/tsf-tests && cmake --build build/tsf-tests && ctest --test-dir build/tsf-tests --output-on-failure` |
 | Native Windows core/COM, composition attributes and deferred edit/selection tests | `ctest --test-dir build/tsf-arm64 -C Release --output-on-failure` (use the configured native TSF build directory; includes `shixin_service_test`) |
 | Windows enablement / logon startup (VM only; startup opens the scratch-configured host) | `Shixin.exe -added` (0 enabled, 1 disabled); successful `-register` adds the user startup command; `Shixin.exe -startup` starts only while enabled |

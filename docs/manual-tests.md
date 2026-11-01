@@ -249,6 +249,38 @@ Registration and unregistration must happen only in the VM. See
    disabled. Restore that key's permissions and retry; cleanup must succeed
    without re-enabling the removed profile.
 
+### Windows installer and upgrade (disposable VM only)
+
+1. Build a signed native installer with `scripts/package-windows.ps1`; use a
+   certificate trusted only in the VM for test builds. `-verify` must accept
+   it. Change a payload byte, try an unsigned installer, a different signing
+   key, a wrong announced version, and the other architecture: each must fail
+   before installation or engine shutdown.
+2. Install from an ordinary interactive account. Cancel confirmation and UAC
+   first; verify no keyboard/startup changes. Complete installation, including
+   UAC with a different administrator account. Verify Program Files ownership,
+   package/user read/execute access, canonical COM path, the original user's
+   keyboard/startup, Installed Apps entry and Start menu settings shortcut.
+   Type in native apps and an emulated x64 app on ARM64.
+3. Change settings and learn a scratch word. Upgrade to a newer signed test
+   release while the settings app, host and engine are running. Verify pending
+   valid settings save, graceful process exit, one dictionary owner, retained
+   settings/learning/enablement/startup, and the new version after completion.
+   Repeat with the keyboard disabled and a custom startup command.
+4. Keep an app holding the old TSF DLL open. Upgrade must leave that app open,
+   report any restart requirement and finish after a user-initiated restart.
+   Never restart automatically or forcibly close the app. Check typing again.
+5. Fail registration after files are staged and verify MSI rollback restores
+   the previous installation; cancel UAC and verify typing recovers. Abandon a
+   queued lifecycle stop during a build and verify it cannot stop the engine
+   after the caller has recovered. Prevent a settings save and verify upgrade
+   aborts before replacing files.
+6. Uninstall through Installed Apps with the profile enabled, then disabled.
+   Cancel UAC and inject a machine-removal failure; prior enablement and startup
+   must survive. Successful removal deletes only owned installation files,
+   shortcuts and startup, preserves scratch settings/dictionaries, and reports
+   restart when needed. Reinstall and confirm preserved data is usable.
+
 ### Windows app matrix
 
 After registration, run `Shixin.exe -added` in the invoking user's account:

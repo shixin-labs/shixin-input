@@ -43,24 +43,24 @@ Delete an entry when it's fixed, and mention it in the commit.
   Application versions: Notepad 11.2607.14.0, Edge 156.0.4314.58,
   Explorer 10.0.26100.8117 and SearchHost 2608.25008.200.0 on Windows
   build 26300.9457. Settings and its Windows guide render; layout, theme
-  and punctuation changes can apply live. The remaining validation and
-  packaging work below prevent treating the port as ready. See the
+  and punctuation changes can apply live. The remaining validation below
+  prevents treating the port as ready. See the
   [Windows status](windows.md#status-2026-11-01).
-- **Missing:** native llama build automation, a signed installer and
-  in-place updates (关于 links to the release page meanwhile).
+- **Missing:** native llama build automation.
 - **Setup and input:** the guide queries per-user enablement with `-added`;
   successful registration adds logon startup, and unregistration removes
   this copy's startup command. TSF supplies composition display attributes;
   the host shows confirmed mode changes beside the caret. Saved desktop app
   IDs also match executable paths, with ambiguous aliases left unresolved.
-- **Security and validation:** Authenticode checks are required before release.
+- **Security and validation:** production-certificate/timestamp behavior and
+  complete installation on native x64 Windows still need release validation.
   AppContainer transport has capability-free sandbox coverage; Start search
   typing also passes in the low-integrity ARM64 SearchHost. Real text-store
   behavior,
   focus/security transitions, migration, DPI placement and mouse selection
-  need broader application coverage. ARM64
-  packaging must also address x64 emulated applications, which need a
-  matching DLL. See [Windows development](windows.md).
+  need broader application coverage. The public ARM64X DLL has ARM64/x64 COM
+  smoke coverage; broader emulated-app typing remains to test. 32-bit
+  applications are not supported by the current packages. See [Windows development](windows.md).
 
 ### Oversized candidate panels on macOS
 - **What:** normal horizontal and vertical panels are measured and clamped

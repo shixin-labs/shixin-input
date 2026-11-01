@@ -7,7 +7,7 @@ front: ARM64 native builds, librime, registration and Edge typing have been
 tested in a Windows VM, with further release validation still required. See
 the [status summary](#status-2026-11-01) and
 [known issues](KNOWN-ISSUES.md#windows-validation-and-release-support).
-There is no signed Windows installer or updater yet.
+Signed installer and update packaging is available; see [Release packages](#release-packages).
 
 ## Build and check
 
@@ -23,7 +23,7 @@ its C++ desktop workload and the selected target architecture:
 
 Outputs under `build/windows-<arch>/` include `Shixin.exe`,
 `shixin_tsf.dll`, `shixin-engine.exe`, `shixin-builder.exe`,
-`shixin-ai.exe`, `shixin-settings.exe`, and `menu-capture.exe`. The script
+`shixin-ai.exe`, `shixin-settings.exe`, `ShixinSetup.exe` (maintenance helper), and `menu-capture.exe`. The script
 builds without installing or registering an input source. `-SkipNative`
 builds only the Go binaries, including the host, for cross-compilation.
 `-Check` runs the native client/COM tests, vet, and short Go tests; it never
@@ -102,6 +102,70 @@ and `%APPDATA%\Shixin\Rime`. Engine tests and tools must use scratch user
 directories. The native COM smoke test never activates a text service,
 so it cannot connect to an installed engine or open a live dictionary.
 
+## Release packages
+
+Build on the matching native Windows architecture with PowerShell 7, Go,
+Visual Studio C++, the Windows SDK, fetched Rime data and our built librime:
+
+```powershell
+./scripts/package-windows.ps1 -Version 0.2.0 -Arch arm64 -CertificateThumbprint <code-signing-certificate-thumbprint>
+```
+
+Use `-Arch amd64` for x64. The certificate must have an accessible private
+key in `CurrentUser/My` (or select `-CertificateStore LocalMachine`).
+`-SignTool` overrides SDK discovery; `-TimestampServer` selects the RFC 3161
+server (the default is DigiCert; an empty string disables timestamping for
+isolated VM tests). `-Data`, `-Librime` and `-OpenCC` override the normal
+build outputs. Every executable/DLL, the MSI and the outer installer are
+signed and verified. Verification uses cached Windows trust and revocation data;
+missing trust information fails closed without fetching it. There is no unsigned release mode. Owned binaries receive Windows file versions
+`100.major.minor.patch`, independent of upstream library versions, so a rebuilt
+librime-shixin DLL advances with the Shixin release. MSI stores the actual
+version and language metadata.
+
+The script uses installed SDK tools, Windows Installer automation and
+`makecab`; it downloads no installer compiler. It compiles all supported
+schemas with an isolated offline builder and bundles prebuilt dictionaries,
+Rime/OpenCC data and license notices. Outputs are
+`build/dist/ShixinSetup-<arch>.exe`. Publish each installer as the matching
+GitHub release asset. The ARM64 installer includes native ARM64 and emulated
+x64 TSF DLLs behind one [ARM64X pure forwarder](https://learn.microsoft.com/en-us/windows/arm/arm64x-build#building-an-arm64x-pure-forwarder-dll); both public export paths are tested
+before packaging. Native llama build automation remains separate work.
+
+Opening the installer requests confirmation, then Windows requests UAC for
+machine installation. Files go to the protected `%ProgramFiles%\Shixin`
+directory. The original caller enables their own keyboard and logon startup,
+including when UAC uses another administrator account. Select 拾新 using the
+Windows input switcher. Upgrades preserve settings, learned words, disabled
+profiles and existing startup commands. An existing development registration
+pointing elsewhere must be unregistered before installing a release.
+
+关于 checks/downloads updates only on request. It selects the current native
+architecture, verifies the signed version and the installed publisher's public
+key, and hands off to the installer after releasing the updater executable.
+Unsigned builds cannot install in-app updates. Downloads are never trusted
+solely because their release metadata contains a hash.
+
+Windows Installer rolls back a failed major upgrade. Settings flush pending
+edits before shutdown, and the host/coordinator/worker stop through private
+lifecycle pipes; no dictionary owner is killed from a PID file. Applications
+holding a TSF DLL stay open. If Windows cannot replace a locked file, the
+installer requests a restart and leaves restart timing to the user. Do not
+assume all binaries have switched versions until that restart completes.
+
+Use Windows Installed Apps to uninstall. The original caller's enabled
+keyboard is disabled before machine removal and restored on failure. Only
+this copy's unmodified startup command is removed. Settings and dictionaries
+are retained for reinstall. Other accounts may need to refresh their input
+list after machine removal. Setup logs are in
+`%LOCALAPPDATA%\Shixin\Logs\setup-*.log`.
+
+`packaging/windows/test-msi.ps1 -Arch arm64` checks package structure without
+installing and runs with `build-windows.ps1 -Check`. `ShixinSetup-<arch>.exe
+-verify` verifies a signed release without installing. Test certificates must
+be trusted only in a disposable VM; a public release needs a production
+code-signing certificate and release validation.
+
 ## Registration and manual use: Windows VM only
 
 Use a disposable Windows VM snapshot. Supply the native dependencies above,
@@ -130,7 +194,7 @@ copy before moving the installation. A matching legacy HKCU class is removed
 after successful user enablement so it cannot shadow the machine class.
 Registration does not select the keyboard. Select 拾新 in Windows's input
 settings, then run the application checklist. The tray opens the shared
-settings GUI and Windows first-run guide. There is no Windows update installer yet.
+settings GUI and Windows first-run guide. Release installations use the signed installer described above.
 
 To remove the development profile in the VM:
 
@@ -139,8 +203,8 @@ To remove the development profile in the VM:
 ```
 
 Close apps using the DLL before deleting its files. An ARM64 DLL supports
-native ARM64 applications; the package strategy for x64 emulated apps,
-which require a matching DLL, still needs validation. The build script does
+native ARM64 applications; release ARM64 packages add an ARM64X forwarder and
+a matching x64 backend for emulated applications. The build script does
 not install or register anything. Successful `Shixin.exe -register` also
 adds this user's logon command, `Shixin.exe -startup`; it exits quietly when
 the keyboard is disabled. Start `Shixin.exe` before typing tests in the
@@ -354,7 +418,7 @@ for normal shutdown, request `Stop-Computer` over SSH and confirm it stopped.
   See [known issues](KNOWN-ISSUES.md#windows-validation-and-release-support).
 - ARM64 and x64 core/COM tests pass; the x64 tests also ran under emulation.
   Actual typing in x64/emulated applications, Office/Chrome, mixed DPI, GPU
-  scoring and packaging remain unverified.
+  scoring and native x64 installation remain unverified.
 - Runtime follow-up at 2048 MiB: five layout rebuilds passed with peak
   builder private commit around 22 MB, versus 909–983 MB without compiled
   resource reuse. A 256 MB process limit rejects a full build but permits
@@ -387,6 +451,16 @@ for normal shutdown, request `Stop-Computer` over SSH and confirm it stopped.
   and no-spacing rule (`你好a`) while global spacing remains enabled.
   Native tests cover attribute cleanup, UTF-16 spans, metadata references,
   mode expiration/security/candidate priority, and ambiguous app aliases.
+
+- Installer follow-up on Windows 11 ARM64 build 26300.9711: signed test packages
+  passed fresh installation, standard-user profile enablement, publisher and
+  payload rejection, and original-user uninstall through UAC. Native ARM64 and
+  emulated x64 COM factories both passed after final resource stamping. Full
+  upgrade comparisons matched all 103 payload files, including changed data and
+  rebuilt native libraries. A forced registration failure restored the old
+  product identity and all old payload hashes. An upgrade with a loaded TSF DLL
+  kept its application alive, installed all new file hashes and returned a
+  restart requirement. Settings and scratch dictionary data survived.
 
 Debug native callback routing with `-DSHIXIN_TSF_TRACE=ON` in the TSF
 CMake configuration. This opt-in build queues fixed numeric records on the
@@ -480,14 +554,16 @@ opening the peer with broader query permissions.
 The DLL's worker uses unredirected LocalAppData with `KF_FLAG_DONT_VERIFY`:
 the package can read Shixin's discovery subtree, although it cannot enumerate
 the private parent directory. Discovery records remain writable only by the
-user/System. Authenticode signature checks remain a release requirement.
+user/System. Installer and in-app update verification use Windows Authenticode trust
+and bind the payload to the installed publisher key.
 
 The engine lock uses nonblocking exclusive `LockFileEx`, released on handle
 close/process exit. Before dictionary attachment, LevelDB `LOCK` files must
 allow an exclusive writable handle. Standbys still warm only schemas with
 user dictionaries disabled; promotion still requires exclusive ownership.
-Windows `StopRunning` refuses to terminate a PID from a lock file; a future
-upgrade flow must stop the coordinator first. Rerank slots use native
+Windows `StopRunning` refuses to terminate a PID from a lock file; the
+upgrade flow stops the coordinator through its private lifecycle endpoint and
+waits for both dictionary locks and application processes to exit. Rerank slots use native
 `VirtualAlloc` memory. Engine/scorer threads request above-normal priority
 and disable execution-speed throttling at startup.
 
@@ -496,7 +572,8 @@ and disable execution-speed throttling at startup.
 - Verify registration and real typing in Windows VMs: Notepad, Office,
   Chrome/Electron, Explorer, Start search, and other elevated/AppContainer
   applications. Start search is covered; broader compatibility remains open. Run the checklist in `manual-tests.md`.
-- Automate native llama builds, validate both architecture packages
-  including emulation, and produce signed installers.
-- Complete signature checks and broader AppContainer validation; measure Windows key,
+- Automate native llama builds, complete native x64 installation and broader
+  emulated-app typing coverage, and validate a production signing certificate
+  and timestamp service. Current packages do not support 32-bit applications.
+- Complete broader AppContainer validation; measure Windows key,
   text application, candidate placement and allocation budgets before release.

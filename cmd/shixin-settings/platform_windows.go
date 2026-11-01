@@ -19,7 +19,9 @@ var plat = platform{
 		return p
 	},
 	// Windows reports enablement without macOS's cache-repair operation.
-	added:         true,
-	inputSettings: "ms-settings:regionlanguage",
-	guide:         windowsGuide,
+	added:          true,
+	selfUpdate:     true,
+	installingText: "s.u.installing.win",
+	inputSettings:  "ms-settings:regionlanguage",
+	guide:          windowsGuide,
 }
