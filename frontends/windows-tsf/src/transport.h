@@ -26,11 +26,34 @@ class Transport : public std::enable_shared_from_this<Transport> {
   std::atomic<bool> online_{false};
   std::atomic<bool> drop_{false}, drain_{false};
   FrameRing outgoing_, incoming_;
+#ifdef SHIXIN_TSF_TRACE
+  struct Trace {
+    const char *event;
+    uint64_t a, b, c, tick;
+  };
+  FrameRing traces_{16 << 10};
+#endif
   void run();
 
 public:
   Transport(HWND window, std::wstring directory, bool presentation = false);
   ~Transport();
+  // Debug builds queue numeric diagnostics; only the I/O worker touches disk.
+  void trace(const char *event, uint64_t a = 0, uint64_t b = 0,
+             uint64_t c = 0) {
+#ifdef SHIXIN_TSF_TRACE
+    if (auto p = traces_.reserve(sizeof(Trace))) {
+      Trace t{event, a, b, c, GetTickCount64()};
+      std::memcpy(p, &t, sizeof(t));
+      traces_.publish(sizeof(t));
+    }
+#else
+    (void)event;
+    (void)a;
+    (void)b;
+    (void)c;
+#endif
+  }
   bool start();
   void stop();
   bool send(const Frame &frame);

@@ -59,17 +59,22 @@ Delete an entry when it's fixed, and mention it in the commit.
   packaging must also address x64 emulated applications, which need a
   matching DLL. See [Windows development](windows.md).
 
-### Windows ordinary fields can fall back to Latin text
-- **Repro:** select Shixin in native ARM64 Notepad 11.2607.14.0 on Windows
-  11 build 26300.9457, using full pinyin; type `nihao` and Space. The result
-  is literal `nihao ` with no candidates, although `shixin_tsf.dll` is
-  loaded. Edge 156.0.4314.58 on the same account commits `你好`.
-- Repeated with UAC enabled and medium-integrity Notepad: 自然码 `nihk`
-  plus Space produces literal `nihk `. The Explorer, Ctrl+L and candidate-click
-  failures below were also reproduced at medium integrity with UAC enabled.
-- Explorer search and Start search also passed `nihk` through without
-  candidates when 自然码双拼 was selected. The cause is not isolated;
-  these results do not establish AppContainer or secure-scope support.
+### Windows Start search still falls back to Latin text
+- **Fixed in ordinary fields:** Windows 11 Notepad and Explorer search
+  expose an input-scope property whose empty value query returns `E_FAIL`.
+  This previously marked the entire field secure. Empty unsupported scopes
+  now allow composition; explicit password/PIN/private scopes, native password
+  edits, disabled compartments and read-only contexts remain guarded.
+  Both fields passed exact copied `你好` at medium integrity with UAC on.
+- **Remaining:** Start search still passes `nihao ` through. In the same
+  Windows 11 ARM64 VM, SearchHost runs at low integrity (`0x1000`) and does
+  not load the development DLL after a fresh process start. Notepad's trace
+  rules out activation, key-sink registration and edit-session lock failure
+  for its former fallback; these conclusions do not establish Start support.
+  The current profile advertises only the keyboard category, and the pipe
+  security does not support AppContainer clients. Isolate Store/immersive
+  activation categories and restricted-token transport before claiming
+  support; do not weaken password guards or enable broad pipe access.
 
 ### Windows Explorer rename produces the wrong composition
 - **Repro:** select 自然码双拼, select a scratch text file in Explorer,

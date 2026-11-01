@@ -2,6 +2,7 @@
 #include "transport.h"
 #include <algorithm>
 #include <bcrypt.h>
+#include <cstdio>
 #include <cstring>
 #include <memory>
 #include <new>
@@ -224,6 +225,43 @@ void Transport::run() {
     return;
   std::wstring runtime =
       std::wstring(local) + L"\\Shixin\\run-" + std::to_wstring(session);
+#ifdef SHIXIN_TSF_TRACE
+  PWSTR low = nullptr;
+  SHGetKnownFolderPath(FOLDERID_LocalAppDataLow, 0, nullptr, &low);
+  std::wstring logdir = std::wstring(low ? low : local) + L"\\Shixin";
+  CoTaskMemFree(low);
+  CreateDirectoryW(logdir.c_str(), nullptr);
+  auto logfile = logdir + L"\\tsf-" + std::to_wstring(GetCurrentProcessId()) +
+                 L"-" + std::to_wstring(GetCurrentThreadId()) + L".log";
+  Handle log(CreateFileW(logfile.c_str(), FILE_APPEND_DATA,
+                         FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
+                         OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr));
+  auto connection_trace = [&](DWORD error) {
+    char line[128];
+    int len = std::snprintf(line, sizeof(line), "connect-error %lu\n",
+                            (unsigned long)error);
+    DWORD wrote = 0;
+    if (len > 0 && len < int(sizeof(line)))
+      WriteFile(log.value, line, DWORD(len), &wrote, nullptr);
+  };
+  auto flush_trace = [&] {
+    for (size_t n; auto p = traces_.front(n); traces_.pop()) {
+      Trace t{};
+      std::memcpy(&t, p, sizeof(t));
+      char line[256];
+      int len = std::snprintf(line, sizeof(line), "%llu %s %llx %llx %llx\n",
+                              (unsigned long long)t.tick, t.event,
+                              (unsigned long long)t.a, (unsigned long long)t.b,
+                              (unsigned long long)t.c);
+      DWORD wrote = 0;
+      if (len > 0 && len < int(sizeof(line)))
+        WriteFile(log.value, line, DWORD(len), &wrote, nullptr);
+    }
+  };
+#else
+  auto flush_trace = [] {};
+  auto connection_trace = [](DWORD) {};
+#endif
   CoTaskMemFree(local);
   auto arrived = [&] {
     SetEvent(arrived_);
@@ -243,6 +281,7 @@ void Transport::run() {
   // 20 ms doubling to 2 s, reset by a connection that lasted 2 s.
   DWORD backoff = 20;
   while (WaitForSingleObject(stop_, 0) != WAIT_OBJECT_0) {
+    flush_trace();
     // Discard keys from the previous connection before opening a new one.
     for (size_t n; outgoing_.front(n);)
       outgoing_.pop();
@@ -260,6 +299,7 @@ void Transport::run() {
                                   nullptr));
     if (pipe.value == INVALID_HANDLE_VALUE ||
         !trusted(pipe.value, directory_, sid, session, presentation_)) {
+      connection_trace(GetLastError());
       WaitForSingleObject(stop_, 500);
       continue;
     }
@@ -322,6 +362,7 @@ void Transport::run() {
           break;
         }
       }
+      flush_trace();
       bool progress = false;
       if (!reading) {
         ResetEvent(read.hEvent);

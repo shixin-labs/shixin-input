@@ -2,6 +2,7 @@
 #include "core.h"
 #include "keys.h"
 #include "ring.h"
+#include "scope.h"
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -585,6 +586,19 @@ static void policy_tables() {
   c->reset();
   CHECK(c->tables.specials == 0 && c->install(encode(1, 128, 128)));
 }
+static void scopes() {
+  CHECK(absent_input_scope(0, 0));
+  CHECK(absent_input_scope(1, 0));
+  CHECK(
+      absent_input_scope(0x80004005u, 0)); // no supplied scope in shell/Notepad
+  CHECK(absent_input_scope(0x80004001u, 0));   // unsupported by context owner
+  CHECK(!absent_input_scope(0x80004005u, 13)); // supplied IUnknown failed
+  CHECK(!absent_input_scope(0x80040200u, 0));  // TSF lock error
+  CHECK(!absent_input_scope(0x80040204u, 0));  // disconnected context
+  CHECK(!absent_input_scope(0x80070057u, 0));  // invalid argument
+  CHECK(!absent_input_scope(0, 13));           // inspect supplied input scope
+  CHECK(!absent_input_scope(0, 3));            // malformed type
+}
 static void keymap() {
   CHECK(windows_key('A', 0, false, 0) == 'a');
   CHECK(windows_key('A', 0, false, kShift) == 'A');
@@ -607,6 +621,7 @@ static void keymap() {
   CHECK(windows_key(0xff, 0, false, 0) == 0);
 }
 int main() {
+  scopes();
   keymap();
   golden();
   decisions();

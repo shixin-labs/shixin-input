@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "service.h"
 #include "keys.h"
+#include "scope.h"
 #include <algorithm>
 #include <appmodel.h>
 #include <cstring>
@@ -227,6 +228,7 @@ HRESULT Service::ActivateEx(ITfThreadMgr *m, TfClientId id, DWORD flags) {
     Deactivate();
     return hr;
   }
+  transport_->trace("activate", flags, hr, client_);
   ITfDocumentMgr *doc = nullptr;
   if (SUCCEEDED(manager_->GetFocus(&doc)) && doc) {
     OnSetFocus(doc, nullptr);
@@ -273,6 +275,8 @@ HRESULT Service::Deactivate() {
   return S_OK;
 }
 void Service::focus(ITfContext *c) {
+  if (transport_)
+    transport_->trace("focus", uintptr_t(c), uintptr_t(context_), inside_);
   if (inside_) {
     release(next_context_);
     next_context_ = c;
@@ -365,6 +369,8 @@ HRESULT Service::OnSetFocus(BOOL foreground) {
   return S_OK;
 }
 HRESULT Service::OnCompositionTerminated(TfEditCookie, ITfComposition *c) {
+  if (transport_)
+    transport_->trace("terminated", uintptr_t(c), uintptr_t(composition_));
   if (c == composition_) {
     release(composition_);
     degraded();
@@ -396,6 +402,21 @@ bool Service::disabled() const {
 bool Service::password(TfEditCookie ec, ITfContext *c) {
   if (disabled())
     return true;
+  ITfContextView *view = nullptr;
+  if (SUCCEEDED(c->GetActiveView(&view))) {
+    HWND hwnd = nullptr;
+    if (SUCCEEDED(view->GetWnd(&hwnd)) && hwnd) {
+      wchar_t name[64]{};
+      GetClassNameW(hwnd, name, int(std::size(name)));
+      bool edit =
+          _wcsicmp(name, L"Edit") == 0 || _wcsnicmp(name, L"RichEdit", 8) == 0;
+      if (edit && (GetWindowLongPtrW(hwnd, GWL_STYLE) & ES_PASSWORD)) {
+        view->Release();
+        return true;
+      }
+    }
+    view->Release();
+  }
   TF_STATUS status{};
   if (FAILED(c->GetStatus(&status)) || (status.dwStaticFlags & TF_SD_READONLY))
     return true;
@@ -406,15 +427,19 @@ bool Service::password(TfEditCookie ec, ITfContext *c) {
     return true;
   ITfReadOnlyProperty *property = nullptr;
   HRESULT hr = c->GetAppProperty(kInputScopeProperty, &property);
+  if (transport_)
+    transport_->trace("app-property", uint32_t(hr), uintptr_t(property));
   VARIANT v;
   VariantInit(&v);
-  if (SUCCEEDED(hr)) {
+  if (SUCCEEDED(hr) && property) {
     hr = property->GetValue(ec, sel.range, &v);
     property->Release();
   }
   sel.range->Release();
-  bool secure =
-      FAILED(hr) || (v.vt != VT_EMPTY && (v.vt != VT_UNKNOWN || !v.punkVal));
+  if (transport_)
+    transport_->trace("scope", uint32_t(hr), v.vt);
+  bool secure = !absent_input_scope(uint32_t(hr), v.vt) &&
+                (FAILED(hr) || v.vt != VT_UNKNOWN || !v.punkVal);
   if (SUCCEEDED(hr) && v.vt == VT_UNKNOWN && v.punkVal) {
     ITfInputScope *scope = nullptr;
     if (FAILED(v.punkVal->QueryInterface(kInputScope,
@@ -691,6 +716,8 @@ void Service::schedule() {
   HRESULT hr = context_->RequestEditSession(
       client_, &edit_,
       TF_ES_ASYNCDONTCARE | (probe ? TF_ES_READ : TF_ES_READWRITE), &result);
+  if (transport_)
+    transport_->trace("edit-request", uint32_t(hr), uint32_t(result), probe);
   if (FAILED(hr) || FAILED(result)) {
     edit_clear();
     probe_needed_ = false;
@@ -712,6 +739,8 @@ HRESULT Service::execute(Edit &edit, TfEditCookie ec) {
     return S_OK;
   inside_ = true;
   bool secure = password(ec, context_);
+  if (transport_)
+    transport_->trace("execute", secure, edit.probe, epoch_);
   inside_ = false;
   if (flush_focus())
     return S_OK;
@@ -874,6 +903,10 @@ HRESULT Service::handle(ITfContext *c, WPARAM vk, LPARAM lp, bool up,
   if (!eaten)
     return E_POINTER;
   *eaten = FALSE;
+  if (transport_)
+    transport_->trace("handle", uintptr_t(c), uintptr_t(context_),
+                      (core_.secure ? 1 : 0) | (core_.connected ? 2 : 0) |
+                          (core_.known ? 4 : 0));
   if (inside_ || c != context_ || !active_ || !transport_ || core_.secure ||
       disabled())
     return S_OK;
@@ -905,6 +938,8 @@ HRESULT Service::handle(ITfContext *c, WPARAM vk, LPARAM lp, bool up,
 }
 HRESULT Service::OnTestKeyDown(ITfContext *c, WPARAM vk, LPARAM lp,
                                BOOL *eaten) {
+  if (transport_)
+    transport_->trace("test-down", vk, lp, epoch_);
   auto hr = handle(c, vk, lp, false, eaten);
   tested_ = eaten && *eaten;
   test_up_ = false;
@@ -915,6 +950,8 @@ HRESULT Service::OnTestKeyDown(ITfContext *c, WPARAM vk, LPARAM lp,
   return hr;
 }
 HRESULT Service::OnTestKeyUp(ITfContext *c, WPARAM vk, LPARAM lp, BOOL *eaten) {
+  if (transport_)
+    transport_->trace("test-up", vk, lp, epoch_);
   auto hr = handle(c, vk, lp, true, eaten);
   tested_ = eaten && *eaten;
   test_up_ = true;
@@ -925,6 +962,8 @@ HRESULT Service::OnTestKeyUp(ITfContext *c, WPARAM vk, LPARAM lp, BOOL *eaten) {
   return hr;
 }
 HRESULT Service::OnKeyDown(ITfContext *c, WPARAM vk, LPARAM lp, BOOL *eaten) {
+  if (transport_)
+    transport_->trace("key-down", vk, lp, tested_);
   if (!eaten)
     return E_POINTER;
   if (tested_ && !test_up_ && test_vk_ == vk && test_lparam_ == lp) {

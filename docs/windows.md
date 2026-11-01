@@ -315,10 +315,21 @@ for normal shutdown, request `Stop-Computer` over SSH and confirm it stopped.
 - Edge 156.0.4314.58 passed exact commits, selection, paging, Shift mode
   switching, directly focused password/PIN guards and basic placement.
   Settings rendered; live layout/theme/punctuation changes and worker recovery passed.
-- Medium-integrity checks reproduced Notepad/search fallback, Explorer rename,
+- A subsequent medium-integrity check with UAC enabled verified exact `你好`
+  in Notepad and Explorer search after fixing empty input-scope handling.
+  Start search still falls back to Latin text.
+- Medium-integrity checks reproduced Explorer rename,
   Ctrl+L duplication and click-region failures; registration needed elevation.
   See [known issues](KNOWN-ISSUES.md#windows-validation-and-release-support).
 - x64/emulated apps, Office/Chrome, mixed DPI, GPU scoring and packaging remain unverified.
+
+Debug native callback routing with `-DSHIXIN_TSF_TRACE=ON` in the TSF
+CMake configuration. This opt-in build queues fixed numeric records on the
+apartment and writes them only on the pipe worker, under
+`%USERPROFILE%\AppData\LocalLow\Shixin\tsf-<pid>-<thread>.log`.
+It includes activation, focus, input-scope and edit-request HRESULTs and
+key callback codes, so use it only for explicit development reproductions.
+The default build omits tracing.
 
 ## Client and presentation architecture
 
