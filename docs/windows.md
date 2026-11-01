@@ -197,9 +197,10 @@ directory. `SHIXIN_WINDOWS_USER` and `SHIXIN_WINDOWS_SSH_PORT` override the
 account and SSH port. SSH uses a dedicated `known_hosts`, accepts first-use
 keys and rejects changed keys. The controller owns VNC configuration.
 
-The current vncdotool sends `_` as `-` with `type`: send underscores with
-`keys shift-minus`, and inspect screenshots after commands containing shifted
-symbols. Prefer SSH once it works. The external controller's current `stop`
+QEMU maps raw shifted punctuation keysyms to their base keys (for example
+`_` becomes `-` and `:` becomes `;`). The helper’s `type` command splits
+printable US ASCII into ordinary text and explicit Shift chords. Use `keys`
+for Enter and Tab, and prefer SSH once it works. The external controller's current `stop`
 requests ACPI shutdown, waits up to 60 seconds and then terminates QEMU;
 request guest shutdown over SSH and confirm it completed before relying on
 that command for normal shutdown.

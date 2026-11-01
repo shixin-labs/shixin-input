@@ -28,6 +28,33 @@ run_vm() {
   "$RUN" "$@"
 }
 need_ssh() { [[ -f "$KEY" ]] || fail 'run init-state and configure guest OpenSSH key authentication first'; }
+type_text() {
+  # QEMU's USB keyboard maps shifted punctuation keysyms to their base key.
+  # Send explicit Shift chords, while keeping ordinary text in large chunks.
+  local remaining="$1" chunk='' ch chord LC_ALL=C
+  [[ $remaining != *[![:print:]]* ]] || fail 'type accepts printable US ASCII; use keys for Enter and Tab'
+  while [[ -n $remaining ]]; do
+    ch="${remaining:0:1}"
+    remaining="${remaining:1}"
+    chord=''
+    case "$ch" in
+      '~') chord='shift-`' ;; '!') chord='shift-1' ;; '@') chord='shift-2' ;;
+      '#') chord='shift-3' ;; '$') chord='shift-4' ;; '%') chord='shift-5' ;;
+      '^') chord='shift-6' ;; '&') chord='shift-7' ;; '*') chord='shift-8' ;;
+      '(') chord='shift-9' ;; ')') chord='shift-0' ;; '_') chord='shift-minus' ;;
+      '+') chord='shift-=' ;; '{') chord='shift-[' ;; '}') chord='shift-]' ;;
+      '|') chord='shift-bslash' ;; ':') chord='shift-;' ;; '"') chord="shift-'" ;;
+      '<') chord='shift-,' ;; '>') chord='shift-.' ;; '?') chord='shift-/' ;;
+    esac
+    if [[ -n $chord ]]; then
+      if [[ -n $chunk ]]; then run_vm type "$chunk"; chunk=''; fi
+      run_vm keys "$chord"
+    else
+      chunk+="$ch"
+    fi
+  done
+  if [[ -n $chunk ]]; then run_vm type "$chunk"; fi
+}
 case "$1" in
 init-state)
   [[ $# -eq 1 ]] || usage
@@ -70,7 +97,7 @@ shot)
   echo "$S/shots/$2.png"
   ;;
 keys) shift; [[ $# -gt 0 ]] || usage; run_vm keys "$@" ;;
-type) [[ $# -eq 2 ]] || usage; run_vm type "$2" ;;
+type) [[ $# -eq 2 ]] || usage; type_text "$2" ;;
 click)
   [[ $# -eq 3 && $2 =~ ^[0-9]+$ && $3 =~ ^[0-9]+$ ]] || usage
   run_vm click "$2" "$3"
