@@ -136,7 +136,7 @@ func Accept(l net.Listener) (net.Conn, error) {
 
 // Dial resolves the current generation off the key path, then connects.
 func Dial(path string, timeout time.Duration) (net.Conn, error) {
-	if b, err := os.ReadFile(path); err == nil {
+	if b, err := ReadEndpoint(path); err == nil {
 		target := string(b)
 		// Only a sibling private endpoint may be published. Never follow a
 		// chain, a remote pipe, or a record in another user's directory.

@@ -144,6 +144,8 @@ user/System DACL. Logical endpoints map to
 16 bytes of SHA-256 over the lowercased absolute endpoint path, in UTF-8.
 `engine.sock` is a discovery record containing the absolute sibling `g-*`
 worker endpoint, replaced during promotion without symlink privileges.
+Readers open it with `FILE_SHARE_DELETE` so the replacement never collides
+with a read; the publisher also retries a sharing violation for up to 1 s.
 Control, UI and AI endpoints map directly to pipes.
 
 Pipe DACLs currently allow only the current user. Go checks peer SID/session
