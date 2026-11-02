@@ -194,6 +194,11 @@ func recoverDictionary(user string) error {
 		return errors.New("dictionary: cannot inspect recovery copy")
 	}
 	if _, err := os.Lstat(live); err == nil {
+		// The backup folder may have been removed by hand; recreate it so
+		// a partial import is still preserved instead of blocking startup.
+		if err := os.MkdirAll(root, 0o700); err != nil {
+			return errors.New("dictionary: cannot preserve interrupted import")
+		}
 		if err := os.Rename(live, filepath.Join(root, "interrupted.userdb")); err != nil {
 			return errors.New("dictionary: cannot preserve interrupted import")
 		}
@@ -328,13 +333,14 @@ func runDictionaryTask(c config, action, path string) error {
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
+	if action == "clear" {
+		// Clearing only moves the database aside; it never needs a copy.
+		return commitDictionary(c.user, work, hadDB, true)
+	}
 	if hadDB {
 		if err := copyDictionaryTree(live, filepath.Join(work, learnedDB)); err != nil {
 			return err
 		}
-	}
-	if action == "clear" {
-		return commitDictionary(c.user, work, hadDB, true)
 	}
 	var imported dictionary.Backup
 	if action == "import" {

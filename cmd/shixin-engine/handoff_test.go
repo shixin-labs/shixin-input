@@ -24,7 +24,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	if len(os.Args) > 1 && (os.Args[1] == "-worker" || os.Args[1] == "-user") {
+	if len(os.Args) > 1 && (os.Args[1] == "-worker" || os.Args[1] == "-user" || os.Args[1] == "-dictionary-task") {
 		main()
 		os.Exit(0)
 	}
