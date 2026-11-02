@@ -844,7 +844,7 @@ func TestMigrationDrainsQueuedCommit(t *testing.T) {
 		b = ipc.AppendPolicy(b, idle)
 		b = ipc.AppendPolicy(b, comp)
 		for {
-			typ, _, err := r.Next()
+			typ, p, err := r.Next()
 			if err != nil {
 				drained <- err
 				return
@@ -855,7 +855,17 @@ func TestMigrationDrainsQueuedCommit(t *testing.T) {
 			if typ == ipc.TypeFocusIn {
 				nc.Write(b)
 				nc.Write((&ipc.Result{Ctx: 1, Policy: 1}).Append(nil))
-				break
+			}
+			if typ == ipc.TypeClear { // follows each FocusIn
+				var cl ipc.Clear
+				if err := cl.Decode(p); err != nil {
+					drained <- err
+					return
+				}
+				nc.Write((&ipc.Result{Ctx: cl.Ctx, Seq: cl.Seq, Policy: 1}).Append(nil))
+				if cl.Seq == 2 { // the connection's and the harness's focus
+					break
+				}
 			}
 		}
 		<-migrate
@@ -870,6 +880,14 @@ func TestMigrationDrainsQueuedCommit(t *testing.T) {
 			if err != nil {
 				drained <- err
 				return
+			}
+			if typ == ipc.TypeClear {
+				var cl ipc.Clear
+				if err := cl.Decode(p); err != nil {
+					drained <- err
+					return
+				}
+				nc.Write((&ipc.Result{Ctx: cl.Ctx, Seq: cl.Seq, Policy: 1}).Append(nil))
 			}
 			if typ == ipc.TypeKey {
 				if err := key.Decode(p); err != nil {

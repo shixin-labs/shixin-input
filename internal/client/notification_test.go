@@ -55,7 +55,7 @@ func TestQueuedModeCannotDuplicateCommittedKey(t *testing.T) {
 		t.Run(tc.input, func(t *testing.T) {
 			h := newHarness(t, realEngine(t), nil)
 			h.c.FocusIn("com.example.exact-output", false)
-			h.until(func() bool { return !h.c.sp.on })
+			h.settle()
 			chinese := h.c.cur
 			stale := &policy.Policy{Notify: policy.NotifyShift}
 			h.c.cur, h.c.spec, h.c.shiftDown = stale, stale, true

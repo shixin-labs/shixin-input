@@ -3,8 +3,10 @@ package client
 import (
 	"strconv"
 	"testing"
+	"time"
 
 	"shixin/internal/ipc"
+	"shixin/internal/policy"
 )
 
 func TestPerAppContexts(t *testing.T) {
@@ -59,9 +61,10 @@ func TestPerAppContextFence(t *testing.T) {
 	c.conn.Store(&conn{out: make(chan outMsg, 16)})
 	c.seq = 10
 	c.FocusIn("first", false)
+	want := c.seq + 1
 	c.FocusIn("second", false)
 	fence := c.contextFence
-	if fence != 11 {
+	if fence != want {
 		t.Fatalf("target context was not fenced: %d", fence)
 	}
 	drop := c.dropZero
@@ -104,5 +107,46 @@ func TestPerAppContextFailedClearKeepsFence(t *testing.T) {
 		c.acceptResult(&ipc.Result{Ctx: c.ctx, Seq: 9, Commit: []byte("old")}, &drop) ||
 		c.acceptResult(&ipc.Result{Ctx: c.ctx}, &drop) {
 		t.Fatal("failed Clear allowed the previous context owner's late output")
+	}
+}
+
+// Switching apps used to install a passthrough policy until the new app's
+// FocusIn reply arrived, so a quick first spelling key went to the app as a
+// literal letter even in Chinese mode. The first key now waits, within the
+// budget, for the reply.
+func TestPerAppContextFirstKeyWaitsForFocusReply(t *testing.T) {
+	c := New(Options{PerAppContexts: true}, &recorder{})
+	defer c.timer.Stop()
+	cn := &conn{out: make(chan outMsg, 16)}
+	c.conn.Store(cn)
+	idle, composing := fakePolicies()
+	c.pols.Store(&map[uint16]*policy.Policy{1: idle, 2: composing})
+	c.FocusIn("first", false)
+	for len(cn.out) > 0 {
+		<-cn.out
+	}
+	c.cur, c.spec = idle, idle
+	c.arrived.Store(c.seq)
+
+	c.FocusOut()
+	c.FocusIn("second", false)
+	go func() { // the engine, answering a little after the switch
+		for m := range cn.out {
+			if m.typ == ipc.TypeKey {
+				return
+			}
+			if m.typ == ipc.TypeFocusOut { // no reply
+				continue
+			}
+			time.Sleep(time.Millisecond)
+			c.push(evResult, &ipc.Result{Ctx: m.key.Ctx, Seq: m.key.Seq, Policy: 1})
+			if m.key.Seq != 0 {
+				c.arrived.Store(m.key.Seq)
+			}
+			c.signalArrived()
+		}
+	}()
+	if !c.HandleKey('n', 0) {
+		t.Fatal("first spelling key after an app switch passed to the app")
 	}
 }

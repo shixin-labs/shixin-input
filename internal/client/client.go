@@ -485,7 +485,16 @@ func (c *Client) FocusIn(app string, secure bool) {
 		c.composing, c.marked = false, c.marked[:0]
 	}
 	c.app = app
-	c.post(&outMsg{typ: ipc.TypeFocusIn, key: ipc.Key{Ctx: c.ctx}, app: app, flag: secure})
+	if !c.post(&outMsg{typ: ipc.TypeFocusIn, key: ipc.Key{Ctx: c.ctx}, app: app, flag: secure}) || secure {
+		return // secure keys pass without a policy
+	}
+	// FocusIn has no sequence number, and its reply carries the app's mode.
+	// A sequenced Clear answered after it lets the first key wait (within
+	// the budget) for that mode instead of passing a spelling key through
+	// to the app with a guessed policy. The composition is already empty.
+	if c.sendTracked(&outMsg{typ: ipc.TypeClear, key: ipc.Key{Ctx: c.ctx}}) {
+		c.spec = nil
+	}
 }
 
 type appContext struct {
