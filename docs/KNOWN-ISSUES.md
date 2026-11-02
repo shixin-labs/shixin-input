@@ -115,8 +115,9 @@ Delete an entry when it's fixed, and mention it in the commit.
 ### Settings app gaps
 - **Not built yet:** skin editor and the 同步/云输入 pages (M5).
 - Dictionary migration/backup/clear, candidate pins and native filter controls
-  are implemented. Their Go unit tests pass in the race gate; native filter
-  builds/integration and GUI snapshots remain unvalidated.
+  are implemented. Their Go unit tests pass in the race gate, and native
+  filter and coordinator maintenance integration tests pass; GUI snapshots
+  remain unvalidated.
 - **性能 page:** shows the engine's own numbers only. The front's
   `handleEvent` and key→candidates histograms (and ASK timeouts, the stall
   counter) stay in its log; the front could report them to the engine for

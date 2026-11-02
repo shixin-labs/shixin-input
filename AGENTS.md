@@ -234,6 +234,7 @@ and tools that touch Rime use scratch user dirs, never the live one.
 |---|---|
 | Handoff safety, failure/recovery and first-run timing (scratch dirs only) | `SHIXIN_LIBRIME=… go test -v ./cmd/shixin-engine` (`-short` skips real rime-ice builds) |
 | librime lock-conflict regression: two processes and learned-word preservation | `go test -v ./internal/rime -run TestUserDictionaryLockConflict` |
+| Dictionary import/export/clear/restore through a real coordinator (rime-ice; scratch dirs) / commit, recovery journal and export-path checks (no librime) | `SHIXIN_LIBRIME=… go test -v ./cmd/shixin-engine -run TestCoordinatorDictionaryMaintenance` · `go test ./cmd/shixin-engine ./internal/lifecycle ./internal/dictionary -run 'Dictionary\|AcceptControl'` |
 | Abandoned generation cleanup and path preservation (no librime) | `go test ./cmd/shixin-engine -run TestGenerationCleanup` |
 | Prebuilt prism reuse for page size, other options and fuzzy spelling | `go test -v ./internal/generation -run TestPrebuiltReuse` |
 | Saved-generation compiler compatibility / rebuild after new defaults | `go test ./internal/generation -run TestMatchesSettings` · `go test ./cmd/shixin-engine -run TestCoordinatorRebuildsOldCompiler` |
@@ -246,6 +247,7 @@ and tools that touch Rime use scratch user dirs, never the live one.
 | Verify shuangpin charts against real spelling rules (scratch dictionaries) | `go test -v ./internal/engine -run TestShuangpinCharts` |
 | Full-pinyin fallback, all layouts, mixed/fuzzy/ü spellings, ambiguous codes and zero Go allocations | `go test -v ./internal/engine -run 'Test(MixedPinyinSpellings\|RimeIceMixedPinyin\|ShuangpinCharts)'` |
 | Candidate shortcuts across all layouts, page/highlight behavior, native translators, idle policy and zero Go allocations | `go test -v ./internal/engine -run '^TestRimeIce'` |
+| Native candidate filters: pins, long-word, English demotion/case, v-symbols, long piecewise selections and paging past the window (also under ASan via `scripts/ci.sh asan`) | `go test -v ./internal/engine -run '^TestNative'` |
 | Forgetting learned words/ranking, both shortcuts and off, idle policy, zero Go allocations and persistence across fresh processes (scratch dictionaries) | `go test -v ./internal/engine -run '^TestForgetCandidatePersistence$'` |
 
 ### 智能排序
@@ -355,8 +357,9 @@ operate on a private database copy on the child's locked OS thread. Import
 and clear retain the original database under `Rime/backups/dictionary-*`.
 Do not open or restore those raw files while an engine owns the user directory.
 A recovery journal is processed before any new session can attach.
-Go parser/compiler/recovery tests pass in the race gate. Native filter
-build/integration checks and GUI snapshots have not yet been run.
+Go parser/compiler/recovery tests pass in the race gate; native filter and
+coordinator maintenance integration tests pass. GUI snapshots have not yet
+been checked.
 
 ## Troubleshooting
 

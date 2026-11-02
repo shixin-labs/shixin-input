@@ -1536,8 +1536,10 @@ The filter order is rerank → long-word → English demotion → v-symbols →
 English case → reverse lookup/emoji/traditionalization/uniquifier → pins.
 Each filter scans at most 100 candidates of the first candidate's span;
 native date/number/Unicode/calculator readings pass unchanged. Four warmed
-translation slots per enabled filter hold fixed candidate arrays. Exhausted
-pools preserve upstream order rather than allocating. English case changes
+translation slots per enabled filter hold fixed candidate arrays. Each
+selected segment's menu keeps its slot until the composition ends, so a long
+piecewise selection adds slots (allocating once, up to 64); only beyond that
+does a filter preserve upstream order. English case changes
 use preallocated shadow candidates retaining their genuine dictionary entry.
 No filter reads files or changes an already displayed menu.
 
@@ -1551,10 +1553,11 @@ than every configurable variant of upstream Lua. Pins move existing words
 only, matching their displayed text after emoji/traditional conversion, with up to 10 per exact code and
 256 total; the layout is stored explicitly. They do not invent a reading.
 Tests cover pure C++ ordering/case rules, fuzzed arbitrary text, real-engine
-filter reuse and Go allocations, compiler YAML, migration parsing and
-interrupted database replacement. Go parser/compiler/recovery unit tests
-pass with the race detector. Native filter build/integration checks and GUI
-snapshots have not yet been run.
+filter reuse (also under ASan/UBSan), long piecewise selections, paging past
+the 100-candidate window and Go allocations, compiler YAML, migration parsing,
+interrupted database replacement and coordinator import/export/clear/restore
+on rime-ice. Go parser/compiler/recovery unit tests pass with the race
+detector. GUI snapshots have not yet been checked.
 
 ### 7.1 Auto spacing between Chinese and English
 
