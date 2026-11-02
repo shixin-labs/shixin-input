@@ -629,8 +629,18 @@ func TestPoolRefillsAfterQuiet(t *testing.T) {
 		cl.send((&ipc.FocusIn{Ctx: ctx, App: []byte("app" + strconv.Itoa(int(ctx)))}).Append(cl.buf[:0]))
 		cl.result()
 	}
-	if n := e.Stats().Pooled; n >= e.opt.PoolSize {
-		t.Fatalf("pool refilled during input: %d sessions", n)
+	low := e.Stats().Pooled
+	if low >= e.opt.PoolSize {
+		t.Fatalf("pool refilled during input: %d sessions", low)
+	}
+	// Keep typing, with gaps shorter than poolQuiet, for longer than it.
+	for end := time.Now().Add(poolQuiet * 3 / 2); time.Now().Before(end); {
+		cl.key('a', 0)
+		cl.key(policy.KeyEscape, 0)
+		time.Sleep(poolQuiet / 5)
+	}
+	if n := e.Stats().Pooled; n != low {
+		t.Fatalf("pool refilled between keys: %d → %d sessions", low, n)
 	}
 	deadline := time.Now().Add(poolQuiet + 5*time.Second)
 	for e.Stats().Pooled < e.opt.PoolSize {
