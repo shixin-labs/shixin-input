@@ -38,10 +38,18 @@ type Request struct {
 	Path    string `json:"path,omitempty"`
 }
 
+// DictionaryTimeout bounds a dictionary request on both ends. It covers
+// waiting in the coordinator's queue (30 s), converting another Rime input
+// method's database (60 s), waiting for idle and drain (17 s), the
+// maintenance child (90 s) and restarting the worker, with room to reply.
+const DictionaryTimeout = 300 * time.Second
+
 // Dictionary requests import, export or clear on a background Settings
-// goroutine. Only this cold JSON protocol changes; the typing wire is unchanged.
+// goroutine; "import-rime" imports another Rime input method's user
+// database directory. Only this cold JSON protocol changes; the typing
+// wire is unchanged.
 func Dictionary(socket, action, path string) error {
-	if action != "import" && action != "export" && action != "clear" {
+	if action != "import" && action != "import-rime" && action != "export" && action != "clear" {
 		return errors.New("lifecycle: unsupported dictionary action")
 	}
 	c, err := ipc.Dial(socket+".control", time.Second)
@@ -49,7 +57,7 @@ func Dictionary(socket, action, path string) error {
 		return errors.New("lifecycle: engine is unavailable")
 	}
 	defer c.Close()
-	c.SetDeadline(time.Now().Add(180 * time.Second))
+	c.SetDeadline(time.Now().Add(DictionaryTimeout))
 	if err := json.NewEncoder(c).Encode(Request{Version: Version, Op: OpDictionary, Action: action, Path: path}); err != nil {
 		return errors.New("lifecycle: dictionary request failed")
 	}

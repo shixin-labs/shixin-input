@@ -1,8 +1,11 @@
 package main
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"testing"
 	"time"
@@ -130,6 +133,51 @@ func TestCoordinatorDictionaryMaintenance(t *testing.T) {
 	if roots, _ := filepath.Glob(filepath.Join(s.c.user, "backups", "dictionary-*", learnedDB)); len(roots) != 2 {
 		t.Fatalf("import and clear should each keep a recovery copy: %q", roots)
 	}
+	// Another Rime input method's database: the clear's recovery copy laid
+	// out as Squirrel's folder, with its own LOCK. It is imported from a
+	// private copy, leaving the source as it was.
+	var newest string
+	var newestAt time.Time
+	roots, _ := filepath.Glob(filepath.Join(s.c.user, "backups", "dictionary-*", learnedDB))
+	for _, db := range roots {
+		if info, err := os.Stat(db); err == nil && info.ModTime().After(newestAt) {
+			newest, newestAt = db, info.ModTime()
+		}
+	}
+	squirrel := filepath.Join(root, "Squirrel", "rime_ice.userdb")
+	if err := os.MkdirAll(filepath.Dir(squirrel), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := copyDictionaryTree(newest, squirrel); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(squirrel, "LOCK"), nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	before := treeSnapshot(t, squirrel)
+	for _, bad := range []string{filepath.Join(s.c.user, learnedDB), filepath.Join(root, "Squirrel", "wubi86.userdb"), "rime_ice.userdb"} {
+		if err := lifecycle.Dictionary(s.c.socket, "import-rime", bad); err == nil {
+			t.Fatalf("import-rime accepted %s", bad)
+		}
+	}
+	// A copy left by a coordinator that died mid-conversion is removed.
+	stale := filepath.Join(filepath.Dir(s.c.socket), "dictionary-rime-stale", "work", learnedDB)
+	if err := os.MkdirAll(stale, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := lifecycle.Dictionary(s.c.socket, "import-rime", squirrel); err != nil {
+		t.Fatal(err)
+	}
+	if !typed() {
+		t.Fatal("word imported from another Rime input method is not offered")
+	}
+	if after := treeSnapshot(t, squirrel); after != before {
+		t.Fatal("import-rime changed the source database")
+	}
+	if err := lifecycle.Dictionary(s.c.socket, "clear", ""); err != nil {
+		t.Fatal(err)
+	}
+
 	// Restoring the backup brings the word back.
 	if err := lifecycle.Dictionary(s.c.socket, "import", backup); err != nil {
 		t.Fatal(err)
@@ -141,6 +189,7 @@ func TestCoordinatorDictionaryMaintenance(t *testing.T) {
 	for _, pattern := range []string{
 		filepath.Join(s.c.user, "dictionary-work-*"),
 		filepath.Join(s.c.user, "dictionary-recovery.json"),
+		filepath.Join(filepath.Dir(s.c.socket), "dictionary-rime-*"),
 		filepath.Join(filepath.Dir(s.c.socket), "dictionary-import-*"),
 		filepath.Join(root, ".shixin-dictionary-*"),
 	} {
@@ -148,4 +197,25 @@ func TestCoordinatorDictionaryMaintenance(t *testing.T) {
 			t.Fatalf("maintenance left %q", left)
 		}
 	}
+}
+
+// treeSnapshot lists every file under dir with its size and contents' hash.
+func treeSnapshot(t *testing.T, dir string) string {
+	t.Helper()
+	var out strings.Builder
+	err := filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+		b, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(&out, "%s %x\n", path, sha256.Sum256(b))
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return out.String()
 }

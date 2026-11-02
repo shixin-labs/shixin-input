@@ -25,6 +25,16 @@ const learnedDB = "rime_ice.userdb"
 // exits, a separate locked-thread child operates on a private database copy.
 // Clients reconnect normally and PASS while maintenance owns the database.
 func (s *coordinator) dictionary(req lifecycle.Request) error {
+	if req.Action == "import-rime" {
+		// Convert another Rime input method's database first, while typing
+		// continues; then import the table like a chosen file.
+		dir, err := s.convertRime(req.Path)
+		if err != nil {
+			return err
+		}
+		defer os.RemoveAll(dir)
+		req.Action, req.Path = "import", filepath.Join(dir, "table.txt")
+	}
 	if req.Action != "import" && req.Action != "export" && req.Action != "clear" {
 		return errors.New("dictionary: unsupported operation")
 	}
@@ -122,6 +132,119 @@ func (s *coordinator) dictionary(req lifecycle.Request) error {
 	return nil
 }
 
+// convertRime exports a Squirrel, Weasel or fcitx5/ibus-rime user database
+// to a normalized table.txt in a new directory under the runtime directory,
+// and returns that directory for the caller to remove. A child process
+// copies the database into the directory and exports the copy: neither
+// process opens the other input method's database in place, takes Shixin's
+// engine lock or touches Shixin's user dictionary. The coordinator owns the
+// directory, so a child killed at its deadline leaves no copy behind.
+func (s *coordinator) convertRime(source string) (string, error) {
+	if !filepath.IsAbs(source) || len(source) > 2048 || dictionary.RimeSourceName(source) == "" {
+		return "", errors.New("dictionary: unsupported Rime dictionary")
+	}
+	if info, err := os.Lstat(source); err != nil || !info.IsDir() {
+		return "", errors.New("dictionary: cannot open the Rime dictionary")
+	}
+	if inside(s.c.user, source) {
+		return "", errors.New("dictionary: choose another input method's dictionary")
+	}
+	// Requests are serialized, so any earlier directory belongs to a
+	// coordinator that died during a conversion.
+	runtimeDir := filepath.Dir(s.c.socket)
+	if stale, _ := filepath.Glob(filepath.Join(runtimeDir, "dictionary-rime-*")); len(stale) > 0 {
+		for _, dir := range stale {
+			os.RemoveAll(dir)
+		}
+	}
+	dir, err := os.MkdirTemp(runtimeDir, "dictionary-rime-")
+	if err != nil {
+		return "", errors.New("dictionary: cannot prepare import")
+	}
+	table := filepath.Join(dir, "table.txt")
+	exe, err := os.Executable()
+	if err == nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+		// As for maintenance, never copy the child's output: native
+		// diagnostics may quote words or paths.
+		err = exec.CommandContext(ctx, exe, "-dictionary-task", "convert-rime", "-dictionary-path", source, "-dictionary-output", table,
+			"-lib", s.c.lib, "-data", s.c.data, "-user", s.c.user, "-settings", s.c.settings, "-log", "-").Run()
+		cancel()
+	}
+	var words []dictionary.Entry
+	if err == nil {
+		var in *os.File
+		if in, err = os.Open(table); err == nil {
+			words, err = dictionary.ReadRimeTable(in)
+			in.Close()
+		}
+	}
+	if err == nil {
+		// The same file, now holding only entries Shixin accepts.
+		var out *os.File
+		if out, err = os.Create(table); err == nil {
+			err = dictionary.WriteTable(out, words)
+			if closeErr := out.Close(); err == nil {
+				err = closeErr
+			}
+		}
+	}
+	if err != nil {
+		os.RemoveAll(dir)
+		if errors.Is(err, dictionary.ErrEmpty) {
+			return "", errors.New("dictionary: no learned words to import")
+		}
+		// Weasel keeps its database files open exclusively while it runs.
+		return "", errors.New("dictionary: cannot read the Rime dictionary; quit that input method and retry")
+	}
+	return dir, nil
+}
+
+// runRimeConversion is the convert-rime child. It works only on a private
+// copy of source in output's directory, which the coordinator removes, on
+// one locked OS thread.
+func runRimeConversion(c config, source, output string) error {
+	name := dictionary.RimeSourceName(source)
+	if name == "" || output == "" || !filepath.IsAbs(source) || !filepath.IsAbs(output) || inside(c.user, source) {
+		return errors.New("dictionary: unsupported Rime dictionary")
+	}
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+	work, err := os.MkdirTemp(filepath.Dir(output), "dictionary-rime-work-")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(work)
+	// The source's LOCK belongs to its own input method, and its LOG files
+	// are diagnostics; LevelDB recreates both in the copy.
+	if err := copyTree(source, filepath.Join(work, name+".userdb"), func(rel string) bool {
+		return rel == "LOCK" || rel == "LOG" || rel == "LOG.old"
+	}); err != nil {
+		return err
+	}
+	lib, err := rime.Load(c.lib)
+	if err != nil {
+		return err
+	}
+	lib.Setup(rime.Traits{SharedDataDir: c.data, UserDataDir: work, AppName: "rime.shixin", MinLogLevel: 3, Modules: []string{"default", "levers"}})
+	lib.InitializeDeployer()
+	_, err = lib.ExportUserDictionary(name, output)
+	lib.Finalize()
+	return err
+}
+
+// inside reports whether path is dir or lies under it, after resolving links.
+func inside(dir, path string) bool {
+	if x, err := filepath.EvalSymlinks(dir); err == nil {
+		dir = x
+	}
+	if x, err := filepath.EvalSymlinks(path); err == nil {
+		path = x
+	}
+	rel, err := filepath.Rel(strings.ToLower(dir), strings.ToLower(path))
+	return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
+}
+
 type dictionaryRecovery struct {
 	Backup string `json:"backup"`
 	HadDB  bool   `json:"had_db"`
@@ -214,6 +337,12 @@ func recoverDictionary(user string) error {
 }
 
 func copyDictionaryTree(source, target string) error {
+	return copyTree(source, target, func(string) bool { return false })
+}
+
+// copyTree copies regular files up to 1 GiB in all, leaving out those skip
+// names by their path relative to source.
+func copyTree(source, target string, skip func(rel string) bool) error {
 	var size int64
 	return filepath.WalkDir(source, func(path string, entry os.DirEntry, walkErr error) error {
 		if walkErr != nil {
@@ -226,6 +355,9 @@ func copyDictionaryTree(source, target string) error {
 		rel, err := filepath.Rel(source, path)
 		if err != nil {
 			return err
+		}
+		if skip(filepath.ToSlash(rel)) {
+			return nil
 		}
 		dst := filepath.Join(target, rel)
 		if entry.IsDir() {

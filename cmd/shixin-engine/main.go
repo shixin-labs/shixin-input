@@ -43,6 +43,7 @@ func main() {
 	capture := flag.Bool("capture", false, "serve a warm-only generation for offline menu capture (own scratch user/socket)")
 	dictionaryTask := flag.String("dictionary-task", "", "exclusive dictionary maintenance (coordinator child only)")
 	dictionaryPath := flag.String("dictionary-path", "", "dictionary maintenance source or destination")
+	dictionaryOutput := flag.String("dictionary-output", "", "table written by -dictionary-task convert-rime")
 	flag.Parse()
 	if *capture {
 		// Capture never opens the developer's ordinary log path.
@@ -71,7 +72,11 @@ func main() {
 	if *dictionaryTask != "" {
 		err = defaults(&c)
 		if err == nil {
-			err = runDictionaryTask(c, *dictionaryTask, *dictionaryPath)
+			if *dictionaryTask == "convert-rime" {
+				err = runRimeConversion(c, *dictionaryPath, *dictionaryOutput)
+			} else {
+				err = runDictionaryTask(c, *dictionaryTask, *dictionaryPath)
+			}
 		}
 	} else if *capture {
 		err = captureConfig(&c, *worker)

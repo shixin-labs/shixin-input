@@ -472,7 +472,7 @@ func acceptControl(l net.Listener, requests chan<- applyRequest, stop <-chan str
 			var req lifecycle.Request
 			err := json.NewDecoder(io.LimitReader(c, 4096)).Decode(&req)
 			if req.Op == lifecycle.OpDictionary {
-				c.SetDeadline(time.Now().Add(180 * time.Second))
+				c.SetDeadline(time.Now().Add(lifecycle.DictionaryTimeout))
 			}
 			if err == nil && (req.Version != lifecycle.Version || (req.Op != lifecycle.OpApply && req.Op != lifecycle.OpStop && req.Op != lifecycle.OpDictionary)) {
 				err = errors.New("unsupported lifecycle request")
