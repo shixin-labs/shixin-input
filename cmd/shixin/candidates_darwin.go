@@ -42,6 +42,9 @@ var cand struct {
 	args         [3]uintptr // immutable arguments for dispatch_async_f
 	queued       bool
 	framePending bool
+	// The panel's size in the last frame, to place the window before it
+	// shows: until the next frame measures the new candidates.
+	lastW, lastH float64
 }
 
 // look is the candidate window's part of the settings.
@@ -120,6 +123,7 @@ func candView(c *ui.Context) {
 	}
 	style.MaxWidth, style.MaxHeight = candidateCardBounds(work, candWindowW, candWindowH, shadowPad)
 	w, h := candview.Measure(c, &cand.state, &style)
+	cand.lastW, cand.lastH = float64(w), float64(h)
 	if cand.shown {
 		positionCandidates(float64(w), float64(h))
 	}
@@ -223,6 +227,11 @@ func updateCandidateWindow() {
 		cand.flyout.Invalidate()
 	}
 	if !cand.shown {
+		// Move the hidden window to this caret first: it still sits where
+		// the last composition was, often in another app, and the frame
+		// that positions it runs after it shows. The frame then fits the
+		// new candidates' size.
+		positionCaretWindow(cand.flyout, cand.caret, cand.lastW, cand.lastH)
 		cand.flyout.ShowInactive()
 		cand.shown = true
 	}
