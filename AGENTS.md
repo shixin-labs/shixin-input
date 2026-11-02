@@ -56,7 +56,9 @@ M1 (macOS MVP) is done; M2 (DESIGN §10) is in progress. Built so far:
   placement, the caret mode bubble, committing inline text on focus loss,
   bounded per-app engine contexts, and the double-click installer and in-place upgrader.
 - **Settings app** (DESIGN §6; gaps in KNOWN-ISSUES): per-app modes,
-  custom phrases, .scel/text migration, portable dictionary backup/restore/export
+  custom phrases, .scel/text migration, detecting and importing Sogou for
+  Mac's and Rime-based input methods' dictionaries (a guide step and the
+  Dictionary page), portable dictionary backup/restore/export
   and learned-word clearing, candidate pins, second/third-candidate shortcuts, the default
   punctuation style, a candidate font picker, forgetting learned words,
   skins and the performance page.
@@ -235,6 +237,7 @@ and tools that touch Rime use scratch user dirs, never the live one.
 | Handoff safety, failure/recovery and first-run timing (scratch dirs only) | `SHIXIN_LIBRIME=… go test -v ./cmd/shixin-engine` (`-short` skips real rime-ice builds) |
 | librime lock-conflict regression: two processes and learned-word preservation | `go test -v ./internal/rime -run TestUserDictionaryLockConflict` |
 | Dictionary import/export/clear/restore through a real coordinator (rime-ice; scratch dirs) / commit, recovery journal and export-path checks (no librime) | `SHIXIN_LIBRIME=… go test -v ./cmd/shixin-engine -run TestCoordinatorDictionaryMaintenance` · `go test ./cmd/shixin-engine ./internal/lifecycle ./internal/dictionary -run 'Dictionary\|AcceptControl'` |
+| Other input methods: Sogou `SGPU`/`.scel` parsing, source detection (scratch homes) / settings source list and import flow / real Rime database import through the coordinator (`import-rime` on a private copy) | `go test ./internal/dictionary -run 'Test(Sogou\|SCEL\|FindSources\|ReadRimeTable\|RimeSourceName)'` · `go test ./cmd/shixin-settings -run 'Test(Sources\|Import)'` · `SHIXIN_LIBRIME=… go test -v ./cmd/shixin-engine -run TestCoordinatorDictionaryMaintenance` |
 | Abandoned generation cleanup and path preservation (no librime) | `go test ./cmd/shixin-engine -run TestGenerationCleanup` |
 | Prebuilt prism reuse for page size, other options and fuzzy spelling | `go test -v ./internal/generation -run TestPrebuiltReuse` |
 | Saved-generation compiler compatibility / rebuild after new defaults | `go test ./internal/generation -run TestMatchesSettings` · `go test ./cmd/shixin-engine -run TestCoordinatorRebuildsOldCompiler` |
@@ -346,8 +349,11 @@ shared into the guest read-only.
 
 ## Dictionary maintenance
 
-Dictionary settings import standard Sogou `.scel`, UTF-8 Rime tables/sync
-snapshots and Shixin JSON backups. Exported JSON preserves learned words and
+Dictionary settings import standard Sogou `.scel`, Sogou for Mac's `SGPU`
+user dictionary and `.bin` backups, UTF-8 Rime tables/sync snapshots and
+Shixin JSON backups, and detect Sogou for Mac and Rime-based input methods
+on the computer (DESIGN §7). Another Rime input method's database is only
+copied and exported in a lock-free `convert-rime` child. Exported JSON preserves learned words and
 counts plus custom phrases and pins; exported TXT is a Rime table. Learned
 words use full-pinyin syllables in every layout. Clear affects learned data
 only. All operations use the coordinator's cold lifecycle endpoint and briefly

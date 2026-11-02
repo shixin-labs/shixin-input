@@ -1362,9 +1362,9 @@ menu.
 | 性能 Performance | Live latency histograms (§3.7), stall counter, slowest recent keys, Lua component costs |
 | 高级 Advanced | Cloud input (off), open Rime folder, logs, about/update |
 
-First-run guide: enable the IME in System Settings (macOS), 全拼/双拼, fuzzy
-pinyin, skin, and importing an existing Sogou/Squirrel/Weasel/fcitx5-rime
-dictionary.
+First-run guide: enable the IME in System Settings (macOS), import the
+words of the input method used until now (Sogou, Squirrel, Weasel,
+fcitx5-rime), then start typing.
 
 **Built (M2, `cmd/shixin-settings`):** a System Settings–style window (hidden
 title bar, translucent sidebar with colored icons, pages of grouped cards)
@@ -1432,7 +1432,8 @@ schema reset value; the configured punctuation shortcut still toggles the
 current session without changing the preference. Chinese input can thus
 start with `，。` or `,.`; English input continues to pass punctuation
 through normally.
-Dictionary also offers Sogou `.scel` and full-pinyin text migration,
+Dictionary also offers direct import from Sogou for Mac and Rime-based
+input methods found on the computer, Sogou `.scel`/`.bin` and full-pinyin text migration,
 portable JSON backup/restore (learned words/counts, custom phrases and pins),
 Rime text export, and clearing learned words. Import merges entries; it does
 not replace preferences or bundled dictionaries. The installation guide links
@@ -1489,7 +1490,7 @@ controls and Shixin's current support separately from the plans below.
 - Per-app mode and secure-field handling
 - Auto spacing between Chinese and English (§7.1)
 - Right-click delete word
-- `.scel`/full-pinyin text import, user dictionary backup/restore/export/clear, migration from other IMEs
+- `.scel`/full-pinyin text import, user dictionary backup/restore/export/clear, migration from other IMEs (detected; below)
 - Sync
 - Performance page
 - 智能排序: candidates reordered by a local model from what was just
@@ -1528,6 +1529,41 @@ pairs recoverable before startup or session attachment. Export atomically
 publishes JSON or interoperable Rime text; portable backups preserve words
 and counts, while automatic raw recovery copies preserve all database
 metadata. Custom phrases and pins from JSON are merged into Settings.
+
+#### Importing from other input methods
+
+Settings looks for other input methods' dictionaries at startup, off the
+UI thread (`dictionary.FindSources`), and lists them in the guide's import
+step and on the Dictionary page, each with an Import button. It never
+interrupts with a prompt. Imported sources are marked from
+`dictionary-sources.json` beside `settings.json`, which is UI state, not a
+setting.
+
+- **Sogou for Mac:** `~/Library/Application Support/Sogou/InputMethod/SogouPY/`
+  holds learned words in `sgim_gd_usr.bin` and enabled cell dictionaries in
+  `scd/*.scel`. The user dictionary (and the `.bin` backups Sogou exports)
+  starts with `SGPU`; its header gives a byte-sized index of uint32 offsets
+  into a data area of records: frequency, time, flags, Sogou's fixed
+  413-syllable codes, and UTF-16 text. Forgotten words (frequency 0) and
+  abbreviation codes (from 842) are skipped. The file is read once and
+  parsed from that snapshot; a length mismatch, as while Sogou rewrites it,
+  fails as a whole. `.scel` files are read up to the header's group count
+  (0x120); words spelled with the table's letter entries are skipped.
+- **Rime (Squirrel, Weasel, fcitx5-rime, ibus-rime):** only
+  `rime_ice`, `luna_pinyin` and `pinyin_simp` user databases, whose codes
+  are spaced full pinyin. Their LevelDB can only be read by librime, so
+  Settings sends `import-rime` with the database directory. Before
+  interrupting typing, the coordinator runs a `convert-rime` child: it
+  copies the database, without the other input method's `LOCK` and info
+  logs, to a private directory under the runtime directory and exports the
+  copy with `levers`. That child takes no engine lock, opens no Shixin user
+  dictionary and creates no sessions; the other input method's files are
+  only read. The exported table is filtered to entries Shixin accepts and
+  then imported like a chosen file.
+
+Imports merge into learned words as above. Sources are parsed again at
+import time, since the other input method may have learned more since
+startup.
 The same generation is restarted after success or failure. Keys pass through
 while maintenance runs; app threads never wait for its file/native work.
 This maintenance pause is explicit in the Dictionary page.

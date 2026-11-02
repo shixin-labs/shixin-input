@@ -118,6 +118,25 @@ Delete an entry when it's fixed, and mention it in the commit.
   are implemented. Their Go unit tests pass in the race gate, and native
   filter and coordinator maintenance integration tests pass; GUI snapshots
   remain unvalidated.
+- **Importing from other input methods:** Settings detects Sogou for Mac
+  (its learned words and enabled `.scel` cell dictionaries) and the Rime
+  family (Squirrel, Weasel, fcitx5-rime, ibus-rime; `rime_ice`,
+  `luna_pinyin` and `pinyin_simp` only). Parsers and the Rime conversion
+  pass against real Sogou files and a real LevelDB; the full flow has not
+  been exercised in a VM with Sogou or Squirrel installed. Not covered:
+  - Sogou on Windows: its user dictionary (`sgim_usr_v3new.bin`) uses a
+    different, encrypted format, and its folders weren't checked. Users can
+    still export a `.scel`/text file from Sogou.
+  - Sogou's custom phrases (自定义短语), and Sogou's abbreviation-only
+    entries (skipped: they have no full pinyin).
+  - Microsoft Pinyin (`ChsPinyinUDL.dat`/`ChsPinyinIH.dat`), WeChat
+    Input, Baidu, iFlytek and Apple's Pinyin: no reader yet. Apple's learned
+    words aren't readable at all; its text replacements are in a Core Data
+    store.
+  - Weasel keeps its database files open exclusively while it runs; the
+    import then fails with a message to quit Weasel and retry.
+  - Other Rime schemas' user databases (wubi, terra_pinyin with tones,
+    double-pinyin schemas on their own dictionaries) are not offered.
 - **性能 page:** shows the engine's own numbers only. The front's
   `handleEvent` and key→candidates histograms (and ASK timeouts, the stall
   counter) stay in its log; the front could report them to the engine for
