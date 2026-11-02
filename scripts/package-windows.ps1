@@ -78,23 +78,27 @@ try {
     $flags="-s -w -X main.version=$Version"
     $buildOptions=@()
     if ($UnsignedPreview) { $buildOptions=@('-tags','shixin_unsigned_preview') }
-    foreach ($name in @('shixin-engine','shixin-builder','shixin-ai')) {
-        & go build @buildOptions -trimpath -ldflags $flags -o (Join-Path $payload "$name.exe") "./cmd/$name"; Check "build $name"
-    }
+    # One go build per flag set compiles and links its commands in parallel.
+    & go build @buildOptions -trimpath -ldflags $flags -o "$payload/" ./cmd/shixin-engine ./cmd/shixin-builder ./cmd/shixin-ai
+    Check 'build console commands'
+    $gui=Join-Path $work 'gui'
+    Remove-Item $gui -Recurse -Force -ErrorAction SilentlyContinue
+    & go build @buildOptions -trimpath -ldflags "$flags -H windowsgui" -o "$gui/" ./cmd/shixin ./cmd/shixin-settings ./cmd/shixin-setup
+    Check 'build windowed commands'
     foreach ($entry in @(@('shixin','Shixin'),@('shixin-settings','shixin-settings'),@('shixin-setup','ShixinSetup'))) {
-        & go build @buildOptions -trimpath -ldflags "$flags -H windowsgui" -o (Join-Path $payload ($entry[1]+'.exe')) "./cmd/$($entry[0])"; Check "build $($entry[0])"
+        Move-Item "$gui/$($entry[0]).exe" (Join-Path $payload ($entry[1]+'.exe'))
     }
     $target=if ($Arch -eq 'arm64') {'ARM64'} else {'x64'}
     $native=Join-Path $root "build/tsf-$Arch"
     $fwdResource=Join-Path $work 'forwarder-version.res'
     & go run ./tools/windows-package -version-res $fwdResource -version $Version; Check 'write forwarder version resource'
     & cmake -S frontends/windows-tsf -B $native -A $target "-DSHIXIN_TSF_ARM64X=$($Arch -eq 'arm64' ? 'ON' : 'OFF')" "-DSHIXIN_TSF_VERSION_RESOURCE=$fwdResource" -DSHIXIN_TSF_TRACE=OFF; Check 'configure TSF'
-    & cmake --build $native --config Release; Check 'build TSF'
+    & cmake --build $native --config Release --parallel; Check 'build TSF'
     & ctest --test-dir $native -C Release --output-on-failure; Check 'test TSF'
     if ($Arch -eq 'arm64') {
         $x64=Join-Path $root 'build/tsf-amd64'
         & cmake -S frontends/windows-tsf -B $x64 -A x64 -DSHIXIN_TSF_TRACE=OFF; Check 'configure x64 TSF'
-        & cmake --build $x64 --config Release; Check 'build x64 TSF'
+        & cmake --build $x64 --config Release --parallel; Check 'build x64 TSF'
         & ctest --test-dir $x64 -C Release --output-on-failure; Check 'test emulated x64 TSF'
         & cmake --build $native --config Release --target shixin_tsf_forwarder; Check 'build ARM64X forwarder'
         Copy-Item "$native/Release/shixin_tsf.dll" "$payload/shixin_tsf_arm64.dll"

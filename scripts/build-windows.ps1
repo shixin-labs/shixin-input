@@ -36,7 +36,7 @@ try {
         $native = Join-Path $root "build/tsf-$Arch"
         & cmake -S frontends/windows-tsf -B $native -A $target
         if ($LASTEXITCODE -ne 0) { throw 'configure TSF failed' }
-        & cmake --build $native --config Release
+        & cmake --build $native --config Release --parallel
         if ($LASTEXITCODE -ne 0) { throw 'build TSF failed' }
         Copy-Item (Join-Path $native 'Release/shixin_tsf.dll') $out -Force
     }
