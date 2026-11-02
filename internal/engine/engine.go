@@ -426,7 +426,7 @@ func (e *Engine) loop() {
 				continue
 			}
 		}
-		if r.kind == reqMessage { // input activity, not the engine's own control
+		if r.kind == reqMessage && r.typ != ipc.TypeStatsRequest { // input, not diagnostics
 			e.lastReq = time.Now()
 		}
 		if r.kind == reqStop {

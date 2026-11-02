@@ -66,7 +66,7 @@ configuration model.
 | # | Rule |
 |---|---|
 | R1 | **An app thread never waits on the engine for keys it can classify locally.** The client decides from a local *key policy* and sends the key asynchronously. The result is applied when it arrives, typically in < 1 ms. |
-| R2 | **The rare synchronous wait has a hard budget** (8 ms default). If the budget runs out, the key passes through unchanged and the client goes into degraded mode. Nothing ever waits indefinitely. |
+| R2 | **The rare synchronous wait has a hard budget** (8 ms default), shared by every wait for one key. If the budget runs out, the key passes through unchanged and the client goes into degraded mode; an eaten direct commit instead stays eaten and is marked (§3.3). Nothing ever waits indefinitely. |
 | R3 | **librime runs only in `shixin-engine`**, on one dedicated OS thread. It never shares a process with UI, IMK or app code. |
 | R4 | **Slow work never runs on the engine thread while it serves keys.** Data compilation (deploy) runs in a separate builder process. New data goes live through a hot swap to a pre-warmed engine (§3.5). |
 | R5 | **No disk I/O, network, allocation or lock contention on the hot path**, in the client or the engine, beyond librime's own work. |
@@ -220,8 +220,16 @@ are sent once per connection; results refer to them by ID.
     Chromium-based apps, type such a key themselves unless text was
     inserted when it returns: "," became ",，". The client waits for that
     key's result within the key budget and inserts the commit inside
-    `handleEvent:`, as Squirrel does. On timeout the key stays eaten and
-    the commit follows later.
+    `handleEvent:`, as Squirrel does. On timeout the key stays eaten, is
+    marked so the app doesn't type it, and the commit replaces the mark
+    when it arrives.
+  - **Unknown state after focus:** `FocusIn` has no sequence number, so
+    the client follows it with a sequenced `Clear` and treats the policy
+    as unknown until that reply: the first key after an app switch waits
+    (within the budget) for the app's mode instead of passing through.
+    A key reads its pending state before draining queued results; the
+    reader queues a result before marking it arrived, so nothing counted
+    as arrived is classified against the old state.
 - **Windows:** results arrive on a DLL I/O thread (overlapped pipe), are
   posted to the app's TSF thread through a hidden message window, and are
   applied with `RequestEditSession(TF_ES_ASYNCDONTCARE | TF_ES_READWRITE)`.
@@ -342,10 +350,12 @@ The coordinator also watches settings.json, so edits outside Settings work.
    switcher and future sessions never choose warm schemas after activation.
    One session is ready at activation. The macOS front retains up to 16
    per-app contexts. The engine refills its pool with real-schema sessions,
-   one per idle moment, once no input has arrived for a second: a refill
-   takes tens of milliseconds and must not delay the keys after a focus
-   change. Without the pool, a new app's FocusIn created a session on the
-   key path and its first key passed through to the app. Until the refill,
+   one per idle moment, once no input has arrived for a second, so refills
+   rarely meet keys. After takeover a refill takes about a millisecond
+   (the first session of a process takes ~45 ms, which warm-up absorbs
+   before the engine is ready); a key that arrives during one waits for it.
+   Without the pool, a new app's FocusIn created a session on the key path
+   and its first key passed through to the app. Until the pool is refilled,
    additional contexts use the cold session fallback. No deploy or file
    copying occurs on a serving engine thread. Only the lock holder may select a real schema.
 6. Each worker has a private endpoint. The public `engine.sock` is an

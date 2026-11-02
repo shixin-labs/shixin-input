@@ -33,9 +33,9 @@ Delete an entry when it's fixed, and mention it in the commit.
   the VM).
 - **State:** composition, current switches and in-memory remembered app
   modes reset to settings on takeover. Only one context is prepared at
-  activation; the pool of real-schema sessions refills after input pauses,
-  so a new app focused within a second of takeover can still use the cold
-  session fallback.
+  activation; the pool of real-schema sessions refills only after input
+  pauses for a second, so new apps focused before such a pause (however
+  long typing continues) still use the cold session fallback.
 
 ## Front and UI
 

@@ -75,7 +75,8 @@ type Stats struct {
 	Keys, Eaten, Asked, Passed, Notified uint64
 	// Barriers counts PASS keys that had to wait for pending results.
 	Barriers uint64
-	// Timeouts counts waits that hit the budget: the key passed through.
+	// Timeouts counts waits that hit the budget: the key passed through,
+	// or an eaten direct commit was marked to arrive later.
 	Timeouts uint64
 	// Repairs counts eaten printable keys the engine declined; the client
 	// inserted them itself.
@@ -111,6 +112,7 @@ type Client struct {
 	connected    bool
 	status       Status
 	timer        *time.Timer
+	deadline     time.Time // the current key's budget; zero until it first waits
 	keys         [256]sentKey
 	syncSeq      uint32
 	syncHandled  bool
@@ -222,15 +224,19 @@ func (c *Client) HandleKey(keysym, mods uint32) bool {
 		c.stats.Passed++
 		return false
 	}
+	c.deadline = time.Time{} // all waits for this key share one budget
 	// A mode/focus reply can arrive before its scheduled main-thread wake.
 	// Classifying with the previous mode can pass the first spelling key to
-	// the app even though the engine has already switched to Chinese.
+	// the app even though the engine has already switched to Chinese. Read
+	// pending before draining: the reader queues a result before it marks
+	// it arrived, so whatever counted as arrived here gets applied.
+	pending := c.pending()
 	c.Drain()
 	if mods&policy.ReleaseMask == 0 {
 		c.sp.tick()
 	}
 	p := c.cur
-	if c.pending() {
+	if pending {
 		if c.spec == nil {
 			// The last eaten key may have ended the composition: wait for
 			// the real state rather than guess.
@@ -296,6 +302,13 @@ func (c *Client) HandleKey(keysym, mods uint32) bool {
 			// handler, as Squirrel does, waiting within the budget.
 			if c.wait(c.seq) {
 				c.Drain()
+			} else if keysym >= 0x20 && keysym < 0x7f && mods&^policy.ShiftMask == 0 {
+				// Too slow: mark the key itself so the app doesn't type it
+				// as well. The commit, or the repair of a declined key,
+				// replaces the marked text when the result arrives.
+				c.stats.Timeouts++
+				c.marked = append(c.marked[:0], byte(keysym))
+				c.a.Preedit(c.marked, 1)
 			} else {
 				c.stats.Timeouts++
 			}
@@ -336,6 +349,7 @@ func (c *Client) HandleKey(keysym, mods uint32) bool {
 // Cmd-V).
 func (c *Client) barrier() {
 	if !c.pending() {
+		c.Drain() // results that arrived after the key's first drain
 		return
 	}
 	c.stats.Barriers++
@@ -369,7 +383,7 @@ func (c *Client) ResetSpacing() { c.sp.reset.Store(true) }
 func (c *Client) policy(id uint16) *policy.Policy { return (*c.pols.Load())[id] }
 
 // wait blocks until the result for seq (or, with seq 0, for everything
-// sent) has arrived, or the budget runs out.
+// sent) has arrived, or the current key's budget runs out.
 func (c *Client) wait(seq uint32) bool {
 	if seq == 0 {
 		seq = c.seq
@@ -378,9 +392,11 @@ func (c *Client) wait(seq uint32) bool {
 	if done() {
 		return true
 	}
-	deadline := time.Now().Add(c.opt.Budget)
+	if c.deadline.IsZero() {
+		c.deadline = time.Now().Add(c.opt.Budget)
+	}
 	for !done() {
-		left := time.Until(deadline)
+		left := time.Until(c.deadline)
 		if left <= 0 {
 			return false
 		}
