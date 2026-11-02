@@ -274,6 +274,13 @@ func TestSnapshots(t *testing.T) {
 				if pg.id == "perf" {
 					a.stats = sampleStats()
 				}
+				if pg.id == "start" || pg.id == "dictionary" {
+					// Sogou and Squirrel used before Shixin; one imported.
+					a.sourcesLoaded(sampleSources("/x"), map[string]string{"sogou:user": sourceImported})
+					writeSnapshot(t, a, language.lang, dark, 1100, pg.id+"-sources")
+					a.sourcesLoaded(nil, map[string]string{})
+				}
+
 				writeSnapshot(t, a, language.lang, dark, 720, pg.id)
 			}
 		}

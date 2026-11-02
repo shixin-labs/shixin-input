@@ -23,6 +23,7 @@ import (
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
 
+	"shixin/internal/dictionary"
 	"shixin/internal/i18n"
 	"shixin/internal/ipc"
 	"shixin/internal/lifecycle"
@@ -66,8 +67,9 @@ type app struct {
 	applyAgain bool // settings changed during it: apply once more after it
 
 	// Hooks, replaced in tests.
-	saveFile    func(settings.Settings) error
-	applyEngine func(done func(error))
+	saveFile          func(settings.Settings) error
+	applyEngine       func(done func(error))
+	requestDictionary func(action, path string) error
 
 	page       string
 	chartShown bool
@@ -82,6 +84,11 @@ type app struct {
 	dictionaryMessage             string
 	dictionaryError               bool
 	confirmClearDictionary        bool
+
+	// Other input methods' dictionaries (migrate.go)
+	sources      []dictionary.Source
+	sourcesFound bool              // findSources finished
+	sourceState  map[string]string // by Source.ID: imported
 
 	// 应用
 	installed []mygo.InstalledApp
@@ -112,10 +119,11 @@ type app struct {
 }
 
 func newApp(path string, s settings.Settings) *app {
-	a := &app{path: path, saved: clone(s), s: clone(s), seen: clone(s), page: "general", icons: map[string]*ui.Bitmap{}, loading: map[string]bool{}}
+	a := &app{path: path, saved: clone(s), s: clone(s), seen: clone(s), page: "general", icons: map[string]*ui.Bitmap{}, loading: map[string]bool{}, sourceState: map[string]string{}}
 	a.fonts = fonts.Families()
 	a.saveFile = func(s settings.Settings) error { return settings.Save(a.path, s) }
 	a.applyEngine = applyEngine
+	a.requestDictionary = dictionaryRequest
 	a.checkRelease = shixupdate.Check
 	a.front = plat.front()
 	a.refreshModel()
@@ -310,6 +318,7 @@ func main() {
 		go a.loadApps()
 		go a.pollStats()
 		go a.pollAdded()
+		go a.findSources()
 	})
 	if err := mygo.App.Run(); err != nil {
 		log.Fatal(err)

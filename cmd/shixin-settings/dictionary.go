@@ -73,7 +73,7 @@ func (a *app) importDictionary() {
 	a.dictionaryBusy, a.dictionaryMessage = true, ""
 	snapshot := clone(a.s)
 	go func() {
-		paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{Parent: a.win, Title: T("s.d.import"), Filters: []mygo.FileFilter{{Name: T("s.d.files"), Extensions: []string{"scel", "txt", "json"}}}})
+		paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{Parent: a.win, Title: T("s.d.import"), Filters: []mygo.FileFilter{{Name: T("s.d.files"), Extensions: []string{"scel", "bin", "txt", "json"}}}})
 		if err != nil || len(paths) == 0 {
 			a.dictionaryDone(err, "")
 			return
@@ -87,22 +87,7 @@ func (a *app) importDictionary() {
 			return
 		}
 		if len(b.Words) > 0 {
-			// Only normalized portable entries reach the coordinator. The
-			// selected external file may disappear after parsing.
-			f, makeErr := os.CreateTemp(filepath.Dir(a.path), ".dictionary-import-")
-			if makeErr != nil {
-				a.dictionaryDone(makeErr, "")
-				return
-			}
-			defer os.Remove(f.Name())
-			err = dictionary.WriteTable(f, b.Words)
-			closeErr := f.Close()
-			if err == nil {
-				err = closeErr
-			}
-			if err == nil {
-				err = dictionaryRequest("import", f.Name())
-			}
+			err = a.importWords(b.Words)
 		}
 		if err != nil {
 			a.dictionaryDone(err, "")
@@ -123,6 +108,25 @@ func (a *app) importDictionary() {
 	}()
 }
 
+// importWords sends words to the coordinator, off the UI thread. Only
+// normalized portable entries reach it: the source file may change or
+// disappear after parsing.
+func (a *app) importWords(words []dictionary.Entry) error {
+	f, err := os.CreateTemp(filepath.Dir(a.path), ".dictionary-import-")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(f.Name())
+	err = dictionary.WriteTable(f, words)
+	if closeErr := f.Close(); err == nil {
+		err = closeErr
+	}
+	if err == nil {
+		err = a.requestDictionary("import", f.Name())
+	}
+	return err
+}
+
 func (a *app) exportDictionary() {
 	if !a.dictionaryReady() {
 		return
@@ -137,7 +141,7 @@ func (a *app) exportDictionary() {
 		if filepath.Ext(path) == "" {
 			path += ".json"
 		}
-		err = dictionaryRequest("export", path)
+		err = a.requestDictionary("export", path)
 		a.dictionaryDone(err, T("s.d.exported"))
 	}()
 }
@@ -147,13 +151,13 @@ func (a *app) clearDictionary() {
 		return
 	}
 	a.dictionaryBusy, a.dictionaryMessage = true, ""
-	go func() { a.dictionaryDone(dictionaryRequest("clear", ""), T("s.d.cleared")) }()
+	go func() { a.dictionaryDone(a.requestDictionary("clear", ""), T("s.d.cleared")) }()
 }
 
 func (a *app) dictionaryTools(c *ui.Context) {
 	ready := a.dictionaryReady()
+	group(c, T("s.d.src"), T("s.d.src.note"), func() { a.sourceRows(c, false) })
 	group(c, T("s.d.transfer"), T("s.d.transfer.note"), func() {
-		row(c, T("s.d.import"), T("s.d.import.desc"), func() { ui.Button(c, T("s.d.import.button")).Disabled(!ready).OnClick(a.importDictionary) })
 		row(c, T("s.d.export"), T("s.d.export.desc"), func() { ui.Button(c, T("s.d.export.button")).Disabled(!ready).OnClick(a.exportDictionary) })
 		row(c, T("s.d.clear"), T("s.d.clear.desc"), func() {
 			ui.Button(c, T("s.d.clear.button")).Disabled(!ready).OnClick(func() { a.confirmClearDictionary = true })

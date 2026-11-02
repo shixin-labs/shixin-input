@@ -27,7 +27,7 @@ type platform struct {
 }
 
 type guideKeys struct {
-	subtitle, addStep, add, addDesc, addOpen, typeStep, typeDesc string
+	subtitle, addStep, add, addDesc, addOpen, typeStep, typeDesc, importStep string
 }
 
 // The 开始使用 guide's keys: macOS asks for consent first (step 1), Windows
@@ -36,12 +36,14 @@ var (
 	macGuide = guideKeys{
 		subtitle: "s.start.subtitle", addStep: "s.start.step2", add: "s.start.add",
 		addDesc: "s.start.add.desc", addOpen: "s.start.add.open",
-		typeStep: "s.start.step3", typeDesc: "s.start.type.desc",
+		importStep: "s.start.step3",
+		typeStep:   "s.start.step4", typeDesc: "s.start.type.desc",
 	}
 	windowsGuide = guideKeys{
 		subtitle: "s.start.win.subtitle", addStep: "s.start.win.step1", add: "s.start.win.add",
 		addDesc: "s.start.win.add.desc", addOpen: "s.start.win.add.open",
-		typeStep: "s.start.win.step2", typeDesc: "s.start.win.type.desc",
+		importStep: "s.start.win.step2",
+		typeStep:   "s.start.win.step3", typeDesc: "s.start.win.type.desc",
 	}
 )
 
