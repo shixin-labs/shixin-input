@@ -59,11 +59,18 @@ type Logger struct {
 	once    sync.Once
 }
 
-// New starts a logger writing to w.
-func New(w io.Writer) *Logger {
+// New starts a logger writing to w. The caller keeps ownership of w.
+func New(w io.Writer) *Logger { return start(w, nil) }
+
+// start starts a logger writing to w, closing c (if any) once Close has
+// flushed the queue.
+func start(w io.Writer, c io.Closer) *Logger {
 	l := &Logger{ch: make(chan string, 1024), done: make(chan struct{}), stop: make(chan struct{})}
 	go func() {
 		defer close(l.done)
+		if c != nil {
+			defer c.Close()
+		}
 		for {
 			select {
 			case s := <-l.ch:
@@ -84,7 +91,7 @@ func New(w io.Writer) *Logger {
 }
 
 // Open starts a logger appending to path, creating its directory. Files
-// over 4 MiB are truncated first.
+// over 4 MiB are truncated first. Close closes the file.
 func Open(path string) (*Logger, error) {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return nil, err
@@ -97,7 +104,7 @@ func Open(path string) (*Logger, error) {
 	if err != nil {
 		return nil, err
 	}
-	return New(f), nil
+	return start(f, f), nil
 }
 
 // Printf logs a line. It formats on the caller's goroutine, so keep it off

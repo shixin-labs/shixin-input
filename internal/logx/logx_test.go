@@ -87,3 +87,91 @@ func TestCloseDuringBackgroundLogging(t *testing.T) {
 		t.Fatalf("shutdown logs: %q", b.String())
 	}
 }
+
+func TestOpenAppendsAndCreatesDirectory(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "Logs", "Shixin", "engine.log")
+	for _, line := range []string{"first", "second"} {
+		l, err := Open(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		l.Printf("%s", line)
+		l.Close()
+	}
+	b, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if lines := strings.Split(strings.TrimSuffix(string(b), "\n"), "\n"); len(lines) != 2 ||
+		!strings.HasSuffix(lines[0], " first") || !strings.HasSuffix(lines[1], " second") {
+		t.Fatalf("log: %q", b)
+	}
+}
+
+func TestOpenTruncatesLargeFiles(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "engine.log")
+	for _, c := range []struct {
+		size int
+		kept bool
+	}{{4 << 20, true}, {4<<20 + 1, false}} {
+		if err := os.WriteFile(path, bytes.Repeat([]byte{'x'}, c.size), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		l, err := Open(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		l.Printf("after")
+		l.Close()
+		b, _ := os.ReadFile(path)
+		if kept := len(b) > c.size; kept != c.kept || !strings.HasSuffix(string(b), " after\n") {
+			t.Errorf("%d bytes: now %d bytes, kept %v", c.size, len(b), kept)
+		}
+	}
+}
+
+func TestOpenFailsWithoutDirectory(t *testing.T) {
+	file := filepath.Join(t.TempDir(), "file")
+	if err := os.WriteFile(file, nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Open(filepath.Join(file, "engine.log")); err == nil {
+		t.Fatal("opened a log under a regular file")
+	}
+}
+
+// closeCounter records Close calls on the writer.
+type closeCounter struct {
+	bytes.Buffer
+	closes int
+}
+
+func (c *closeCounter) Close() error { c.closes++; return nil }
+
+// Open's logger owns its file; New's writer stays the caller's.
+func TestCloseOwnership(t *testing.T) {
+	w := &closeCounter{}
+	l := New(w)
+	l.Close()
+	if w.closes != 0 {
+		t.Fatal("New closed the caller's writer")
+	}
+	l = start(w, w)
+	l.Printf("x")
+	l.Close()
+	l.Close()
+	if w.closes != 1 || !strings.HasSuffix(w.String(), " x\n") {
+		t.Fatalf("closed %d times after %q", w.closes, w.String())
+	}
+	path := filepath.Join(t.TempDir(), "engine.log")
+	l, err := Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	l.Close()
+	// The file is closed: removing it works even where open files can't be
+	// removed (Windows).
+	if err := os.Remove(path); err != nil {
+		t.Fatal(err)
+	}
+}
