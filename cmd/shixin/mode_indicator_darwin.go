@@ -84,6 +84,13 @@ func focusModeIndicator(client uintptr) {
 	}
 }
 
+// selectModeIndicator runs when 拾新 becomes the input source.
+func selectModeIndicator() {
+	if modeBubble.state.selected() {
+		queueModeBubble()
+	}
+}
+
 func dismissModeBubble() {
 	if modeBubble.state.dismiss() {
 		queueModeBubble()
@@ -124,7 +131,8 @@ func updateModeBubble() {
 	if refresh || !modeBubble.shown {
 		var caret nsRect
 		send(imkClient, selAttributesAt, 0, uintptr(unsafe.Pointer(&caret)))
-		positionCaretWindow(modeBubble.window, caret, modeview.Size, modeview.Size)
+		refreshCandidateScreens()
+		positionBesideBadge(modeBubble.window, caret, modeview.Size, modeview.Size, m.beside)
 		modeBubble.window.Invalidate()
 		modeBubble.window.ShowInactive()
 		modeBubble.shown = true

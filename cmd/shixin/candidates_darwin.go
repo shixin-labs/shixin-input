@@ -169,11 +169,20 @@ func refreshCandidateScreens() {
 }
 
 func positionOnCandidateScreens(window *mygo.Window, rect nsRect, width, height float64) {
+	positionBesideBadge(window, rect, width, height, false)
+}
+
+// positionBesideBadge places window at the caret like the candidates, or
+// beside macOS's input source badge (modeBesideBadge).
+func positionBesideBadge(window *mygo.Window, rect nsRect, width, height float64, beside bool) {
 	if len(cand.screens) == 0 {
 		return
 	}
 	caret := candidateRect(rect)
 	s := &cand.screens[candidateScreenAt(caret, cand.screens)]
+	if beside {
+		caret = modeBesideBadge(caret, s.work, width)
+	}
 	x, y := candidatePosition(caret, s.work, width, height, cand.screens[0].frame.H, shadowPad)
 	window.SetPosition(x, y)
 }

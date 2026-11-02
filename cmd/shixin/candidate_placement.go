@@ -47,3 +47,16 @@ func candidatePosition(caret, work candidateRect, width, height, primaryHeight, 
 	y = min(max(y, work.Y), max(work.Y, work.Y+work.H-height))
 	return int(math.Floor(x - margin)), int(math.Floor(primaryHeight - y - height - margin))
 }
+
+// modeBesideBadge moves the caret so the mode bubble clears macOS's own
+// input source badge, which is centered under the caret after a switch:
+// to its right, or to its left at the work area's right edge.
+func modeBesideBadge(caret, work candidateRect, width float64) candidateRect {
+	const clearance = 20 // half the badge plus a gap
+	r := caret
+	r.X = caret.X + clearance
+	if r.X+width > work.X+work.W {
+		r.X = caret.X - clearance - width
+	}
+	return r
+}

@@ -74,3 +74,17 @@ func TestCandidateScreenAt(t *testing.T) {
 		})
 	}
 }
+
+func TestModeBesideBadge(t *testing.T) {
+	work := candidateRect{0, 0, 1000, 800}
+	caret := candidateRect{500, 400, 1, 20}
+	r := modeBesideBadge(caret, work, 26)
+	if r.X != 520 || r.Y != caret.Y || r.H != caret.H {
+		t.Fatalf("beside the badge: %+v", r)
+	}
+	// At the right edge the bubble moves to the badge's left, still clear of it.
+	caret.X = 980
+	if r := modeBesideBadge(caret, work, 26); r.X != 980-20-26 {
+		t.Fatalf("at the right edge: %+v", r)
+	}
+}

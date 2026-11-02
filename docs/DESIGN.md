@@ -1502,9 +1502,13 @@ controls and Shixin's current support separately from the plans below.
 - Mode indicator bubble (macOS and Windows): a small card (26 pt, about a line of
   text) with 中 / 英 (En in the English UI) beside the caret for 900 ms
   when the confirmed mode differs from the last one: a Shift toggle, or a
-  per-app mode that switches on focus. Focusing a field or selecting 拾新
-  in the same mode shows nothing; macOS 26 already shows its own indicator
-  for an input source switch, and a bubble on every focus was too loud. It
+  per-app mode that switches on focus. Focusing a field in the same mode
+  shows nothing; a bubble on every focus was too loud. On macOS, selecting
+  拾新 from another input source also shows the mode once: macOS 26 shows
+  only its own 拾 badge, centered under the caret, for the switch. That
+  bubble sits beside the badge (to its right, or to its left at the work
+  area's edge) so the two never overlap; macOS draws the badge, so they
+  cannot share one box. It
   uses the candidate skin's background, 中 in its highlight color, and the
   same screen/work-area clamping as the candidates. Repeated results do not
   restart it; candidates take priority. Focus loss, caret changes,

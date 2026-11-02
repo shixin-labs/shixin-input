@@ -16,7 +16,7 @@ func TestModeIndicatorConfirmedChanges(t *testing.T) {
 		t.Fatal("focus guessed a mode before its result")
 	}
 	if m.observe(false) || m.visible(now) {
-		t.Fatal("the first confirmed mode was shown; macOS shows its own indicator")
+		t.Fatal("the first confirmed mode was shown without an input source switch")
 	}
 	if !m.observe(true) || !m.visible(now) || !m.ascii {
 		t.Fatal("switch to English was not shown")
@@ -85,6 +85,50 @@ func TestModeIndicatorFocusAndDismissal(t *testing.T) {
 	}
 }
 
+func TestModeIndicatorInputSourceSelection(t *testing.T) {
+	var m modeIndicator
+	now := time.Unix(1, 0)
+	m.focus(1)
+	m.observe(false)
+	m.focus(0) // switched to another input source
+
+	// Selected from the menu: the notification precedes the field's result.
+	if m.selected() || m.visible(now) {
+		t.Fatal("selection without a focused field showed a bubble")
+	}
+	m.focus(2)
+	if !m.observe(false) || !m.visible(now) || m.ascii || !m.beside {
+		t.Fatal("the unchanged mode was not shown beside the 拾 badge")
+	}
+	m.dismiss()
+	if m.observe(false) {
+		t.Fatal("selection announced more than one result")
+	}
+
+	// Selected by shortcut: the result precedes the notification.
+	m.focus(0)
+	m.focus(3)
+	m.observe(true)
+	if !m.selected() || !m.visible(now) || !m.ascii || !m.beside {
+		t.Fatal("the confirmed mode was not shown beside the 拾 badge")
+	}
+	if m.observe(true) {
+		t.Fatal("the shown selection was announced again")
+	}
+	if !m.observe(false) || m.beside {
+		t.Fatal("a Shift toggle, with no system badge, was placed beside one")
+	}
+
+	// A selection that never reached a text field is forgotten on deactivation.
+	m.focus(0)
+	m.selected()
+	m.focus(0)
+	m.focus(4)
+	if m.observe(false) {
+		t.Fatal("a stale selection announced a later field's mode")
+	}
+}
+
 func TestModeIndicatorDoesNotAllocate(t *testing.T) {
 	var m modeIndicator
 	now := time.Unix(1, 0)
@@ -96,6 +140,7 @@ func TestModeIndicatorDoesNotAllocate(t *testing.T) {
 		m.observe(true)
 		m.visible(now)
 		m.dismiss()
+		m.selected()
 		m.focus(0)
 	}); n != 0 {
 		t.Fatalf("mode tracking allocates %v times", n)

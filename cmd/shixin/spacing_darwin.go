@@ -185,14 +185,20 @@ func installSpacingResets() {
 	distCallback = purego.NewCallback(func(center, observer, name, object, info uintptr) uintptr {
 		core.ResetSpacing()
 		dismissModeBubble()
+		if observer != observeSource {
+			return 0
+		}
+		if tis.current() == inputMode {
+			// macOS shows only the 拾 icon for the switch: add the mode.
+			selectModeIndicator()
+			return 0
+		}
 		// macOS 26 doesn't call deactivateServer: when another process
 		// switches the input source (TISSelectInputSource): finish the
 		// composition here, as Squirrel's finalizeStrandedComposition
 		// does. A menu switch has already deactivated, and finishInput
 		// does nothing then.
-		if observer == observeSource && tis.current() != inputMode {
-			finishInput()
-		}
+		finishInput()
 		return 0
 	})
 	center, _, _ := purego.SyscallN(getCenter)
