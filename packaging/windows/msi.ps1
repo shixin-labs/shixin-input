@@ -63,12 +63,7 @@ Add Feature @('Main',$null,'Shixin Input','Shixin Chinese input method',1,1,'Shi
 $dirs=@{''='ShixinInstallDir'}
 $files=@{}
 $sequence=0
-$ddf=[Collections.Generic.List[string]]::new()
-$ddf.Add('.OPTION EXPLICIT')
-$ddf.Add('.Set CabinetNameTemplate=payload.cab')
-$ddf.Add('.Set DiskDirectoryTemplate="'+$work+'"')
-$ddf.Add('.Set Cabinet=ON'); $ddf.Add('.Set Compress=ON'); $ddf.Add('.Set CompressionType=MSZIP')
-$ddf.Add('.Set MaxDiskSize=0'); $ddf.Add('.Set MaxCabinetSize=0')
+$cabFiles=[Collections.Generic.List[object]]::new()
 foreach ($file in (Get-ChildItem $Payload -Recurse -File | Sort-Object FullName)) {
     if ($file.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Payload cannot contain links' }
     $relative=[IO.Path]::GetRelativePath($Payload,$file.FullName)
@@ -92,7 +87,7 @@ foreach ($file in (Get-ChildItem $Payload -Recurse -File | Sort-Object FullName)
     $fileVersion=$null; $fileLanguage=$null
     try { $fileVersion=$installer.FileVersion($file.FullName,0); $fileLanguage=$installer.FileVersion($file.FullName,1) } catch {}
     Add File @($id,$component,$file.Name,[int]$file.Length,$fileVersion,$fileLanguage,512,$sequence)
-    $ddf.Add('"'+$file.FullName+'" '+$id)
+    $cabFiles.Add(@{ Path=$file.FullName; Id=$id; Size=$file.Length })
 }
 # A fixed protected install root is required by sibling authentication and
 # prevents custom action execution from a user-writable directory.
@@ -103,16 +98,53 @@ Add CreateFolder @('ShixinInstallDir',$front.Component)
 Table MsiLockPermissionsEx '`MsiLockPermissionsEx` CHAR(72) NOT NULL, `LockObject` CHAR(72) NOT NULL, `Table` CHAR(32) NOT NULL, `SDDLText` CHAR(0) NOT NULL, `Condition` CHAR(255)' '`MsiLockPermissionsEx`'
 Add MsiLockPermissionsEx @('ProtectedRoot','ShixinInstallDir','CreateFolder','D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;FRFX;;;BU)(A;OICI;FRFX;;;AC)',$null)
 Table Media '`DiskId` SHORT NOT NULL, `LastSequence` LONG NOT NULL, `DiskPrompt` CHAR(64) LOCALIZABLE, `Cabinet` CHAR(255), `VolumeLabel` CHAR(32), `Source` CHAR(72)' '`DiskId`'
-Add Media @(1,$sequence,$null,'#payload.cab',$null,$null)
-$ddfPath=Join-Path $work 'payload.ddf'
-[IO.File]::WriteAllLines($ddfPath,$ddf,[Text.Encoding]::Default)
-& "$env:SystemRoot/System32/makecab.exe" /F $ddfPath | Out-Null
-if ($LASTEXITCODE -ne 0) { throw 'makecab failed' }
-$view=$db.OpenView('INSERT INTO `_Streams` (`Name`,`Data`) VALUES (?,?)')
-$record=$installer.CreateRecord(2); $record.StringData(1)='payload.cab'; $record.SetStream(2,(Join-Path $work 'payload.cab'))
-$view.Execute($record); $view.Close()
+# makecab compresses on one core. Split the payload, in file sequence order,
+# into at most four cabinets of similar size and compress them in parallel;
+# file keys and sequence numbers stay the same.
+$cabinets=[Collections.Generic.List[object]]::new()
+$remaining=0; foreach ($entry in $cabFiles) { $remaining+=$entry.Size }
+$group=$null; $size=0
+for ($i=0; $i -lt $cabFiles.Count; $i++) {
+    if (-not $group) { $group=[Collections.Generic.List[object]]::new(); $size=0 }
+    $group.Add($cabFiles[$i]); $size+=$cabFiles[$i].Size
+    $left=4-$cabinets.Count
+    if ($i -eq $cabFiles.Count-1 -or ($left -gt 1 -and $size -ge $remaining/$left)) {
+        $cabinets.Add(@{ Name="payload$($cabinets.Count+1).cab"; Files=$group; LastSequence=$i+1 })
+        $remaining-=$size; $group=$null
+    }
+}
+$makecab=foreach ($cabinet in $cabinets) {
+    $ddf=[Collections.Generic.List[string]]::new()
+    $ddf.Add('.OPTION EXPLICIT')
+    $ddf.Add('.Set CabinetNameTemplate='+$cabinet.Name)
+    $ddf.Add('.Set DiskDirectoryTemplate="'+$work+'"')
+    # Parallel runs must not share makecab's default setup.inf/setup.rpt.
+    $ddf.Add('.Set InfFileName="'+(Join-Path $work "$($cabinet.Name).inf")+'"')
+    $ddf.Add('.Set RptFileName="'+(Join-Path $work "$($cabinet.Name).rpt")+'"')
+    $ddf.Add('.Set Cabinet=ON'); $ddf.Add('.Set Compress=ON'); $ddf.Add('.Set CompressionType=MSZIP')
+    $ddf.Add('.Set MaxDiskSize=0'); $ddf.Add('.Set MaxCabinetSize=0')
+    foreach ($entry in $cabinet.Files) { $ddf.Add('"'+$entry.Path+'" '+$entry.Id) }
+    $ddfPath=Join-Path $work "$($cabinet.Name).ddf"
+    [IO.File]::WriteAllLines($ddfPath,$ddf,[Text.Encoding]::Default)
+    $start=[Diagnostics.ProcessStartInfo]::new("$env:SystemRoot/System32/makecab.exe")
+    $start.ArgumentList.Add('/F'); $start.ArgumentList.Add($ddfPath)
+    $start.UseShellExecute=$false; $start.RedirectStandardOutput=$true
+    $process=[Diagnostics.Process]::Start($start)
+    @{ Process=$process; Output=$process.StandardOutput.ReadToEndAsync(); Name=$cabinet.Name }
+}
+foreach ($job in $makecab) {
+    $job.Process.WaitForExit()
+    if ($job.Process.ExitCode -ne 0) { throw "makecab failed for $($job.Name): $($job.Output.Result)" }
+}
+for ($disk=1; $disk -le $cabinets.Count; $disk++) {
+    $cabinet=$cabinets[$disk-1]
+    Add Media @($disk,$cabinet.LastSequence,$null,('#'+$cabinet.Name),$null,$null)
+    $view=$db.OpenView('INSERT INTO `_Streams` (`Name`,`Data`) VALUES (?,?)')
+    $record=$installer.CreateRecord(2); $record.StringData(1)=$cabinet.Name; $record.SetStream(2,(Join-Path $work $cabinet.Name))
+    $view.Execute($record); $view.Close()
     [Runtime.InteropServices.Marshal]::FinalReleaseComObject($record) | Out-Null
     [Runtime.InteropServices.Marshal]::FinalReleaseComObject($view) | Out-Null
+}
 Table Upgrade '`UpgradeCode` CHAR(38) NOT NULL, `VersionMin` CHAR(20), `VersionMax` CHAR(20), `Language` CHAR(255), `Attributes` LONG NOT NULL, `Remove` CHAR(255), `ActionProperty` CHAR(72) NOT NULL' '`UpgradeCode`,`VersionMin`,`VersionMax`,`Language`,`Attributes`'
 Add Upgrade @($upgrade,$null,$Version,$null,1,$null,'SHIXIN_OLD') # migrate features, max exclusive
 Add Upgrade @($upgrade,$Version,$null,$null,258,$null,'SHIXIN_NEWER') # detect only, min inclusive

@@ -180,7 +180,8 @@ librime-shixin DLL advances with the Shixin release. MSI stores the actual
 version and language metadata.
 
 The script uses installed SDK tools, Windows Installer automation and
-`makecab`; it downloads no installer compiler. It compiles all supported
+`makecab`; it downloads no installer compiler. The MSI embeds up to four
+cabinets, compressed in parallel. It compiles all supported
 schemas with an isolated offline builder and bundles prebuilt dictionaries,
 Rime/OpenCC data and license notices. Outputs are
 `build/dist/ShixinSetup-<arch>.exe`. Publish each installer as the matching

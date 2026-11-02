@@ -36,7 +36,15 @@ try {
     if ((Value 'SELECT `Language` FROM `File` WHERE `FileName`=''rime.dll''') -ne '1033') {throw 'Native resource language missing'}
     if ((Value 'SELECT `Type` FROM `CustomAction` WHERE `Action`=''RegisterTIP''') -ne '3090') {throw 'Registration is not deferred as system'}
     if ((Value 'SELECT `SDDLText` FROM `MsiLockPermissionsEx` WHERE `LockObject`=''ShixinInstallDir''') -notmatch 'FRFX;;;AC') {throw 'Sandbox apps cannot load the DLLs'}
-    if ((Value 'SELECT `Name` FROM `_Streams` WHERE `Name`=''payload.cab''') -ne 'payload.cab') {throw 'Missing embedded offline payload'}
+    $media=$db.OpenView('SELECT `Cabinet` FROM `Media`'); $null=$media.Execute(); $cabinets=@()
+    while ($r=$media.Fetch()) { $cabinets+=$r.StringData(1); [Runtime.InteropServices.Marshal]::FinalReleaseComObject($r) | Out-Null }
+    $null=$media.Close(); [Runtime.InteropServices.Marshal]::FinalReleaseComObject($media) | Out-Null
+    if (-not $cabinets) {throw 'Missing embedded offline payload'}
+    foreach ($cabinet in $cabinets) {
+        if ($cabinet -notmatch '^#(payload[0-9]+\.cab)$') {throw "Unexpected cabinet $cabinet"}
+        $name=$Matches[1]
+        if ((Value "SELECT ``Name`` FROM ``_Streams`` WHERE ``Name``='$name'") -ne $name) {throw "Missing embedded offline payload $name"}
+    }
     $null=$db.Export('_SummaryInformation',$temp,'summary.idt')
     $summary=Get-Content "$temp/summary.idt" -Raw
     $platform=if ($Arch -eq 'arm64') {'Arm64'} else {'x64'}
