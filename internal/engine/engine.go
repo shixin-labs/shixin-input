@@ -88,7 +88,15 @@ type Engine struct {
 	realSchema string
 	migrating  bool
 	rr         rerankState
+	lastReq    time.Time   // when the last request arrived
+	poolTimer  *time.Timer // ends the quiet period before a pool refill
 }
+
+// poolQuiet is how long the engine must go without requests before it
+// tops up the session pool. A refill takes tens of milliseconds (create,
+// select the schema, warm the filters); a key arriving meanwhile would
+// wait for it, so it runs only after typing has paused.
+const poolQuiet = time.Second
 
 // AppModes are the per-app rules: the mode applied when an input
 // context's app changes (FocusIn), and where auto spacing is on.
@@ -115,6 +123,8 @@ type Stats struct {
 	Schemas     []string
 	StartupTime time.Duration
 	Rerank      RerankStats
+	// Pooled is the number of ready sessions waiting for new contexts.
+	Pooled int
 }
 
 type reqKind uint8
@@ -194,6 +204,8 @@ func Start(opt Options) (*Engine, error) {
 		conns:   map[*Conn]bool{},
 	}
 	e.res.Candidates = make([]ipc.Candidate, 0, 16)
+	e.poolTimer = time.NewTimer(time.Hour)
+	e.poolTimer.Stop()
 	ready := make(chan error, 1)
 	go e.run(ready)
 	if err := <-ready; err != nil {
@@ -387,13 +399,20 @@ func (e *Engine) loop() {
 			e.expireHeld()
 			continue
 		default:
-			// Idle: top up the session pool, one session per idle moment so
+			// Idle: top up the session pool, one session per quiet moment so
 			// a key arriving meanwhile waits for at most one create_session.
+			var refill <-chan time.Time
 			if len(e.pool) < e.opt.PoolSize {
-				if err := e.refill(); err != nil {
-					e.opt.Logf("refill session pool: %v", err)
+				wait := poolQuiet - time.Since(e.lastReq)
+				if e.lastReq.IsZero() || wait <= 0 {
+					if err := e.refill(); err != nil {
+						e.opt.Logf("refill session pool: %v", err)
+						e.lastReq = time.Now() // retry after another quiet period
+					}
+					continue
 				}
-				continue
+				e.poolTimer.Reset(wait)
+				refill = e.poolTimer.C
 			}
 			select {
 			case r = <-e.reqs:
@@ -403,7 +422,12 @@ func (e *Engine) loop() {
 			case <-e.rr.timer.C:
 				e.expireHeld()
 				continue
+			case <-refill:
+				continue
 			}
+		}
+		if r.kind == reqMessage { // input activity, not the engine's own control
+			e.lastReq = time.Now()
 		}
 		if r.kind == reqStop {
 			return
@@ -510,6 +534,7 @@ func (e *Engine) handleControl(r *request) {
 	case reqStats:
 		e.stats.Rerank = e.rr.stats
 		e.stats.Rerank.Slow = e.rr.slow
+		e.stats.Pooled = len(e.pool)
 		r.stats <- e.stats
 		if r.flags != 0 {
 			e.stats.KeyTime = perf.Hist{}

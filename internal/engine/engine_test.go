@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -614,5 +615,28 @@ func TestStatsRequest(t *testing.T) {
 	}
 	if e.rr.attached && (st.Rerank == nil || !st.Rerank.On) {
 		t.Errorf("智能排序 stats %+v", st.Rerank)
+	}
+}
+
+// New contexts take pooled sessions; the pool is topped up only after input
+// pauses, so a refill never delays the keys that follow a focus change. An
+// empty pool would make each new app's first FocusIn create and warm a
+// session, long enough for the client to pass its first key to the app.
+func TestPoolRefillsAfterQuiet(t *testing.T) {
+	e := testEngine(t)
+	cl := dial(t, e)
+	for ctx := uint32(2); ctx <= uint32(e.opt.PoolSize)+2; ctx++ {
+		cl.send((&ipc.FocusIn{Ctx: ctx, App: []byte("app" + strconv.Itoa(int(ctx)))}).Append(cl.buf[:0]))
+		cl.result()
+	}
+	if n := e.Stats().Pooled; n >= e.opt.PoolSize {
+		t.Fatalf("pool refilled during input: %d sessions", n)
+	}
+	deadline := time.Now().Add(poolQuiet + 5*time.Second)
+	for e.Stats().Pooled < e.opt.PoolSize {
+		if time.Now().After(deadline) {
+			t.Fatalf("pool not refilled after a quiet period: %d of %d", e.Stats().Pooled, e.opt.PoolSize)
+		}
+		time.Sleep(50 * time.Millisecond)
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"shixin/internal/ipc"
 )
@@ -97,9 +98,12 @@ func (e *Engine) promote(schema string) error {
 		e.destroySession(spare)
 	}
 	e.pool = e.pool[:1]
-	// Do not build a replacement session immediately after FocusIn,
-	// delaying the first queued key. A larger attached pool is deferred.
-	e.opt.PoolSize = 0
+	// The loop refills the pool with real-schema sessions once input has
+	// paused (poolQuiet), not right after FocusIn, where it would delay the
+	// first queued key. Without the refill, every other app's first FocusIn
+	// creates and warms a session on the key path and its first key passes
+	// through to the app.
+	e.lastReq = time.Now()
 	e.realSchema = schema
 	e.schemas[schema] = sp
 	e.stats.Schemas = []string{schema}

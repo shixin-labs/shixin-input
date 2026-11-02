@@ -334,8 +334,12 @@ The coordinator also watches settings.json, so edits outside Settings work.
    the cached default schema list to real IDs (without saving it), so the
    switcher and future sessions never choose warm schemas after activation.
    One session is ready at activation. The macOS front retains up to 16
-   per-app contexts; additional contexts use the existing cold session fallback;
-   preparing a larger real-schema pool is deferred. No deploy or file
+   per-app contexts. The engine refills its pool with real-schema sessions,
+   one per idle moment, once no input has arrived for a second: a refill
+   takes tens of milliseconds and must not delay the keys after a focus
+   change. Without the pool, a new app's FocusIn created a session on the
+   key path and its first key passed through to the app. Until the refill,
+   additional contexts use the cold session fallback. No deploy or file
    copying occurs on a serving engine thread. Only the lock holder may select a real schema.
 6. Each worker has a private endpoint. The public `engine.sock` is an
    atomically replaced symlink to the active endpoint; clients reconnect
@@ -2406,8 +2410,8 @@ under the user, so none ever does. Instead:
 - M2 replaces the settings restart with builder + hot swap (§3.5), and
   per-app rules and remembered modes replace the global mode. Fuzzy pinyin
   works in full pinyin and all seven supported double-pinyin schemes; its
-  derivations run before double-pinyin spelling conversion. Remaining:
-  a fully attached standby pool for all front contexts.
+  derivations run before double-pinyin spelling conversion. The session
+  pool refills with real-schema sessions after takeover, once input pauses.
 
 **M0 spikes:**
 

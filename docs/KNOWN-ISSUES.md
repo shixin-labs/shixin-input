@@ -33,8 +33,9 @@ Delete an entry when it's fixed, and mention it in the commit.
   the VM).
 - **State:** composition, current switches and in-memory remembered app
   modes reset to settings on takeover. Only one context is prepared at
-  activation; extra contexts use the cold session fallback rather than a
-  fully attached standby pool.
+  activation; the pool of real-schema sessions refills after input pauses,
+  so a new app focused within a second of takeover can still use the cold
+  session fallback.
 
 ## Front and UI
 
