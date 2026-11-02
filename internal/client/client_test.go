@@ -441,17 +441,34 @@ func TestOrderingBarrier(t *testing.T) {
 	// This tests that the client waits, not for how long: a busy CI runner
 	// can take longer than the 8 ms default to answer.
 	h.c.opt.Budget = time.Second
-	if !h.c.HandleKey(',', 0) {
-		t.Fatal("',' not eaten")
+	for i, eaten := range h.typ("ab ") {
+		if !eaten {
+			t.Fatalf("key %d not eaten", i)
+		}
 	}
-	// Cmd-V right after: the app must get "，" before the paste.
+	// Cmd-V right after: the app must get the commit before the paste.
 	if h.c.HandleKey('v', policy.SuperMask) {
 		t.Fatal("Cmd-V eaten")
 	}
-	if got := h.rec.commits(); got != "，" {
+	if got := h.rec.commits(); got != "X" {
 		t.Fatalf("before Cmd-V reached the app, commits were %q", got)
 	}
-	if h.c.Stats().Barriers != 1 {
+}
+
+// Chromium apps and WeChat 4 type an eaten key themselves unless text was
+// inserted or marked when the key returns: Chinese punctuation typed ",，".
+func TestDirectCommitInsideKeyHandler(t *testing.T) {
+	f := startFake(t)
+	f.delay = 3 * time.Millisecond
+	h := newHarness(t, f.path, nil)
+	h.c.opt.Budget = time.Second // tests that it waits, not for how long
+	if !h.c.HandleKey(',', 0) {
+		t.Fatal("',' not eaten")
+	}
+	if got := h.rec.commits(); got != "，" {
+		t.Fatalf("when the key returned, commits were %q", got)
+	}
+	if h.c.Stats().Timeouts != 0 {
 		t.Fatalf("stats %+v", h.c.Stats())
 	}
 }

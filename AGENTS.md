@@ -98,7 +98,8 @@ that can make a user's app wait on Shixin is a bug, even if everything else
 works. Before writing hot-path code, re-read DESIGN §3. In short:
 
 - **App threads never wait on the engine** except for `ASK` keys, which have
-  a hard budget (default 8 ms) and then pass through. Never add a
+  a hard budget (default 8 ms) and then pass through, and the bounded waits
+  DESIGN §3.3 lists (ordering barriers, unknown state, direct commits). Never add a
   synchronous round trip, retry loop, lock, or connect/reconnect on the key
   path in any client (macOS front, TSF DLL, fcitx5 addon).
 - **librime runs only in `shixin-engine`, on its single locked OS thread.**

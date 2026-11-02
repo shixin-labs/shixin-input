@@ -288,6 +288,17 @@ func (c *Client) HandleKey(keysym, mods uint32) bool {
 			// inside the key handler.
 			c.marked = append(c.marked[:0], byte(keysym))
 			c.a.Preedit(c.marked, 1)
+		} else if len(c.marked) == 0 && act.Next() != policy.Composing && mods&policy.ReleaseMask == 0 {
+			// An eaten key outside a composition commits directly (Chinese
+			// punctuation). Chromium apps and WeChat 4 type an eaten key
+			// themselves unless text was inserted or marked when the key
+			// returns: "," became ",，". Insert the commit inside the key
+			// handler, as Squirrel does, waiting within the budget.
+			if c.wait(c.seq) {
+				c.Drain()
+			} else {
+				c.stats.Timeouts++
+			}
 		}
 		return true
 

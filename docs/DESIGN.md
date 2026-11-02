@@ -215,6 +215,13 @@ are sent once per connection; results refer to them by ID.
     auto spacing). Only that first letter is local; it costs no wait, round
     trip or allocation. With double pinyin, Rime's spelling (`v` → `zh`)
     replaces the letter a moment later.
+  - **Direct commits:** an eaten key outside a composition that doesn't
+    start one (Chinese punctuation) commits at once. The same apps, and
+    Chromium-based apps, type such a key themselves unless text was
+    inserted when it returns: "," became ",，". The client waits for that
+    key's result within the key budget and inserts the commit inside
+    `handleEvent:`, as Squirrel does. On timeout the key stays eaten and
+    the commit follows later.
 - **Windows:** results arrive on a DLL I/O thread (overlapped pipe), are
   posted to the app's TSF thread through a hidden message window, and are
   applied with `RequestEditSession(TF_ES_ASYNCDONTCARE | TF_ES_READWRITE)`.
