@@ -305,3 +305,21 @@ func TestWatch(t *testing.T) {
 		t.Fatal("no change seen")
 	}
 }
+
+func TestAppMode(t *testing.T) {
+	s := Default()
+	s.Apps = []AppRule{{ID: "com.apple.Terminal", Mode: ModeEnglish}, {ID: "com.tencent.xinWeChat", Mode: ModeChinese}}
+	for app, want := range map[string]string{
+		"com.apple.Terminal":    ModeEnglish,
+		"com.tencent.xinWeChat": ModeChinese,
+		"com.apple.terminal":    "", // IDs match exactly
+		"":                      "",
+	} {
+		if got := s.AppMode(app); got != want {
+			t.Errorf("AppMode(%q) = %q, want %q", app, got, want)
+		}
+	}
+	if err := s.Validate(); err != nil {
+		t.Fatal(err)
+	}
+}

@@ -131,3 +131,27 @@ func FuzzDecode(f *testing.F) {
 		p.Lookup('`', ControlMask)
 	})
 }
+
+// Act packs both halves into the byte the C++ clients decode; neither half
+// may leak into the other.
+func TestActionRoundTrip(t *testing.T) {
+	for _, d := range []Disposition{Pass, PassNotify, Eat, Ask} {
+		for _, n := range []Next{Same, Composing, Unknown} {
+			a := Act(d, n)
+			if a.Disposition() != d || a.Next() != n {
+				t.Errorf("Act(%v, %d) = %#x → %v, %d", d, n, a, a.Disposition(), a.Next())
+			}
+			if a>>4 != 0 {
+				t.Errorf("Act(%v, %d) = %#x uses the high bits", d, n, a)
+			}
+		}
+	}
+}
+
+func TestDispositionString(t *testing.T) {
+	for d, want := range map[Disposition]string{Pass: "PASS", PassNotify: "PASS_NOTIFY", Eat: "EAT", Ask: "ASK", 9: "?"} {
+		if got := d.String(); got != want {
+			t.Errorf("%d: %q, want %q", d, got, want)
+		}
+	}
+}

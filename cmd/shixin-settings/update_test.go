@@ -109,3 +109,21 @@ func TestFinishCheck(t *testing.T) {
 		t.Errorf("error: phase %d %q", a.upd.phase, a.upd.err)
 	}
 }
+
+func TestShorten(t *testing.T) {
+	for _, c := range []struct {
+		s    string
+		n    int
+		want string
+	}{
+		{"", 3, ""},
+		{"abc", 3, "abc"},
+		{"abcd", 3, "abc…"},
+		{"拾新输入法", 5, "拾新输入法"},
+		{"拾新输入法更新", 4, "拾新输入…"}, // cuts characters, not bytes
+	} {
+		if got := shorten(c.s, c.n); got != c.want {
+			t.Errorf("shorten(%q, %d) = %q, want %q", c.s, c.n, got, c.want)
+		}
+	}
+}

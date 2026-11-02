@@ -79,3 +79,33 @@ func TestDictionaryRejectsBeforeConnecting(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestApplyRequest(t *testing.T) {
+	socket := socketPath(t)
+	got := serveOnce(t, socket, `{"version":1,"duration_ns":42}`+"\n")
+	if err := Apply(socket); err != nil {
+		t.Fatal(err)
+	}
+	if r := <-got; r != (Request{Version: Version, Op: OpApply}) {
+		t.Fatalf("request %+v", r)
+	}
+}
+
+func TestApplyReplies(t *testing.T) {
+	for reply, want := range map[string]string{
+		`{"version":1,"error":"settings: invalid"}`: "settings: invalid",
+		`{"version":0}`: "unsupported version",
+		`{"version":`:   "lifecycle: reply",
+		``:              "lifecycle: reply",
+	} {
+		socket := socketPath(t)
+		serveOnce(t, socket, reply)
+		err := Apply(socket)
+		if err == nil || !strings.Contains(err.Error(), want) {
+			t.Fatalf("reply %q: %v", reply, err)
+		}
+	}
+	if err := Apply(socketPath(t)); err == nil || !strings.Contains(err.Error(), "connect") {
+		t.Fatalf("no coordinator: %v", err)
+	}
+}
