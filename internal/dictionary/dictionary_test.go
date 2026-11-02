@@ -59,6 +59,7 @@ func scelFixture(version byte) []byte {
 	}
 	b := make([]byte, offset)
 	copy(b, []byte{0x40, 0x15, 0, 0, version})
+	b[0x120] = 1 // one word group
 	putString := func(dst []byte, s string) []byte {
 		for _, v := range utf16.Encode([]rune(s)) {
 			dst = binary.LittleEndian.AppendUint16(dst, v)
@@ -114,6 +115,7 @@ func TestRejectMalformedDictionary(t *testing.T) {
 func FuzzDictionary(f *testing.F) {
 	f.Add([]byte("你好\tni hao\t12\n"))
 	f.Add(scelFixture(0x44))
+	f.Add(sogouFixture(sogouRecord{2, []uint16{219, 117}, "你好"}))
 	f.Add([]byte(`{"format":"shixin-dictionary","version":1}`))
 	f.Fuzz(func(t *testing.T, b []byte) {
 		if len(b) > 1<<20 {

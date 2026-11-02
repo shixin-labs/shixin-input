@@ -64,8 +64,8 @@ func validEntry(e Entry) bool {
 	return true
 }
 
-// Read accepts Shixin JSON backups, Rime/Sogou tab-separated text and standard
-// Sogou .scel files. Malformed input fails as a whole, without partial imports.
+// Read accepts Shixin JSON backups, Rime/Sogou tab-separated text, standard
+// Sogou .scel files and Sogou for Mac's user dictionary and its backups. Malformed input fails as a whole, without partial imports.
 func Read(r io.Reader) (Backup, error) {
 	b, err := io.ReadAll(io.LimitReader(r, MaxBytes+1))
 	if err != nil {
@@ -80,6 +80,8 @@ func Read(r io.Reader) (Backup, error) {
 	switch {
 	case len(b) >= 4 && bytes.Equal(b[:4], []byte{0x40, 0x15, 0, 0}):
 		out.Words, err = readSCEL(b)
+	case bytes.HasPrefix(b, []byte("SGPU")):
+		out.Words, err = readSogouUser(b)
 	case bytes.HasPrefix(bytes.TrimSpace(b), []byte("{")):
 		portable = true
 		if !utf8.Valid(b) {
@@ -91,7 +93,7 @@ func Read(r io.Reader) (Backup, error) {
 			return Backup{}, errors.New("dictionary: unsupported backup")
 		}
 	default:
-		out.Words, err = readText(b)
+		out.Words, err = readText(b, false)
 	}
 	if err != nil {
 		return Backup{}, err
@@ -115,6 +117,27 @@ func Read(r io.Reader) (Backup, error) {
 	return out, nil
 }
 
+// ReadRimeTable reads a table exported from another Rime input method's
+// user database. Unlike Read it skips entries Shixin can't use, such as
+// codes that aren't spaced full pinyin, instead of rejecting the file.
+func ReadRimeTable(r io.Reader) ([]Entry, error) {
+	b, err := io.ReadAll(io.LimitReader(r, MaxBytes+1))
+	if err != nil {
+		return nil, errors.New("dictionary: cannot read file")
+	}
+	if len(b) > MaxBytes {
+		return nil, errors.New("dictionary: file exceeds 64 MiB")
+	}
+	words, err := readText(bytes.TrimPrefix(b, []byte{0xef, 0xbb, 0xbf}), true)
+	if err != nil {
+		return nil, err
+	}
+	if len(words) == 0 {
+		return nil, ErrEmpty
+	}
+	return words, nil
+}
+
 func ReadFile(path string) (Backup, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -124,7 +147,7 @@ func ReadFile(path string) (Backup, error) {
 	return Read(f)
 }
 
-func readText(b []byte) ([]Entry, error) {
+func readText(b []byte, lenient bool) ([]Entry, error) {
 	if !utf8.Valid(b) {
 		return nil, errors.New("dictionary: text must be UTF-8")
 	}
@@ -149,6 +172,9 @@ func readText(b []byte) ([]Entry, error) {
 		}
 		parts := strings.Split(s, "\t")
 		if len(parts) < 2 || len(parts) > 3 {
+			if lenient {
+				continue
+			}
 			return nil, fmt.Errorf("dictionary: expected tab-separated text and full pinyin at line %d", line)
 		}
 		e := Entry{Text: strings.TrimSpace(parts[0]), Code: strings.TrimSpace(parts[1]), Count: 1}
@@ -169,10 +195,16 @@ func readText(b []byte) ([]Entry, error) {
 			var err error
 			e.Count, err = strconv.Atoi(count)
 			if err != nil {
+				if lenient {
+					continue
+				}
 				return nil, fmt.Errorf("dictionary: invalid count at line %d", line)
 			}
 		}
 		if !validEntry(e) {
+			if lenient {
+				continue
+			}
 			return nil, fmt.Errorf("dictionary: invalid entry at line %d", line)
 		}
 		out = append(out, e)
@@ -219,7 +251,8 @@ func utf16Text(b []byte) (string, error) {
 	return string(utf16.Decode(u)), nil
 }
 
-// SCEL stores a UTF-16 syllable table at 0x1540 and grouped word records.
+// SCEL stores the number of word groups at 0x120, a UTF-16 syllable table
+// at 0x1540 and grouped word records.
 // Only the two standard container versions are accepted; no guessing offsets.
 func readSCEL(b []byte) ([]Entry, error) {
 	bad := errors.New("dictionary: malformed or unsupported SCEL file")
@@ -250,17 +283,28 @@ func readSCEL(b []byte) ([]Entry, error) {
 		}
 		s, err := utf16Text(b[p : p+n])
 		s = strings.ReplaceAll(s, "ü", "v")
-		if err != nil || !asciiCode(s) {
+		if err != nil {
 			return nil, bad
 		}
 		if _, duplicate := py[id]; duplicate {
 			return nil, bad
 		}
+		// Sogou's tables continue with letters (A–Z) after the syllables.
+		// Words spelled with them have no pinyin and are skipped.
+		if !asciiCode(s) || strings.Contains(s, " ") {
+			s = ""
+		}
 		py[id] = s
 		p += n
 	}
+	// The header counts the word groups; Sogou appends other tables after
+	// them (such as its list of deleted words).
+	groups := int(binary.LittleEndian.Uint32(b[0x120:]))
+	if groups > MaxEntries {
+		return nil, errors.New("dictionary: too many entries")
+	}
 	var out []Entry
-	for p := wordOffset; p < len(b); {
+	for p := wordOffset; groups > 0; groups-- {
 		if p+4 > len(b) {
 			return nil, bad
 		}
@@ -270,11 +314,14 @@ func readSCEL(b []byte) ([]Entry, error) {
 			return nil, bad
 		}
 		parts := make([]string, codeN/2)
+		spelled := true
 		for i := range parts {
-			parts[i] = py[binary.LittleEndian.Uint16(b[p+2*i:])]
-			if parts[i] == "" {
+			s, known := py[binary.LittleEndian.Uint16(b[p+2*i:])]
+			if !known {
 				return nil, bad
 			}
+			parts[i] = s
+			spelled = spelled && s != ""
 		}
 		p += codeN
 		code := strings.Join(parts, " ")
@@ -299,6 +346,9 @@ func readSCEL(b []byte) ([]Entry, error) {
 			}
 			count := int(binary.LittleEndian.Uint16(b[p:]))
 			p += extN
+			if !spelled {
+				continue
+			}
 			out = append(out, Entry{Text: text, Code: code, Count: max(1, count)})
 			if len(out) > MaxEntries {
 				return nil, errors.New("dictionary: too many entries")
