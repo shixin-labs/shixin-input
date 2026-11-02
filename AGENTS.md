@@ -345,7 +345,11 @@ shared into the guest read-only.
 - `vnc` sends clicks and `shot NAME` captures the screen; `exec` runs a
   guest command.
 - Logs: `~/Library/Logs/Shixin/{shixin,engine,ai}.log`. Touch
-  `~/Library/Application Support/Shixin/debug` for key-code diagnostics.
+  `~/Library/Application Support/Shixin/debug` and restart the front for
+  diagnostics: key codes, the app's `commitComposition:`/deactivate calls,
+  and the marked/selected ranges after each marked-text update and commit
+  (lengths and character classes, never text). Key codes reveal what was
+  typed: remove the file afterwards.
 
 ## Dictionary maintenance
 

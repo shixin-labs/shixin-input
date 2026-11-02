@@ -201,9 +201,20 @@ are sent once per connection; results refer to them by ID.
   (`setMarkedText` / `insertText`), as Squirrel does for mouse selection.
   These are synchronous round trips into the app (spike 2), so:
   - Update the candidate window **before** calling the app.
-  - Query the caret rect **once per composition**.
+  - Query the caret rect **once per composition**, and move the hidden
+    candidate window to it (at the last measured size) before showing it.
+    Showing first left it for a frame where the last composition was,
+    often in another app.
   - When several results are queued, apply every commit in order, but only
     the last marked text and candidates.
+  - **First letter:** when an eaten lowercase letter starts a composition,
+    the client sets it as marked text inside `handleEvent:`, as Squirrel
+    does; the engine's preedit replaces it when the result arrives. Some
+    apps insert an eaten key themselves unless marked text exists when the
+    key returns: WeChat 4.x typed "zhege" as "z 这个" (its own `z`, then
+    auto spacing). Only that first letter is local; it costs no wait, round
+    trip or allocation. With double pinyin, Rime's spelling (`v` → `zh`)
+    replaces the letter a moment later.
 - **Windows:** results arrive on a DLL I/O thread (overlapped pipe), are
   posted to the app's TSF thread through a hidden message window, and are
   applied with `RequestEditSession(TF_ES_ASYNCDONTCARE | TF_ES_READWRITE)`.
