@@ -135,6 +135,9 @@ func activateServer(self objc.ID, cmd objc.SEL, sender objc.ID) {
 }
 
 func deactivateServer(self objc.ID, cmd objc.SEL, sender objc.ID) {
+	if debug {
+		logf("debug: deactivate")
+	}
 	finishInput()
 }
 
@@ -154,6 +157,9 @@ func finishInput() {
 
 func commitComposition(self objc.ID, cmd objc.SEL, sender objc.ID) {
 	// The app ends the composition (e.g. a click elsewhere in the text).
+	if debug {
+		logf("debug: app asked to commit the composition")
+	}
 	setClient(uintptr(sender), false)
 	core.CommitComposition()
 	hideCandidates()
@@ -197,9 +203,15 @@ func (frontApplier) Commit(text []byte) {
 	if imkClient == 0 {
 		return
 	}
+	if debug {
+		debugRanges("insert", text)
+	}
 	ns := nsString(text)
 	send(imkClient, selInsertText, ns, nsNotFound, 0)
 	send(ns, selRelease)
+	if debug {
+		debugRanges("inserted", nil)
+	}
 }
 
 func (frontApplier) Preedit(text []byte, cursor int) {
@@ -211,6 +223,9 @@ func (frontApplier) Preedit(text []byte, cursor int) {
 	// selectionRange {sel, 0}, replacementRange {NSNotFound, 0}
 	send(imkClient, selSetMarkedText, ns, uintptr(sel), 0, nsNotFound, 0)
 	send(ns, selRelease)
+	if debug {
+		debugRanges("marked", text)
+	}
 }
 
 func (frontApplier) Status(s client.Status) {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"unicode/utf16"
 	"unsafe"
 
@@ -73,6 +74,40 @@ func textBefore() (rune, bool) {
 		return r, ok && r != 0xfffd
 	}
 	return rune(c), true
+}
+
+// debugRanges logs, in debug mode only, what the app reports after Shixin
+// sets marked text or inserts text: its marked and selected ranges and the
+// kind of character before them. It logs lengths and character classes,
+// never the text.
+func debugRanges(op string, text []byte) {
+	pool, _, _ := purego.SyscallN(poolPush)
+	defer func() { poolArgs[0] = pool; purego.SyscallN(poolPop, poolArgs[:]...) }()
+	mloc, mlen := send2(imkClient, selMarkedRange)
+	sloc, slen := send2(imkClient, selSelectedRange)
+	r, ok := textBefore()
+	kind := "unknown"
+	switch {
+	case !ok:
+	case r == 0:
+		kind = "start"
+	case r == ' ':
+		kind = "space"
+	case r < 0x80 && (r|0x20 >= 'a' && r|0x20 <= 'z'):
+		kind = "latin letter"
+	case r >= 0x4e00 && r <= 0x9fff:
+		kind = "han"
+	default:
+		kind = "other"
+	}
+	logf("debug: %s %d units; marked %s selected %s; before: %s", op, utf16Len(text), debugRange(mloc, mlen), debugRange(sloc, slen), kind)
+}
+
+func debugRange(loc, n uintptr) string {
+	if loc == nsNotFound {
+		return "none"
+	}
+	return fmt.Sprintf("{%d,%d}", loc, n)
 }
 
 // charAt reads one UTF-16 unit of the client's text.
