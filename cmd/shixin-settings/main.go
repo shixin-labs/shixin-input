@@ -77,6 +77,11 @@ type app struct {
 
 	// 词库
 	newCode, newText, phraseQuery string
+	newPinCode, newPinText        string
+	dictionaryBusy                bool
+	dictionaryMessage             string
+	dictionaryError               bool
+	confirmClearDictionary        bool
 
 	// 应用
 	installed []mygo.InstalledApp
@@ -122,6 +127,8 @@ func clone(s settings.Settings) settings.Settings {
 	s.Fuzzy = slices.Clone(s.Fuzzy)
 	s.PageKeys = slices.Clone(s.PageKeys)
 	s.Phrases = slices.Clone(s.Phrases)
+	s.Pins = slices.Clone(s.Pins)
+	s.NoAutoSpace = slices.Clone(s.NoAutoSpace)
 	s.Apps = slices.Clone(s.Apps)
 	s.Hotkeys = maps.Clone(s.Hotkeys)
 	return s
@@ -254,7 +261,7 @@ func applyEngine(done func(error)) {
 // and app rules, which aren't preferences but data.
 func (a *app) resetDefaults() {
 	d := settings.Default()
-	d.Phrases, d.Apps = a.s.Phrases, a.s.Apps
+	d.Phrases, d.Pins, d.Apps = a.s.Phrases, a.s.Pins, a.s.Apps
 	a.s = clone(d)
 }
 

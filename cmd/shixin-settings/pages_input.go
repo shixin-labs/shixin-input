@@ -205,6 +205,12 @@ func (a *app) input(c *ui.Context) {
 		switchRow(c, T("s.i.emoji"), T("s.i.emoji.desc"), &s.Emoji)
 		switchRow(c, T("s.i.traditional"), T("s.i.traditional.desc"), &s.Traditional)
 	})
+	group(c, T("s.i.filters"), T("s.i.filters.note"), func() {
+		switchRow(c, T("s.i.long_word"), T("s.i.long_word.desc"), &s.LongWordPriority)
+		switchRow(c, T("s.i.demote_english"), T("s.i.demote_english.desc"), &s.DemoteEnglish)
+		switchRow(c, T("s.i.v_symbols"), T("s.i.v_symbols.desc"), &s.VSymbolsFirst)
+		switchRow(c, T("s.i.autocap"), T("s.i.autocap.desc"), &s.EnglishAutocap)
+	})
 
 	group(c, "", T("s.i.fuzzy.note"), func() {
 		row(c, T("settings.fuzzy"), fuzzySummary(s), func() {

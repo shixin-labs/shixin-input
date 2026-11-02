@@ -80,6 +80,9 @@ func (a *app) start(c *ui.Context) {
 	})
 	group(c, T(g.typeStep), "", func() {
 		row(c, T("s.start.type"), T(g.typeDesc), nil)
+		row(c, T("s.d.import"), T("s.start.dictionary.desc"), func() {
+			ui.Button(c, T("s.start.dictionary.open")).OnClick(func() { a.page = "dictionary" })
+		})
 		row(c, T("s.i.rerank"), T("s.start.rerank.desc"), func() {
 			ui.Button(c, T("s.start.rerank.open")).OnClick(func() { a.page = "rerank" })
 		})

@@ -222,11 +222,10 @@ func (c *Client) HandleKey(keysym, mods uint32) bool {
 		c.stats.Passed++
 		return false
 	}
-	if c.dropZero && !c.pending() {
-		// Clear may have arrived before its main-thread wake ran. Apply
-		// the fresh idle policy before classifying the next key.
-		c.Drain()
-	}
+	// A mode/focus reply can arrive before its scheduled main-thread wake.
+	// Classifying with the previous mode can pass the first spelling key to
+	// the app even though the engine has already switched to Chinese.
+	c.Drain()
 	if mods&policy.ReleaseMask == 0 {
 		c.sp.tick()
 	}
@@ -400,6 +399,13 @@ func (c *Client) post(m *outMsg) bool {
 // sendKey sends a key. Every key gets a sequence number, so barriers see
 // its result.
 func (c *Client) sendKey(keysym, mods uint32, flags uint8, eaten bool) bool {
+	if flags&ipc.KeyNotify != 0 && keysym >= 0x20 && keysym < 0x7f && (keysym < '0' || keysym > '9') {
+		// The app already owns this printable key. ascii_composer still
+		// needs to cancel a held-Shift tap, but a real key-down could also
+		// start Chinese composition or translate punctuation. A release
+		// clears modifier tracking without inserting the character again.
+		mods |= policy.ReleaseMask
+	}
 	m := outMsg{typ: ipc.TypeKey, key: ipc.Key{Ctx: c.ctx, Keysym: keysym, Mods: mods, Flags: flags}}
 	return c.sendSeq(&m, sentKey{keysym: keysym, eaten: eaten, t: time.Now()})
 }
@@ -653,10 +659,8 @@ func (c *Client) Drain() {
 			c.stats.KeyToApplied.Add(time.Since(k.t))
 		}
 	}
-	c.head.Store(t)
-	if !c.pending() {
-		c.spec = c.cur
-	}
+	// Snapshot the last slot before publishing head: the reader may reuse
+	// every released slot immediately after this store.
 	st := Status{Connected: c.connected}
 	if last != nil {
 		st.ASCII = last.res.Flags&ipc.ResultASCII != 0
@@ -664,6 +668,10 @@ func (c *Client) Drain() {
 		st.ASCII = c.status.ASCII
 	}
 	st.ASCII = st.ASCII || c.secure
+	c.head.Store(t)
+	if !c.pending() {
+		c.spec = c.cur
+	}
 	if st != c.status {
 		c.status = st
 		c.a.Status(st)

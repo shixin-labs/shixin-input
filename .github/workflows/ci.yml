@@ -36,6 +36,25 @@ jobs:
       - name: Unsigned preview isolation and manual updates
         shell: pwsh
         run: go test -short -tags shixin_unsigned_preview ./internal/winsetup ./cmd/shixin-setup ./cmd/shixin ./cmd/shixin-settings
+      # Go 1.27 supports Windows race instrumentation on amd64, not arm64.
+      - name: Go race detector (x64, all packages)
+        if: matrix.arch == 'amd64'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $compiler = Get-Command gcc -ErrorAction SilentlyContinue
+          if (-not $compiler) {
+            foreach ($candidate in @('C:\msys64\ucrt64\bin\gcc.exe', 'C:\msys64\mingw64\bin\gcc.exe', 'C:\mingw64\bin\gcc.exe')) {
+              if (Test-Path $candidate) { $compiler = Get-Item $candidate; break }
+            }
+          }
+          if (-not $compiler) { throw 'Windows x64 race tests require MinGW-w64 GCC' }
+          $compilerPath = if ($compiler.Source) { $compiler.Source } else { $compiler.FullName }
+          $env:CC = $compilerPath
+          $env:PATH = "$(Split-Path $compilerPath -Parent);$env:PATH"
+          $env:CGO_ENABLED = '1'
+          go test -race -p 1 -short -timeout 5m ./...
+          if ($LASTEXITCODE -ne 0) { throw 'Go race tests failed' }
 
   linux:
     runs-on: ubuntu-24.04

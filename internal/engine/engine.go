@@ -587,7 +587,18 @@ func (e *Engine) handleMessage(r *request) {
 		e.stats.Keys++
 		t0 := time.Now()
 		if r.keysym != rerank.RefreshKeysym { // the engine's own key
-			handled = s.ProcessKey(int(r.keysym), int(r.mods))
+			mods := r.mods
+			if r.flags&ipc.KeyNotify != 0 && r.keysym >= 0x20 && r.keysym < 0x7f {
+				// Notifications describe keys the app has already inserted.
+				// Only idle digits need real key-downs for decimal history.
+				// A stale client policy must not select a candidate with a
+				// digit, start composition, or commit translated punctuation.
+				s.ReadStatus(&e.st)
+				if r.keysym < '0' || r.keysym > '9' || e.st.IsComposing || e.st.IsFullShape {
+					mods |= policy.ReleaseMask
+				}
+			}
+			handled = s.ProcessKey(int(r.keysym), int(mods))
 		}
 		e.read(s)
 		e.noteContext(c, r.ctx, s, r)

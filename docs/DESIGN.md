@@ -482,7 +482,8 @@ Results: `docs/spikes/m0-4-handoff.md`.
   - Candidate/preedit/comment strings are immutable owned copies, interned
     in a bounded cache (512 entries, 256 KiB). Unchanged text reuses its
     string in place; row click handlers and view buffers are retained.
-    Capture and warmed typing/page/highlight/hide frames allocate nothing.
+    Capture and ordinary warmed typing/page/highlight/hide frames allocate
+    nothing.
     A new string or layout may allocate on a UI-frame cache miss, outside
     the key callback. No text is logged or persisted by these caches.
   - Shaped text runs are cached per candidate string.
@@ -500,9 +501,13 @@ Results: `docs/spikes/m0-4-handoff.md`.
     the watcher goroutine before publishing it to the candidate window.
     Font-aware text/baseline measurements are retained in a bounded cache
     (512 entries, 256 KiB of key strings) so revisiting warmed pages does
-    not allocate. Each candidate row measures and paints the same retained
-    rich-text line, including label/comment sizes and gaps; separate flex
-    text boxes can disagree on baseline leading under DirectWrite fallback.
+    not allocate. Each candidate row measures a unified rich-text line,
+    including label/comment sizes and gaps, and retains plain component
+    layouts at its native positions and baseline. This avoids rebuilding
+    rich-span paint metadata on each frame; separate flex text boxes can
+    disagree on baseline leading under DirectWrite fallback. Multiline or
+    discontiguous bidi rows retain the rich renderer and may allocate while
+    painting on an asynchronous UI frame.
     Normal and highlighted paint variants are retained with the measurement.
     Rare glyphs may still miss the renderer's glyph cache on
     an asynchronous UI frame, outside key handling.
@@ -586,11 +591,11 @@ Instead:
 | `number_translator` | `R123` → 壹佰贰拾叁, amounts | `shixin_number_translator` · M2 ✅ |
 | `unicode` | `U62fe` → 拾 | `shixin_unicode_translator` · M2 ✅ |
 | `calc_translator` | Calculator (`cC1+2`) | `shixin_calc_translator`: bounded recursive-descent parser · M2 ✅ |
-| `pin_cand_filter` | Pinned candidates (置顶) | `shixin_pin_filter`, configured from Settings · M2 |
-| `long_word_filter` | Long words first | `shixin_long_word_filter` · M2 |
-| `reduce_english_filter` | Demote some English words | `shixin_english_demote_filter` · M2 |
-| `v_filter` | v-mode symbols first | `shixin_v_filter` · M2 |
-| `autocap_filter` | English auto-capitalization | `shixin_autocap_filter` · M2 |
+| `pin_cand_filter` | Pinned candidates (置顶) | `shixin_pin_filter`, layout-scoped exact-code pins in Dictionary · M2 |
+| `long_word_filter` | Long words first | `shixin_long_word_filter`, optional Input switch · M2 |
+| `reduce_english_filter` | Demote some English words | `shixin_english_demote_filter`, optional Input switch · M2 |
+| `v_filter` | v-mode symbols first | `shixin_v_filter`, optional full-pinyin Input switch · M2 |
+| `autocap_filter` | English auto-capitalization | `shixin_autocap_filter`, optional Input switch · M2 |
 | `corrector` | Typo/pronunciation hints | Later; evaluate cost |
 | `lunar` | 农历 | Later; precomputed table, no runtime astronomy |
 | `uuid` | UUID | Later |
@@ -1427,9 +1432,15 @@ schema reset value; the configured punctuation shortcut still toggles the
 current session without changing the preference. Chinese input can thus
 start with `，。` or `,.`; English input continues to pass punctuation
 through normally.
-Not yet: skin editor, .scel/text import, user dictionary
-export/clear, the front's own latency on the 性能 page, sync and cloud input
-(M5), the first-run guide.
+Dictionary also offers Sogou `.scel` and full-pinyin text migration,
+portable JSON backup/restore (learned words/counts, custom phrases and pins),
+Rime text export, and clearing learned words. Import merges entries; it does
+not replace preferences or bundled dictionaries. The installation guide links
+to migration. Dictionary pins are layout-scoped exact spellings, with saved
+ordering and remove/move-up controls. The Input page exposes four optional
+native word filters; each defaults off.
+Not yet: skin editor, the front's own latency on the 性能 page, sync and cloud
+input (M5).
 
 ## 7. Features (Sogou parity map)
 
@@ -1453,8 +1464,8 @@ controls and Shixin's current support separately from the plans below.
 - long-word priority
 
 **Built by Shixin:**
-- Settings app and first-run guide
-- Skins and skin editor
+- Settings app and installation guide with a dictionary migration link
+- Six built-in skins (skin editor deferred)
 - Mode indicator bubble (macOS and Windows): a small card (26 pt, about a line of
   text) with 中 / 英 (En in the English UI) beside the caret for 900 ms
   when the confirmed mode differs from the last one: a Shift toggle, or a
@@ -1478,7 +1489,7 @@ controls and Shixin's current support separately from the plans below.
 - Per-app mode and secure-field handling
 - Auto spacing between Chinese and English (§7.1)
 - Right-click delete word
-- `.scel` import, user dictionary import/export, migration from other IMEs
+- `.scel`/full-pinyin text import, user dictionary backup/restore/export/clear, migration from other IMEs
 - Sync
 - Performance page
 - 智能排序: candidates reordered by a local model from what was just
@@ -1491,6 +1502,59 @@ controls and Shixin's current support separately from the plans below.
 - Never used in secure fields.
 - Pluggable providers; public Sogou/Baidu/Google endpoints are unofficial, so
   the default provider must be chosen carefully.
+
+#### Dictionary maintenance and native candidate filters
+
+Dictionary file parsing lives in `internal/dictionary` (Go, no MyGo or
+librime). Files are bounded to 64 MiB and 250,000 words. Standard SCEL
+versions 0x44/0x45 use their explicit syllable tables; text uses UTF-8
+`word<Tab>full pinyin syllables<Tab>count`. Rime sync text with packed
+`c=` records is also accepted; deletion tombstones are not imported.
+Malformed files fail before changing the active dictionary. No downloaded
+file is executed, and errors never quote imported text.
+
+Settings requests maintenance over the private JSON lifecycle endpoint,
+carrying an operation and path, never dictionary contents. The coordinator
+serializes it with generation changes and waits up to 15 seconds for idle.
+It stops and waits for the old worker before starting a maintenance child.
+That child takes the normal engine lock, checks LevelDB ownership and copies
+`rime_ice.userdb` to a private work directory. It uses librime's native
+`levers` API through purego on one locked OS thread, creates no sessions and
+never opens the live database. The builder remains dictionary-free.
+A successful import replaces the database only after native finalization;
+clear moves the original aside. Original database files remain in private
+`Rime/backups/dictionary-*` directories. A journal makes interrupted rename
+pairs recoverable before startup or session attachment. Export atomically
+publishes JSON or interoperable Rime text; portable backups preserve words
+and counts, while automatic raw recovery copies preserve all database
+metadata. Custom phrases and pins from JSON are merged into Settings.
+The same generation is restarted after success or failure. Keys pass through
+while maintenance runs; app threads never wait for its file/native work.
+This maintenance pause is explicit in the Dictionary page.
+
+The filter order is rerank → long-word → English demotion → v-symbols →
+English case → reverse lookup/emoji/traditionalization/uniquifier → pins.
+Each filter scans at most 100 candidates of the first candidate's span;
+native date/number/Unicode/calculator readings pass unchanged. Four warmed
+translation slots per enabled filter hold fixed candidate arrays. Exhausted
+pools preserve upstream order rather than allocating. English case changes
+use preallocated shadow candidates retaining their genuine dictionary entry.
+No filter reads files or changes an already displayed menu.
+
+Long-word priority preserves candidates 1–3 and promotes at most two longer
+Han-only words to 4–5. English demotion moves ordinary English behind other
+candidates while keeping custom/user-table phrases. Full-pinyin v-mode
+prioritizes single-character symbols for a two-key `v` code. English case
+follows an initial capital (title case) or two initial capitals (all caps),
+only for matching words/completions. These are bounded Shixin rules rather
+than every configurable variant of upstream Lua. Pins move existing words
+only, matching their displayed text after emoji/traditional conversion, with up to 10 per exact code and
+256 total; the layout is stored explicitly. They do not invent a reading.
+Tests cover pure C++ ordering/case rules, fuzzed arbitrary text, real-engine
+filter reuse and Go allocations, compiler YAML, migration parsing and
+interrupted database replacement. Go parser/compiler/recovery unit tests
+pass with the race detector. Native filter build/integration checks and GUI
+snapshots have not yet been run.
 
 ### 7.1 Auto spacing between Chinese and English
 
@@ -1797,7 +1861,7 @@ Model choice:
 - **`shixin_rerank` filter.** It is first in the filter list, on `abc`
   segments. It sees librime's own candidates in simplified text, and
   emoji, 繁体 and `uniquifier` apply after the reorder. A planned
-  `shixin_pin_filter` would come after it, so pins win.
+  `shixin_pin_filter` comes last, after display conversions, so pins win.
   - **Export.** When the menu of the segment being translated is first
     built, it buffers the first N candidates with the same span as #1
     (start and end). It writes their text, flags and prior into the
@@ -2203,10 +2267,32 @@ under the user, so none ever does. Instead:
   the client tests verify restoration of both Chinese and English modes
   through a real engine, alongside the engine's per-app mode tests.
 - **Mode switches and the policy:** a 中/英 switch updates the policy in the
-  same `Result`, so the next key is classified correctly.
+  same `Result`. The Go client drains already queued replies before classifying
+  the next key, even when the main-queue wake has not run. Passed printable
+  notifications cancel modifier tracking through release events rather than
+  producing another key-down; only idle half-width digits keep key-downs for
+  numeric history. Stale composing/full-width policies cannot turn a passed
+  digit into a candidate selection or a full-width commit.
 
 ## 9. Testing and performance gates
 
+- **Go concurrency:** `scripts/ci.sh race` runs `go test -race -p 1 -short
+  ./...`, including command packages. Linux/macOS CI runs it as part of the
+  Go gate, macOS repeats the native engine/client/coordinator checks after
+  building our librime, and Windows x64 runs all packages with MinGW-w64 GCC.
+  Go 1.27 has no Windows ARM64 race detector. Race instrumentation uses its
+  test runtime only; product builds stay `CGO_ENABLED=0`. Instrumented tests
+  disable latency budgets; the separate regular run retains allocation and
+  latency checks. Native C++ still needs its own sanitizer gates.
+- **Input ownership regressions:** forced reply/key interleavings cover both
+  mode directions, coalesced updates, modifier-held passed ASCII, focus/Clear
+  fences, secure fields and disconnects. Exact real-client/engine assertions
+  reproduce the duplicate comma/leading-letter failure without stripping
+  whitespace. A concurrent producer/consumer test wraps the result ring and
+  overwrites source buffers, checking that every commit is applied once and
+  all slot reads finish before the consumer publishes its release. The race
+  detector supplements these assertions; it cannot identify stale-policy
+  logic errors on its own.
 - **Replay corpus:** recorded typing sessions (full pinyin, double pinyin,
   mixed English, punctuation, fast bursts) are replayed against the real
   engine with rime-ice. The tests fail if any budget in §3.7 regresses

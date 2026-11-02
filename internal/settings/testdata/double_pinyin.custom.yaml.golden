@@ -30,10 +30,21 @@ patch:
     - shixin_calc_translator
   engine/filters:
     - shixin_rerank
+    - shixin_long_word_filter
+    - shixin_english_demote_filter
+    - shixin_v_filter
+    - shixin_autocap_filter
     - reverse_lookup_filter@radical_reverse_lookup
     - simplifier@emoji
     - simplifier@traditionalize
     - uniquifier
+    - shixin_pin_filter
+  shixin_filters/long_word: true
+  shixin_filters/demote_english: true
+  shixin_filters/v_symbols: false
+  shixin_filters/autocap: true
+  shixin_filters/pins:
+    - "ui\t是"
   emoji/excluded_types:
     - date
     - number

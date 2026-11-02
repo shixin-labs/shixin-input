@@ -206,6 +206,8 @@ func TestRimeIceOptions(t *testing.T) {
 	s.Hotkeys["traditional"] = "Control+Shift+4"
 	s.Hotkeys["forget"] = "Control+Delete"
 	s.CandidateKeys = "alt"
+	s.LongWordPriority, s.DemoteEnglish, s.VSymbolsFirst, s.EnglishAutocap = true, true, true, true
+	s.Pins = []settings.Pin{{Scheme: "rime_ice", Code: "nihao", Text: "你好"}}
 	s.Phrases = []settings.Phrase{{Code: "yx", Text: "shixin@example.com"}, {Code: "em", Text: "笑脸"}}
 	e := rimeIceEngine(t, s)
 	defer e.Stop()
@@ -214,6 +216,13 @@ func TestRimeIceOptions(t *testing.T) {
 		t.Fatal(err)
 	}
 	var config struct {
+		Filters struct {
+			LongWord      bool     `yaml:"long_word"`
+			DemoteEnglish bool     `yaml:"demote_english"`
+			VSymbols      bool     `yaml:"v_symbols"`
+			Autocap       bool     `yaml:"autocap"`
+			Pins          []string `yaml:"pins"`
+		} `yaml:"shixin_filters"`
 		Emoji struct {
 			ExcludedTypes []string `yaml:"excluded_types"`
 		}
@@ -223,6 +232,9 @@ func TestRimeIceOptions(t *testing.T) {
 	}
 	if strings.Join(config.Emoji.ExcludedTypes, ",") != "date,number,unicode,calc" {
 		t.Fatalf("native translator emoji exclusions lost in deploy: %v", config.Emoji.ExcludedTypes)
+	}
+	if f := config.Filters; !f.LongWord || !f.DemoteEnglish || !f.VSymbols || !f.Autocap || len(f.Pins) != 1 || f.Pins[0] != "nihao\t你好" {
+		t.Fatal("native filter settings lost during deploy")
 	}
 	cl := dial(t, e)
 	if cl.res.Flags&ipc.ResultASCIIPunct == 0 {

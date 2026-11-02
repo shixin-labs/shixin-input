@@ -14,6 +14,10 @@ import (
 // ---------------------------------------------------------------- 词库
 
 func (a *app) dictionary(c *ui.Context) {
+	if a.dictionaryBusy {
+		group(c, T("s.d.transfer"), T("s.d.busy.note"), func() { block(c, func() { ui.Spinner(c).Size(18, 18); ui.Text(c, T("s.d.busy")) }) })
+		return
+	}
 	s := &a.s
 	p := colors(c)
 	t := c.Theme()
@@ -99,6 +103,8 @@ func (a *app) dictionary(c *ui.Context) {
 			ui.Button(c, T("s.open")).OnClick(func() { go mygo.Shell.OpenPath(rimeDir()) })
 		})
 	})
+	a.candidatePins(c)
+	a.dictionaryTools(c)
 }
 
 // ---------------------------------------------------------------- 应用

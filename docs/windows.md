@@ -29,6 +29,12 @@ calls registration exports or activates a connection to a live engine.
 Both native architectures have CI jobs. Cross-compiling a test binary does
 not execute it.
 
+CI also runs `go test -race -p 1 -short ./...` on Windows x64, with
+MinGW-w64 GCC on PATH and `CGO_ENABLED=1` for the test runtime. Set
+`SHIXIN_PERF_TOLERANCE=off` for instrumented runs; regular tests retain the
+latency/allocation gates. Go 1.27 does not support the race detector on
+Windows ARM64. Product builds continue to use `CGO_ENABLED=0` and purego.
+
 The portable C++ codec, policy, queue, and decision tests also run outside
 Windows:
 

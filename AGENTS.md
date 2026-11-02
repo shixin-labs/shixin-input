@@ -48,14 +48,16 @@ M1 (macOS MVP) is done; M2 (DESIGN §10) is in progress. Built so far:
 - **Input:** full pinyin and seven double-pinyin layouts (including 自然码)
   with keyboard charts; optional full pinyin inside every shuangpin layout
   (off by default; compiled into the spelling prism); fuzzy pinyin; the
-  native date, number, Unicode and calculator translators.
+  native date, number, Unicode and calculator translators; optional long-word,
+  English-demotion, v-symbol and English-case filters, and exact-code candidate pins.
 - **Engine:** the offline builder, safe generation hot swap, bundled
   prebuilt dictionaries, and offline menu capture for evaluation.
 - **macOS front:** auto spacing, secure-field detection, candidate window
   placement, the caret mode bubble, committing inline text on focus loss,
   bounded per-app engine contexts, and the double-click installer and in-place upgrader.
 - **Settings app** (DESIGN §6; gaps in KNOWN-ISSUES): per-app modes,
-  custom phrases, second/third-candidate shortcuts, the default
+  custom phrases, .scel/text migration, portable dictionary backup/restore/export
+  and learned-word clearing, candidate pins, second/third-candidate shortcuts, the default
   punctuation style, a candidate font picker, forgetting learned words,
   skins and the performance page.
 - **智能排序** (context-aware reranking, DESIGN §7.2), phases 1–2:
@@ -76,7 +78,7 @@ M1 (macOS MVP) is done; M2 (DESIGN §10) is in progress. Built so far:
 | `cmd/shixin-settings` | Settings app |
 | `cmd/shixin-setup`, `internal/winsetup`, `packaging/windows` | Signed Windows bootstrapper, publisher/payload verification and MSI authoring |
 | `cmd/shixin-ai` | 智能排序 scorer |
-| `internal/{rime,engine,policy,ipc,client,keymap,settings,generation,lifecycle,perf,logx,i18n,rerank,ai,llama,models,netclient,update}` | Shared packages (DESIGN §5.1) |
+| `internal/{rime,engine,policy,ipc,client,keymap,settings,dictionary,generation,lifecycle,perf,logx,i18n,rerank,ai,llama,models,netclient,update}` | Shared packages (DESIGN §5.1) |
 | `internal/ui/{brand,candview,fonts,modeview,skin}` | MyGo views shared by the front and the settings app |
 | `frontends/windows-tsf` | Thin C++ TSF COM server, policy/codec core and tests; CMake for Windows x64/ARM64 |
 | `plugins/librime-shixin` | Native C++ librime components |
@@ -137,7 +139,7 @@ works. Before writing hot-path code, re-read DESIGN §3. In short:
 
 - `cmd/shixin-engine`, `cmd/shixin-builder`, `cmd/shixin-ai`,
   `internal/engine`, `internal/rime`, `internal/ipc`, `internal/policy`,
-  `internal/client`, `internal/settings`, `internal/generation`,
+  `internal/client`, `internal/settings`, `internal/dictionary`, `internal/generation`,
   `internal/lifecycle`, `internal/rerank`, `internal/ai`, `internal/llama`,
   `internal/models`, `internal/netclient`, `internal/update`, `internal/winsetup`,
   `internal/dynlib` and `internal/process` **must not import MyGo** (`scripts/ci.sh go`
@@ -216,7 +218,9 @@ and tools that touch Rime use scratch user dirs, never the live one.
 | Task | Command |
 |---|---|
 | Test / vet / format (serialize packages for latency gates) | `go test -p 1 ./...` · `go vet ./...` · `gofmt -l .` |
-| All CI gates locally | `scripts/ci.sh go\|macos\|asan\|asan-full\|fuzz` (`SHIXIN_PERF_TOLERANCE` scales latency budgets; `off` disables them, as CI and the ASan runs do) |
+| Go race detector, all packages (short tests, instrumented timing excluded) | `scripts/ci.sh race` or `CGO_ENABLED=1 SHIXIN_PERF_TOLERANCE=off go test -race -p 1 -short ./...`; add `SHIXIN_LIBRIME=…` for our matching rebuilt librime |
+| Input ownership/mode/focus regressions and concurrent result-ring reuse | `SHIXIN_LIBRIME=… go test -race -p 1 ./internal/client ./internal/engine -run 'Test(Passed.*\|Queued.*\|KeyUsesQueuedModeReply\|ConcurrentResultQueueOwnership)$'` |
+| All CI gates locally | `scripts/ci.sh go\|race\|macos\|asan\|asan-full\|fuzz` (`SHIXIN_PERF_TOLERANCE` scales latency budgets; `off` disables them, as CI and the ASan runs do) |
 | librime and the engine under ASan/UBSan: per push without the long rime-ice runs, or every engine test | `scripts/ci.sh asan` · `scripts/ci.sh asan-full` |
 | Engine + client tests incl. real rime-ice deploy (slow) | `go test -p 1 ./internal/...` (`-short` skips the rime-ice deploy and replay) |
 | Tests against our librime (以词定字 etc.) | `SHIXIN_LIBRIME=… go test ./internal/engine` |
@@ -337,6 +341,22 @@ shared into the guest read-only.
   guest command.
 - Logs: `~/Library/Logs/Shixin/{shixin,engine,ai}.log`. Touch
   `~/Library/Application Support/Shixin/debug` for key-code diagnostics.
+
+## Dictionary maintenance
+
+Dictionary settings import standard Sogou `.scel`, UTF-8 Rime tables/sync
+snapshots and Shixin JSON backups. Exported JSON preserves learned words and
+counts plus custom phrases and pins; exported TXT is a Rime table. Learned
+words use full-pinyin syllables in every layout. Clear affects learned data
+only. All operations use the coordinator's cold lifecycle endpoint and briefly
+pass keys through while a maintenance child owns the engine lock; neither
+Settings nor the builder opens a live user dictionary. Native levers calls
+operate on a private database copy on the child's locked OS thread. Import
+and clear retain the original database under `Rime/backups/dictionary-*`.
+Do not open or restore those raw files while an engine owns the user directory.
+A recovery journal is processed before any new session can attach.
+Go parser/compiler/recovery tests pass in the race gate. Native filter
+build/integration checks and GUI snapshots have not yet been run.
 
 ## Troubleshooting
 

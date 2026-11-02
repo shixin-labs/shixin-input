@@ -18,11 +18,12 @@ const Version = 1
 // Operations. Settings sends OpApply to the coordinator's control socket;
 // the coordinator sends the others to a worker on its stdin (DESIGN §3.5).
 const (
-	OpApply   = "apply"   // build and activate a generation for settings.json
-	OpPromote = "promote" // take the engine lock and serve the real schema
-	OpMigrate = "migrate" // move clients to the public endpoint at an idle boundary
-	OpDrained = "drained" // report whether every client has left
-	OpStop    = "stop"    // release the user dictionary and exit
+	OpApply      = "apply"      // build and activate a generation for settings.json
+	OpPromote    = "promote"    // take the engine lock and serve the real schema
+	OpMigrate    = "migrate"    // move clients to the public endpoint at an idle boundary
+	OpDrained    = "drained"    // report whether every client has left
+	OpStop       = "stop"       // release the user dictionary and exit
+	OpDictionary = "dictionary" // exclusive, cold dictionary maintenance
 )
 
 // ExitLocked is shixin-engine's exit status when another coordinator owns
@@ -33,6 +34,36 @@ const ExitLocked = 3
 type Request struct {
 	Version int    `json:"version"`
 	Op      string `json:"op"`
+	Action  string `json:"action,omitempty"`
+	Path    string `json:"path,omitempty"`
+}
+
+// Dictionary requests import, export or clear on a background Settings
+// goroutine. Only this cold JSON protocol changes; the typing wire is unchanged.
+func Dictionary(socket, action, path string) error {
+	if action != "import" && action != "export" && action != "clear" {
+		return errors.New("lifecycle: unsupported dictionary action")
+	}
+	c, err := ipc.Dial(socket+".control", time.Second)
+	if err != nil {
+		return errors.New("lifecycle: engine is unavailable")
+	}
+	defer c.Close()
+	c.SetDeadline(time.Now().Add(180 * time.Second))
+	if err := json.NewEncoder(c).Encode(Request{Version: Version, Op: OpDictionary, Action: action, Path: path}); err != nil {
+		return errors.New("lifecycle: dictionary request failed")
+	}
+	var r Reply
+	if err := json.NewDecoder(io.LimitReader(c, 64<<10)).Decode(&r); err != nil {
+		return errors.New("lifecycle: dictionary reply failed; check the result before retrying")
+	}
+	if r.Version != Version {
+		return errors.New("lifecycle: unsupported version")
+	}
+	if r.Error != "" {
+		return errors.New(r.Error)
+	}
+	return nil
 }
 
 // Reply reports completion. Error contains only lifecycle diagnostics.

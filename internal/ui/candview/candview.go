@@ -4,6 +4,9 @@
 package candview
 
 import (
+	"strings"
+	"unicode/utf16"
+
 	"github.com/egoist/mygo/ui"
 
 	"shixin/internal/ui/skin"
@@ -52,16 +55,67 @@ type extent struct {
 	line *candidateLine
 }
 
-// candidateLine retains the exact rich line used for both measurement and
-// painting. Independent label/text/comment boxes have different leading on
-// some fallback fonts, so their flex baseline height cannot be measured as
-// one rich line. Painting that retained line also avoids rebuilding joined
-// rich-text strings on every typing frame.
+// candidateLine measures one rich line and retains its component layouts on
+// that line's baseline. Painter.TextLayout rebuilds span metadata when given
+// a rich layout, even when retained; plain layouts avoid that per-frame work.
+// Keep the unified baseline: independent flex boxes disagree for some fonts.
 type candidateLine struct {
 	item        Item
 	font        ui.Font
+	parts       [3]candidatePart
+	fallback    bool
 	text, muted [2]ui.Color
 	draw        [2]func(*ui.Painter, ui.Rect)
+}
+
+type candidatePart struct {
+	layout *ui.TextLayout
+	x, y   float32
+}
+
+func utf16Length(s string) int {
+	n := 0
+	for _, r := range s {
+		n += utf16.RuneLen(r)
+	}
+	return n
+}
+
+func newCandidateLine(item Item, font ui.Font, rich *ui.TextLayout) *candidateLine {
+	line := &candidateLine{item: item, font: font}
+	objects := rich.Objects()
+	// Preserve the rich renderer for unusual multi-line or discontiguous
+	// bidi runs. Ordinary candidate rows use the cached, span-free path.
+	if len(objects) == 0 || strings.ContainsAny(item.Text, "\r\n\u2028\u2029") || strings.ContainsAny(item.Comment, "\r\n\u2028\u2029") {
+		line.fallback = true
+		return line
+	}
+	baseline := objects[0].Rect.Y
+	start := 0
+	for i, text := range [3]string{item.Label, item.Text, item.Comment} {
+		end := start + utf16Length(text)
+		if text != "" {
+			bounds := rich.SelectionRects(ui.TextInputRange{Start: start, End: end})
+			if len(bounds) != 1 {
+				line.fallback = true
+				return line
+			}
+			f := font
+			if i != 1 {
+				f.Size *= 0.76
+			}
+			// A zero-height attachment exposes the native baseline without
+			// depending on one font's ascent when fallback glyphs are present.
+			probe := ui.ShapeRichText([]ui.Span{{Text: text}, {Text: "\uFFFC", ObjectWidth: 1}}, f, 0).Objects()
+			if len(probe) != 1 {
+				line.fallback = true
+				return line
+			}
+			line.parts[i] = candidatePart{layout: ui.ShapeText(text, f, 0), x: bounds[0].X, y: baseline - probe[0].Rect.Y}
+		}
+		start = end + 1 // the fixed-width gap between components
+	}
+	return line
 }
 
 func rowSpans(item Item, size float32, text, muted ui.Color) []ui.Span {
@@ -84,9 +138,24 @@ func (line *candidateLine) painter(text, muted ui.Color, highlighted bool) func(
 		i = 1
 	}
 	if line.draw[i] == nil || line.text[i] != text || line.muted[i] != muted {
-		layout := ui.ShapeRichText(rowSpans(line.item, line.font.Size, text, muted), line.font, 0)
 		line.text[i], line.muted[i] = text, muted
-		line.draw[i] = func(p *ui.Painter, r ui.Rect) { p.TextLayout(layout, r.X, r.Y, text) }
+		if line.fallback {
+			layout := ui.ShapeRichText(rowSpans(line.item, line.font.Size, text, muted), line.font, 0)
+			line.draw[i] = func(p *ui.Painter, r ui.Rect) { p.TextLayout(layout, r.X, r.Y, text) }
+		} else {
+			line.draw[i] = func(p *ui.Painter, r ui.Rect) {
+				for j, part := range line.parts {
+					if part.layout == nil {
+						continue
+					}
+					color := muted
+					if j == 1 {
+						color = text
+					}
+					p.TextLayout(part.layout, r.X+part.x, r.Y+part.y, color)
+				}
+			}
+		}
 	}
 	return line.draw[i]
 }
@@ -101,17 +170,17 @@ func (st *State) measure(c *ui.Context, item Item, size float32, font string, ro
 	}
 	f := ui.Font{Family: font, Size: size, Lang: key.locale}
 	var w, h float32
+	var line *candidateLine
 	if row {
-		w, h = ui.ShapeRichText(rowSpans(item, size, ui.Color{}, ui.Color{}), f, 0).Size()
+		rich := ui.ShapeRichText(rowSpans(item, size, ui.Color{}, ui.Color{}), f, 0)
+		w, h = rich.Size()
+		line = newCandidateLine(item, f, rich)
 	} else {
 		// Context.MeasureText keeps the page's base font as a minimum
 		// line box. Shape with the element's own font and size instead.
 		w, h = ui.ShapeText(item.Text, f, 0).Size()
 	}
-	e := extent{w: w, h: h}
-	if row {
-		e.line = &candidateLine{item: item, font: f}
-	}
+	e := extent{w: w, h: h, line: line}
 	n := len(item.Label) + len(item.Text) + len(item.Comment) + len(font) + len(key.locale)
 	if n <= stringCacheBytes {
 		if st.measured == nil {

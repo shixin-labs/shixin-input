@@ -299,9 +299,11 @@ func (s *coordinator) apply(next settings.Settings) error {
 }
 
 type applyRequest struct {
-	done   chan error
-	stop   bool
-	commit chan bool
+	done              chan error
+	stop              bool
+	commit            chan bool
+	dictionary        *lifecycle.Request
+	dictionaryStartBy time.Time
 }
 
 func runCoordinator(c config, logf func(string, ...any), sig <-chan os.Signal) error {
@@ -310,6 +312,9 @@ func runCoordinator(c config, logf func(string, ...any), sig <-chan os.Signal) e
 		return fmt.Errorf("%w: %v", errLocked, err)
 	}
 	defer release()
+	if err := recoverDictionaryLocked(c.user); err != nil {
+		return err
+	}
 	if err := os.MkdirAll(filepath.Dir(c.socket), 0o700); err != nil {
 		return err
 	}
@@ -402,6 +407,18 @@ func runCoordinator(c config, logf func(string, ...any), sig <-chan os.Signal) e
 				return err
 			}
 		case r := <-requests:
+			if r.dictionary != nil {
+				if time.Now().After(r.dictionaryStartBy) {
+					r.done <- errors.New("dictionary: coordinator is busy; retry after the current operation")
+					continue
+				}
+				err := s.dictionary(*r.dictionary)
+				r.done <- err
+				if s.active == nil {
+					return errors.New("dictionary: could not restart engine")
+				}
+				continue
+			}
 			if r.stop {
 				// A queued request may outlive its caller during a build.
 				// Do not stop a worker until the caller receives the reply
@@ -454,12 +471,19 @@ func acceptControl(l net.Listener, requests chan<- applyRequest, stop <-chan str
 			c.SetDeadline(time.Now().Add(90 * time.Second))
 			var req lifecycle.Request
 			err := json.NewDecoder(io.LimitReader(c, 4096)).Decode(&req)
-			if err == nil && (req.Version != lifecycle.Version || (req.Op != lifecycle.OpApply && req.Op != lifecycle.OpStop)) {
+			if req.Op == lifecycle.OpDictionary {
+				c.SetDeadline(time.Now().Add(180 * time.Second))
+			}
+			if err == nil && (req.Version != lifecycle.Version || (req.Op != lifecycle.OpApply && req.Op != lifecycle.OpStop && req.Op != lifecycle.OpDictionary)) {
 				err = errors.New("unsupported lifecycle request")
 			}
 			var r applyRequest
 			if err == nil {
 				r = applyRequest{done: make(chan error, 1), stop: req.Op == lifecycle.OpStop, commit: make(chan bool, 1)}
+				if req.Op == lifecycle.OpDictionary {
+					r.dictionary = &req
+					r.dictionaryStartBy = time.Now().Add(30 * time.Second)
+				}
 				select {
 				case requests <- r:
 					select {

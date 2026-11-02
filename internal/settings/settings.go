@@ -93,6 +93,11 @@ type Settings struct {
 	// "standard" (标准). It needs shixin-ai and its model; it doesn't
 	// reach the Rime configuration.
 	Rerank string `json:"rerank"`
+	// Optional native candidate filters. Disabled defaults preserve Rime's order.
+	LongWordPriority bool `json:"long_word_priority"`
+	DemoteEnglish    bool `json:"demote_english"`
+	VSymbolsFirst    bool `json:"v_symbols_first"`
+	EnglishAutocap   bool `json:"english_autocap"`
 
 	// Shortcuts (快捷键): HotkeyActions ids → a Rime key name or "" for
 	// none.
@@ -106,6 +111,9 @@ type Settings struct {
 	// Phrases are the user's custom phrases (自定义短语): typing Code
 	// offers Text first.
 	Phrases []Phrase `json:"phrases"`
+	// Pins keep a candidate first for an exact code in a specific layout.
+	// Entries for the same code are shown in their saved order.
+	Pins []Pin `json:"pins"`
 
 	// Apps (应用).
 
@@ -136,6 +144,26 @@ const (
 type Phrase struct {
 	Code string `json:"code"`
 	Text string `json:"text"`
+}
+
+// Pin is a persistent exact-code candidate, scoped to an input layout.
+type Pin struct {
+	Scheme string `json:"scheme"`
+	Code   string `json:"code"`
+	Text   string `json:"text"`
+}
+
+// Validate checks the native filter's preallocated storage limits.
+func (p Pin) Validate() error {
+	if !hasChoice(Schemes, p.Scheme) || p.Code == "" || len(p.Code) > 64 || p.Text == "" || len(p.Text) > 256 || !utf8.ValidString(p.Text) || strings.ContainsFunc(p.Text, unicode.IsControl) {
+		return errors.New("invalid pin layout, code or text")
+	}
+	for _, r := range p.Code {
+		if (r < 'a' || r > 'z') && r != ';' && r != '\'' {
+			return errors.New("pin codes use lowercase spelling keys")
+		}
+	}
+	return nil
 }
 
 // AppRule is an app's default mode.
@@ -170,6 +198,7 @@ func Default() Settings {
 		CandidateKeys: "off",
 		Rerank:        RerankOff,
 		Phrases:       []Phrase{},
+		Pins:          []Pin{},
 		Apps:          []AppRule{},
 		NoAutoSpace:   slices.Clone(DevApps),
 	}
@@ -314,6 +343,32 @@ func oneOf(field, v string, ok ...string) error {
 // checks covers every field. Errors never quote phrase text, which may be
 // private and ends up in logs (AGENTS.md, privacy).
 var checks = []check{
+	{func(s *Settings) error {
+		if len(s.Pins) > 256 {
+			return errors.New("settings: at most 256 pins")
+		}
+		seen, counts := map[Pin]bool{}, map[string]int{}
+		for _, p := range s.Pins {
+			key := p.Scheme + "\t" + p.Code
+			counts[key]++
+			if p.Validate() != nil || seen[p] || counts[key] > 10 {
+				return errors.New("settings: invalid or duplicate pin, or more than 10 pins per code")
+			}
+			seen[p] = true
+		}
+		return nil
+	}, func(s *Settings) {
+		seen, counts := map[Pin]bool{}, map[string]int{}
+		s.Pins = slices.DeleteFunc(s.Pins, func(p Pin) bool {
+			key := p.Scheme + "\t" + p.Code
+			if p.Validate() != nil || seen[p] || counts[key] >= 10 || len(seen) >= 256 {
+				return true
+			}
+			seen[p] = true
+			counts[key]++
+			return false
+		})
+	}},
 	{func(s *Settings) error {
 		if len(s.FontFamily) > 256 || !utf8.ValidString(s.FontFamily) || strings.TrimSpace(s.FontFamily) != s.FontFamily || strings.ContainsAny(s.FontFamily, ",\"'") || strings.ContainsFunc(s.FontFamily, unicode.IsControl) {
 			return fmt.Errorf("settings: invalid font_family")

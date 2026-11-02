@@ -38,6 +38,19 @@ Delete an entry when it's fixed, and mention it in the commit.
 
 ## Front and UI
 
+### Intermittent duplicate literal keys (user report)
+- Reported `,` producing `,，`, and `xinghui` committing `x幸会`.
+- The client now applies queued mode replies before key classification.
+  Passed printable notifications cancel modifier tracking through release
+  events rather than introducing another key-down to Rime. The engine also
+  prevents notification digits from selecting a candidate in a stale
+  composing context. These address duplicate-output paths, but the reported
+  app/timing and desktop reproduction remain unconfirmed. Focused real-client
+  and real-librime regression tests fail with the old code and pass with the
+  patch, including on the MBP with its installed librime and scratch data.
+  The assertions now check exact output, and the all-package Go race gate
+  covers mode changes, passed-key ownership and concurrent result-ring reuse.
+
 ### Windows release gaps
 - Version 0.2.0 distributes unsigned x64/ARM64 previews with manual updates.
   Their integrity checks do not authenticate the publisher, and Windows
@@ -100,8 +113,10 @@ Delete an entry when it's fixed, and mention it in the commit.
   apply error keeps its failure state.
 
 ### Settings app gaps
-- **Not built yet:** skin editor, .scel/text dictionary import, user
-  dictionary export/clear, and the 同步/云输入 pages (M5).
+- **Not built yet:** skin editor and the 同步/云输入 pages (M5).
+- Dictionary migration/backup/clear, candidate pins and native filter controls
+  are implemented. Their Go unit tests pass in the race gate; native filter
+  builds/integration and GUI snapshots remain unvalidated.
 - **性能 page:** shows the engine's own numbers only. The front's
   `handleEvent` and key→candidates histograms (and ASK timeouts, the stall
   counter) stay in its log; the front could report them to the engine for

@@ -148,6 +148,8 @@ func goldenSettings() Settings {
 	s.Hotkeys["full_shape"] = "Control+comma"
 	s.Hotkeys["switcher"] = "F4"
 	s.CandidateKeys = "control"
+	s.LongWordPriority, s.DemoteEnglish, s.VSymbolsFirst, s.EnglishAutocap = true, true, true, true
+	s.Pins = []Pin{{Scheme: "rime_ice", Code: "shi", Text: "是"}, {Scheme: "double_pinyin", Code: "ui", Text: "是"}}
 	s.Phrases = []Phrase{{Code: "yx", Text: "shixin@example.com"}, {Code: "dz", Text: "北京市"}}
 	return s
 }

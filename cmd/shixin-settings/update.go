@@ -54,8 +54,9 @@ func (a *app) checkUpdate() {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	u.phase, u.rel, u.err, u.cancel = updChecking, nil, "", cancel
+	check, current := a.checkRelease, version
 	go func() {
-		rel, err := a.checkRelease(ctx, version)
+		rel, err := check(ctx, current)
 		update(a, func() {
 			cancel()
 			a.finishCheck(rel, err)

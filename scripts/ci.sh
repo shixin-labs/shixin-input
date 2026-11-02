@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # All CI gates (DESIGN §9), runnable locally. GitHub Actions runs them too.
 #   scripts/ci.sh go        format, vet, build (no cgo), unit tests, race
+#   scripts/ci.sh race      short Go tests with the race detector, all packages
 #   scripts/ci.sh macos     + our librime and its C++ tests, llama.cpp, the
 #                           engine on our librime incl. the rime-ice deploy
 #                           (no-Lua gate) and the replay corpus (latency +
@@ -31,15 +32,21 @@ go_gates() {
   step "build (CGO_ENABLED=0)"
   CGO_ENABLED=0 go build ./...
   step "no MyGo in engine packages"
-  for p in ./cmd/shixin-engine ./cmd/shixin-builder ./cmd/shixin-ai ./internal/engine ./internal/generation ./internal/lifecycle ./internal/rime ./internal/ipc ./internal/policy ./internal/client ./internal/settings ./internal/rerank ./internal/ai ./internal/llama ./internal/models ./internal/netclient ./internal/update ./internal/winsetup ./internal/dynlib ./internal/process; do
+  for p in ./cmd/shixin-engine ./cmd/shixin-builder ./cmd/shixin-ai ./internal/engine ./internal/generation ./internal/lifecycle ./internal/rime ./internal/ipc ./internal/policy ./internal/client ./internal/settings ./internal/dictionary ./internal/rerank ./internal/ai ./internal/llama ./internal/models ./internal/netclient ./internal/update ./internal/winsetup ./internal/dynlib ./internal/process; do
     if go list -deps "$p" | grep egoist/mygo >/dev/null; then echo "$p imports MyGo" >&2; exit 1; fi
   done
   step "unit tests"
   # Package concurrency otherwise makes the real-hardware timing gates
   # measure competing tests instead of the input engine.
   go test -p 1 -short ./...
-  step "race"
-  go test -p 1 -race -short ./internal/...
+  race_gates
+}
+
+race_gates() {
+  step "race (all Go packages)"
+  # Instrumented runs check concurrency, not latency. Product builds remain
+  # CGO_ENABLED=0; the regular tests retain allocation and latency coverage.
+  CGO_ENABLED=1 SHIXIN_PERF_TOLERANCE=off go test -p 1 -race -short ./...
 }
 
 macos_gates() {
@@ -52,6 +59,8 @@ macos_gates() {
   go test -p 1 -count=1 ./internal/llama ./internal/ai
   step "our librime: dictionary lock conflicts, 以词定字, rime-ice deploy (no Lua), prism reuse, replay corpus"
   SHIXIN_LIBRIME="$lib" go test -p 1 -count=1 ./internal/rime ./internal/engine ./internal/client ./internal/generation ./cmd/shixin-engine
+  step "our librime: race detector on client, engine and coordinator"
+  CGO_ENABLED=1 SHIXIN_PERF_TOLERANCE=off SHIXIN_LIBRIME="$lib" go test -p 1 -race -short -count=1 ./internal/rime ./internal/engine ./internal/client ./internal/generation ./cmd/shixin-engine
   step "no Lua in the bundle"
   LIBRIME="$lib" scripts/bundle-macos.sh "$ROOT/build/ci/Shixin.app" >/dev/null
   if grep -rl "lua_" "$ROOT/build/ci/Shixin.app/Contents/Resources/rime-data/"*.custom.yaml 2>/dev/null; then exit 1; fi
@@ -102,10 +111,11 @@ fuzz_gates() {
 
 case "${1:-go}" in
 go) go_gates ;;
+race) race_gates ;;
 macos) go_gates; macos_gates ;;
 asan) asan_gates ;;
 asan-full) asan_gates full ;;
 fuzz) fuzz_gates ;;
-*) echo "usage: scripts/ci.sh go|macos|asan|asan-full|fuzz" >&2; exit 2 ;;
+*) echo "usage: scripts/ci.sh go|race|macos|asan|asan-full|fuzz" >&2; exit 2 ;;
 esac
 step "ok"

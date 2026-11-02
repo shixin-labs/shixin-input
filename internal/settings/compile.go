@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -24,7 +25,7 @@ var (
 	translators = []string{"punct_translator", "script_translator", "shixin_date_translator", "table_translator@custom_phrase",
 		"table_translator@melt_eng", "table_translator@cn_en", "table_translator@radical_lookup",
 		"shixin_unicode_translator", "shixin_number_translator", "shixin_calc_translator"}
-	filters = []string{"shixin_rerank", "reverse_lookup_filter@radical_reverse_lookup", "simplifier@emoji", "simplifier@traditionalize", "uniquifier"}
+	filters = []string{"shixin_rerank", "shixin_long_word_filter", "shixin_english_demote_filter", "shixin_v_filter", "shixin_autocap_filter", "reverse_lookup_filter@radical_reverse_lookup", "simplifier@emoji", "simplifier@traditionalize", "uniquifier", "shixin_pin_filter"}
 )
 
 // englishTranslators are left out without mixed English input.
@@ -112,6 +113,14 @@ func Compile(s Settings) (map[string][]byte, error) {
 		}
 		list(&b, "engine/translators", ts)
 		list(&b, "engine/filters", filters)
+		fmt.Fprintf(&b, "  shixin_filters/long_word: %t\n  shixin_filters/demote_english: %t\n  shixin_filters/v_symbols: %t\n  shixin_filters/autocap: %t\n", s.LongWordPriority, s.DemoteEnglish, s.VSymbolsFirst && sc.ID == "rime_ice", s.EnglishAutocap)
+		var pins []string
+		for _, p := range s.Pins {
+			if p.Scheme == sc.ID {
+				pins = append(pins, p.Code+"\t"+p.Text)
+			}
+		}
+		list(&b, "shixin_filters/pins", pins)
 		// Keep emoji conversion for recognized input, but preserve the
 		// native translators' exact readings (十 must not become 🔟).
 		list(&b, "emoji/excluded_types", []string{"date", "number", "unicode", "calc"})
@@ -269,9 +278,12 @@ func list(b *bytes.Buffer, key string, items []string) {
 	}
 }
 
-// quote returns s as a YAML scalar: plain when safe, else single-quoted
-// (which has no escapes except ” for a quote).
+// quote returns s as a YAML scalar. Control characters need a double-quoted
+// escape; other unsafe values use single quotes.
 func quote(s string) string {
+	if strings.ContainsAny(s, "\t\r\n") {
+		return strconv.Quote(s)
+	}
 	if s != "" && !strings.ContainsAny(s, ":#{}[],&*!|>'\"%`") && !strings.ContainsAny(s[:1], "@-? ") && strings.TrimSpace(s) == s {
 		return s
 	}

@@ -65,6 +65,31 @@ func TestUnsignedPreviewManualUpdates(t *testing.T) {
 	}
 }
 
+func TestCheckUpdateCapturesRequestInputs(t *testing.T) {
+	oldVersion := version
+	version = "0.1.0"
+	t.Cleanup(func() { version = oldVersion })
+	a, _, _ := testApp(t)
+	called, release := make(chan string, 1), make(chan struct{})
+	defer close(release)
+	a.checkRelease = func(_ context.Context, stringVersion string) (*shixupdate.Release, error) {
+		called <- stringVersion
+		<-release
+		return nil, errors.New("offline")
+	}
+	a.checkUpdate()
+	// Request inputs are owned by the main thread. The worker must use its
+	// snapshot even if they change before it starts doing network work.
+	version = "0.2.0"
+	a.checkRelease = func(context.Context, string) (*shixupdate.Release, error) {
+		called <- "replacement provider"
+		return nil, errors.New("unexpected provider")
+	}
+	if got := <-called; got != "0.1.0" {
+		t.Fatalf("worker used %q instead of its request snapshot", got)
+	}
+}
+
 func TestFinishCheck(t *testing.T) {
 	a, _, _ := testApp(t)
 	newer := &shixupdate.Release{Version: "9.9.9", Newer: true, Notes: "Fixed things"}

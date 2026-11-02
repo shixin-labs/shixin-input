@@ -28,6 +28,7 @@ gaps and testing qualifications are recorded in the last column.
 | ✅ Default punctuation | Chinese/English punctuation defaults and switching shortcuts | General → Default punctuation: Chinese `，。` or English `,.` | New sessions use the preference; the shortcut temporarily toggles the current session. Both styles keep ordinary typing asynchronous. |
 | ✅ Candidate paging | Comma/period, minus/equal, brackets, Tab, arrows | Configurable paging pairs, Tab, standard navigation | Core paging is covered. |
 | ✅ Second/third candidate shortcuts | 二三候选 shortcut selector | Optional Ctrl or Option/Alt + semicolon/apostrophe presets, off by default | Selects items 2 and 3 on the current page while candidates are shown; preserves unmodified spelling keys. |
+| Candidate pinning | Pinning was not exercised in the audit | Layout-scoped exact-code pins, managed in Dictionary | Moves existing candidates within the first 100 of the same span; newly implemented. |
 | Candidate filtering | 开启 Tab 筛选模式 | No corresponding app option | Sogou's filtering behavior was not exercised. |
 | ✅ Per-app English mode | 自动切换到英文状态 with an app list | Per-app default modes and remembered modes | Core app-level behavior is covered. |
 | English in browser address bars | 浏览器地址栏内默认启用英文 | No address-bar-specific detection | Existing per-app rules affect the app as a whole. |
@@ -41,8 +42,8 @@ gaps and testing qualifications are recorded in the last column.
 | Status indicators | Configurable menu-bar icons, floating status bar and opacity | Input menu and a temporary caret mode bubble | No persistent floating bar or comparable icon controls. |
 | ✅ Custom phrases | 自定义短语设置 | Add, search, and delete custom phrases | Core custom phrases are covered; format compatibility was not tested. |
 | ✅ Forget learned words | Candidate forgetting was not exercised in the audit | Highlight with arrow keys, then Ctrl+Shift+Backspace (configurable) | Removes learned entries/ranking without committing text. Bundled words may still appear; custom phrases are deleted in Dictionary. |
-| User dictionary management | Chinese dictionary import/export/clear; separate English and URL/email clearing | Automatic word learning, forget a highlighted word, open the data folder | Import/export/clear controls are not built. |
-| Additional dictionaries | Enable/manage 细胞词库, add/remove, download more | No dictionary import UI | `.scel` and text import are deferred. |
+| User dictionary management | Chinese dictionary import/export/clear; separate English and URL/email clearing | Automatic learning, word forgetting, JSON backup/restore, Rime text export and learned-word clearing | New migration/backup controls have not yet been validated end to end. |
+| Additional dictionaries | Enable/manage 细胞词库, add/remove, download more | Dictionary → import `.scel`, full-pinyin text or a Shixin backup | Standard SCEL 0x44/0x45 and UTF-8 tab-separated/Rime snapshot text; newly implemented, not yet validated end to end. |
 | English input mode | Separate 英文输入法, translation and automatic word-space options | English words in Chinese candidates; English pass-through mode | No separate English completion/translation UI. |
 | Typing statistics | Today's count, total count, typing-speed indicator | Engine latency and performance page | Character counts and typing-speed statistics are not built. |
 | Cloud candidates | 云计算候选 | Not built | Opt-in cloud input is planned for M5. |
@@ -55,8 +56,9 @@ gaps and testing qualifications are recorded in the last column.
 
 ## Suggested follow-ups
 
-Dictionary import/export/clear is a larger, already planned gap. Punctuation
-customization needs clear rules and app compatibility tests. New key
+Dictionary import/export/clear and exact-code candidate pins are now implemented;
+their new checks and GUI snapshots have not yet been run. Punctuation
+customization still needs clear rules and app compatibility tests. New key
 bindings and preedit behavior must preserve the latency and allocation
 requirements in [DESIGN §3](DESIGN.md#3-no-stall-architecture).
 

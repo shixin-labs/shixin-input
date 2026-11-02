@@ -164,7 +164,7 @@ func realEngine(t *testing.T) string {
 		e, err := engine.Start(engine.Options{
 			LibPath: lib, SharedDataDir: data, UserDataDir: user, LogDir: dir,
 			MinLogLevel: 2, Version: "test", Deploy: true,
-			Apps: engine.AppModes{AutoSpace: true},
+			Apps: engine.AppModes{AutoSpace: true, NoAutoSpace: map[string]bool{"com.example.exact-output": true}},
 		})
 		if err != nil {
 			realErr = err
@@ -855,11 +855,16 @@ func TestMigrationDrainsQueuedCommit(t *testing.T) {
 		}
 	}()
 	h := newHarness(t, endpoint, nil)
+	// Queue accepted writes before the server announces migration. A key
+	// callback may now drain queued replies itself, so sending keys after
+	// Migrate arrives would correctly pass them to the app instead.
+	for i, eaten := range h.typ("ab ") {
+		if !eaten {
+			t.Fatalf("key %d was not accepted before migration", i)
+		}
+	}
 	close(migrate)
 	<-sent
-	// The main thread has not seen Migrate yet: these are still legitimate
-	// accepted writes, and must precede the writer's half-close marker.
-	h.typ("ab ")
 	h.until(func() bool { return h.c.Stats().Connects == 2 && h.c.cur != &policy.Passthrough })
 	h.settle()
 	if got := h.rec.commits(); got != "X" {

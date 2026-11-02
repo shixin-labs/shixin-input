@@ -41,6 +41,8 @@ func main() {
 	flag.StringVar(&c.builder, "builder", "", "builder executable (default: sibling)")
 	worker := flag.Bool("worker", false, "run a generation under a coordinator")
 	capture := flag.Bool("capture", false, "serve a warm-only generation for offline menu capture (own scratch user/socket)")
+	dictionaryTask := flag.String("dictionary-task", "", "exclusive dictionary maintenance (coordinator child only)")
+	dictionaryPath := flag.String("dictionary-path", "", "dictionary maintenance source or destination")
 	flag.Parse()
 	if *capture {
 		// Capture never opens the developer's ordinary log path.
@@ -66,7 +68,12 @@ func main() {
 	debug.SetGCPercent(400)
 	debug.SetMemoryLimit(512 << 20)
 	var err error
-	if *capture {
+	if *dictionaryTask != "" {
+		err = defaults(&c)
+		if err == nil {
+			err = runDictionaryTask(c, *dictionaryTask, *dictionaryPath)
+		}
+	} else if *capture {
 		err = captureConfig(&c, *worker)
 		if err == nil {
 			err = runCapture(c, logger.Printf, sig, os.Stdin, os.Stdout)
