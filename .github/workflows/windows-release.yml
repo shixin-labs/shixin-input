@@ -1,5 +1,16 @@
 name: Windows release packages
 on:
+  push:
+    branches: [main]
+    paths:
+      - third_party/librime
+      - third_party/llama.cpp
+      - plugins/librime-shixin/**
+      - scripts/build-librime.ps1
+      - scripts/build-llama.ps1
+      - scripts/build-vulkan-tools.ps1
+      - packaging/windows/Khronos-headers.txt
+      - .github/workflows/windows-release.yml
   workflow_dispatch:
     inputs:
       version:
@@ -16,6 +27,7 @@ env:
 
 jobs:
   dictionary:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     steps:
       - name: Download one dictionary snapshot for both architectures
@@ -29,8 +41,11 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  package:
-    needs: dictionary
+  # Native libraries depend only on pinned sources and scripts. Pushes to
+  # main that change them refresh the caches, so a release usually reuses
+  # tested libraries instead of rebuilding them. llama.cpp and librime are
+  # independent and build in parallel jobs.
+  llama:
     strategy:
       fail-fast: false
       matrix:
@@ -42,49 +57,53 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 120
     steps:
+      # The build scripts initialize only the submodules they rebuild.
       - uses: actions/checkout@v7
         with:
-          submodules: recursive
           persist-credentials: false
+      - name: Native source revisions
+        id: keys
+        shell: pwsh
+        run: |
+          "llama=$((& git rev-parse HEAD:third_party/llama.cpp).Trim())" >> $env:GITHUB_OUTPUT
+          # Key on the compiler and its runtime, not the weekly runner image.
+          $vs=(& "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe" -latest -products * -property installationPath).Trim()
+          $tools=(Get-Content "$vs/VC/Auxiliary/Build/Microsoft.VCToolsVersion.default.txt").Trim()
+          $redist=(Get-Content "$vs/VC/Auxiliary/Build/Microsoft.VCRedistVersion.default.txt").Trim()
+          if (-not $tools -or -not $redist) { throw 'Cannot read the Visual C++ toolset version' }
+          "msvc=$tools-$redist" >> $env:GITHUB_OUTPUT
+      - name: Restore tested llama.cpp
+        id: llama
+        uses: actions/cache/restore@v6
+        with:
+          path: build/llama-windows-${{ matrix.arch }}/lib
+          key: llama-v2-${{ matrix.runner }}-${{ matrix.arch }}-${{ steps.keys.outputs.msvc }}-${{ steps.keys.outputs.llama }}-${{ hashFiles('scripts/build-llama.ps1', 'scripts/build-vulkan-tools.ps1', 'packaging/windows/Khronos-headers.txt') }}
+      # Go is needed only to test a fresh build; packaging rechecks cached ones.
       - uses: actions/setup-go@v7
+        if: steps.llama.outputs.cache-hit != 'true'
         with:
           go-version-file: go.mod
       - name: Cache source-built Vulkan tools
         id: vulkan
+        if: steps.llama.outputs.cache-hit != 'true'
         uses: actions/cache/restore@v6
         with:
           path: build/vulkan-tools-${{ matrix.arch }}/sdk
           key: vulkan-tools-${{ matrix.runner }}-${{ matrix.arch }}-${{ hashFiles('scripts/build-vulkan-tools.ps1') }}
       - name: Build Vulkan headers, import library and shader compiler
-        if: steps.vulkan.outputs.cache-hit != 'true'
+        if: steps.llama.outputs.cache-hit != 'true' && steps.vulkan.outputs.cache-hit != 'true'
         shell: pwsh
         run: ./scripts/build-vulkan-tools.ps1 -Arch $env:SHIXIN_ARCH
         env:
           SHIXIN_ARCH: ${{ matrix.arch }}
       - name: Cache validated Vulkan build tools
-        if: steps.vulkan.outputs.cache-hit != 'true'
+        if: steps.llama.outputs.cache-hit != 'true' && steps.vulkan.outputs.cache-hit != 'true'
         uses: actions/cache/save@v6
         with:
           path: build/vulkan-tools-${{ matrix.arch }}/sdk
           key: vulkan-tools-${{ matrix.runner }}-${{ matrix.arch }}-${{ hashFiles('scripts/build-vulkan-tools.ps1') }}
-      - name: Native source revisions
-        id: native-keys
-        shell: pwsh
-        run: |
-          "rime=$((& git rev-parse HEAD:third_party/librime).Trim())" >> $env:GITHUB_OUTPUT
-          "llama=$((& git rev-parse HEAD:third_party/llama.cpp).Trim())" >> $env:GITHUB_OUTPUT
-          "image=$env:ImageVersion" >> $env:GITHUB_OUTPUT
-      - name: Restore tested native libraries
-        id: native
-        uses: actions/cache/restore@v6
-        with:
-          path: |
-            build/llama-windows-${{ matrix.arch }}/lib
-            build/windows-${{ matrix.arch }}/rime.dll
-            build/librime-windows-${{ matrix.arch }}/out/share/opencc
-          key: native-v1-${{ matrix.runner }}-${{ matrix.arch }}-${{ steps.native-keys.outputs.image }}-${{ steps.native-keys.outputs.rime }}-${{ steps.native-keys.outputs.llama }}-${{ hashFiles('scripts/build-llama.ps1', 'scripts/build-librime.ps1', 'scripts/build-vulkan-tools.ps1', 'plugins/librime-shixin/**', 'packaging/windows/Khronos-headers.txt') }}
       - name: Build native runtime and test bindings
-        if: steps.native.outputs.cache-hit != 'true'
+        if: steps.llama.outputs.cache-hit != 'true'
         shell: pwsh
         env:
           SHIXIN_ARCH: ${{ matrix.arch }}
@@ -92,23 +111,131 @@ jobs:
           $ErrorActionPreference='Stop'
           $env:VULKAN_SDK="$PWD/build/vulkan-tools-$env:SHIXIN_ARCH/sdk"
           ./scripts/build-llama.ps1 -Arch $env:SHIXIN_ARCH -Test
+      - name: Cache tested llama.cpp
+        if: steps.llama.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: build/llama-windows-${{ matrix.arch }}/lib
+          key: ${{ steps.llama.outputs.cache-primary-key }}
+      - name: Hand tested llama.cpp to packaging
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v7
+        with:
+          name: llama-${{ matrix.arch }}
+          path: build/llama-windows-${{ matrix.arch }}/lib
+          if-no-files-found: error
+          retention-days: 1
+
+  librime:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-2025
+            arch: amd64
+          - runner: windows-11-arm
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+    steps:
+      # build-librime.ps1 initializes the librime submodule only to rebuild.
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Native source revisions
+        id: keys
+        shell: pwsh
+        run: |
+          "rime=$((& git rev-parse HEAD:third_party/librime).Trim())" >> $env:GITHUB_OUTPUT
+          # Key on the compiler and its runtime, not the weekly runner image.
+          $vs=(& "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe" -latest -products * -property installationPath).Trim()
+          $tools=(Get-Content "$vs/VC/Auxiliary/Build/Microsoft.VCToolsVersion.default.txt").Trim()
+          $redist=(Get-Content "$vs/VC/Auxiliary/Build/Microsoft.VCRedistVersion.default.txt").Trim()
+          if (-not $tools -or -not $redist) { throw 'Cannot read the Visual C++ toolset version' }
+          "msvc=$tools-$redist" >> $env:GITHUB_OUTPUT
+      - name: Restore tested librime
+        id: rime
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            build/windows-${{ matrix.arch }}/rime.dll
+            build/librime-windows-${{ matrix.arch }}/out/share/opencc
+            build/librime-windows-${{ matrix.arch }}/out/licenses
+          key: librime-v2-${{ matrix.runner }}-${{ matrix.arch }}-${{ steps.keys.outputs.msvc }}-${{ steps.keys.outputs.rime }}-${{ hashFiles('scripts/build-librime.ps1', 'plugins/librime-shixin/**') }}
+      # librime's third-party dependencies don't change with librime-shixin.
+      - name: Restore librime dependencies
+        id: rime-deps
+        if: steps.rime.outputs.cache-hit != 'true'
+        uses: actions/cache/restore@v6
+        with:
+          path: build/librime-windows-${{ matrix.arch }}/deps
+          key: librime-deps-v2-${{ matrix.runner }}-${{ matrix.arch }}-${{ steps.keys.outputs.msvc }}-${{ steps.keys.outputs.rime }}-${{ hashFiles('scripts/build-librime.ps1') }}
       - name: Build native librime and test components
-        if: steps.native.outputs.cache-hit != 'true'
+        if: steps.rime.outputs.cache-hit != 'true'
         shell: pwsh
         env:
           SHIXIN_ARCH: ${{ matrix.arch }}
         run: ./scripts/build-librime.ps1 -Arch $env:SHIXIN_ARCH -Test
-      - name: Cache tested native libraries
-        if: steps.native.outputs.cache-hit != 'true'
+      - name: Cache librime dependencies
+        if: steps.rime.outputs.cache-hit != 'true' && steps.rime-deps.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: build/librime-windows-${{ matrix.arch }}/deps
+          key: ${{ steps.rime-deps.outputs.cache-primary-key }}
+      - name: Cache tested librime
+        if: steps.rime.outputs.cache-hit != 'true'
         uses: actions/cache/save@v6
         with:
           path: |
-            build/llama-windows-${{ matrix.arch }}/lib
             build/windows-${{ matrix.arch }}/rime.dll
             build/librime-windows-${{ matrix.arch }}/out/share/opencc
-          key: native-v1-${{ matrix.runner }}-${{ matrix.arch }}-${{ steps.native-keys.outputs.image }}-${{ steps.native-keys.outputs.rime }}-${{ steps.native-keys.outputs.llama }}-${{ hashFiles('scripts/build-llama.ps1', 'scripts/build-librime.ps1', 'scripts/build-vulkan-tools.ps1', 'plugins/librime-shixin/**', 'packaging/windows/Khronos-headers.txt') }}
-      - name: Recheck cached runtime bindings
-        if: steps.native.outputs.cache-hit == 'true'
+            build/librime-windows-${{ matrix.arch }}/out/licenses
+          key: ${{ steps.rime.outputs.cache-primary-key }}
+      - name: Hand tested librime to packaging
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v7
+        with:
+          name: librime-${{ matrix.arch }}
+          path: |
+            build/windows-${{ matrix.arch }}/rime.dll
+            build/librime-windows-${{ matrix.arch }}/out/share/opencc
+            build/librime-windows-${{ matrix.arch }}/out/licenses
+          if-no-files-found: error
+          retention-days: 1
+
+  package:
+    if: github.event_name == 'workflow_dispatch'
+    needs: [dictionary, llama, librime]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-2025
+            arch: amd64
+          - runner: windows-11-arm
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+    steps:
+      # Packaging uses the tested native libraries, not submodule sources.
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: Fetch tested llama.cpp
+        uses: actions/download-artifact@v8
+        with:
+          name: llama-${{ matrix.arch }}
+          path: build/llama-windows-${{ matrix.arch }}/lib
+      - name: Fetch tested librime
+        uses: actions/download-artifact@v8
+        with:
+          name: librime-${{ matrix.arch }}
+          path: build
+      # The libraries may come from a cache filled on an older runner image.
+      - name: Recheck runtime bindings on this runner
         shell: pwsh
         env:
           SHIXIN_ARCH: ${{ matrix.arch }}
@@ -147,8 +274,8 @@ jobs:
             version=$env:SHIXIN_VERSION
             architecture=$env:SHIXIN_ARCH
             source=(& git rev-parse HEAD).Trim()
-            librime=(& git -C third_party/librime rev-parse HEAD).Trim()
-            llama=(& git -C third_party/llama.cpp rev-parse HEAD).Trim()
+            librime=(& git rev-parse HEAD:third_party/librime).Trim()
+            llama=(& git rev-parse HEAD:third_party/llama.cpp).Trim()
             dictionary_sha256=(Get-FileHash build/downloads/rime-ice-full.zip -Algorithm SHA256).Hash.ToLowerInvariant()
             unsigned_preview=$true
             gpu_scoring_validated=$false
