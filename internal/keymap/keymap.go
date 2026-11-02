@@ -45,6 +45,16 @@ const (
 	MacFlagCommand  = 1 << 20
 )
 
+// Device-dependent NSEvent modifier flags (IOKit's NX_DEVICE*KEYMASK): the
+// side of each held modifier. Events posted without them carry only the
+// device-independent flags above.
+const (
+	MacFlagControlL = 0x0001
+	MacFlagShiftL   = 0x0002
+	MacFlagShiftR   = 0x0004
+	MacFlagControlR = 0x2000
+)
+
 // MacMods converts NSEvent modifier flags to a Rime mask.
 func MacMods(flags uint64) uint32 {
 	var m uint32
@@ -87,16 +97,14 @@ func MacKeyDown(keyCode uint16, ch byte) (keysym uint32, ok bool) {
 func MacModifierKey(keyCode uint16, flags uint64) (keysym uint32, mods uint32, ok bool) {
 	var down bool
 	switch keyCode {
-	case MacShiftL, MacShiftR:
-		keysym, down = policy.KeyShiftL, flags&MacFlagShift != 0
-		if keyCode == MacShiftR {
-			keysym = policy.KeyShiftR
-		}
-	case MacControlL, MacControlR:
-		keysym, down = policy.KeyControlL, flags&MacFlagControl != 0
-		if keyCode == MacControlR {
-			keysym = policy.KeyControlR
-		}
+	case MacShiftL:
+		keysym, down = policy.KeyShiftL, sideDown(flags, MacFlagShift, MacFlagShiftL, MacFlagShiftL|MacFlagShiftR)
+	case MacShiftR:
+		keysym, down = policy.KeyShiftR, sideDown(flags, MacFlagShift, MacFlagShiftR, MacFlagShiftL|MacFlagShiftR)
+	case MacControlL:
+		keysym, down = policy.KeyControlL, sideDown(flags, MacFlagControl, MacFlagControlL, MacFlagControlL|MacFlagControlR)
+	case MacControlR:
+		keysym, down = policy.KeyControlR, sideDown(flags, MacFlagControl, MacFlagControlR, MacFlagControlL|MacFlagControlR)
 	default:
 		return 0, 0, false
 	}
@@ -105,4 +113,18 @@ func MacModifierKey(keyCode uint16, flags uint64) (keysym uint32, mods uint32, o
 		mods |= policy.ReleaseMask
 	}
 	return keysym, mods, true
+}
+
+// sideDown reports whether one side of a modifier is held. The generic flag
+// stays set while the other side is held, so releasing Left Shift with Right
+// Shift down would look like another press; the side's device flag tells
+// them apart when the event has device flags.
+func sideDown(flags, generic, side, sides uint64) bool {
+	if flags&generic == 0 {
+		return false
+	}
+	if flags&sides == 0 {
+		return true // no device flags (a posted event)
+	}
+	return flags&side != 0
 }
