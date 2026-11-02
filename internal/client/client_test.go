@@ -561,6 +561,36 @@ func TestFocusOutCommitsPreedit(t *testing.T) {
 	}
 }
 
+// The first letter of a composition is marked text when HandleKey
+// returns, before the engine's result: WeChat 4 types the key itself
+// otherwise. The engine's preedit then replaces it.
+func TestFirstLetterMarkedAtOnce(t *testing.T) {
+	h := newHarness(t, realEngine(t), nil)
+	if !h.c.HandleKey('z', 0) || h.rec.preedit != "z" {
+		t.Fatalf("first letter not marked synchronously: %v", h.rec.log)
+	}
+	h.typ("hege")
+	h.settle()
+	if h.rec.preedit != "zhege" || h.rec.commits() != "" {
+		t.Fatalf("composition after the provisional letter: %q %v", h.rec.preedit, h.rec.log)
+	}
+	h.c.FocusOut()
+	h.settle()
+	if h.rec.commits() != "zhege" {
+		t.Fatalf("commit: %v", h.rec.log)
+	}
+	// Only the first letter: later keys wait for the engine's preedit, and
+	// a key already composing doesn't restart the provisional text.
+	h.c.FocusIn("com.example.Test", false)
+	h.settle()
+	h.rec.log = nil
+	h.typ("ni")
+	if len(h.rec.log) != 1 || h.rec.log[0] != "preedit:n" {
+		t.Fatalf("provisional preedit beyond the first letter: %v", h.rec.log)
+	}
+	h.settle()
+}
+
 func TestFocusOutRealPreedit(t *testing.T) {
 	h := newHarness(t, realEngine(t), nil)
 	h.typ("nihao")

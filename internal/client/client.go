@@ -280,6 +280,15 @@ func (c *Client) HandleKey(keysym, mods uint32) bool {
 		default:
 			c.spec = nil
 		}
+		if len(c.marked) == 0 && act.Next() == policy.Composing && mods == 0 && keysym >= 'a' && keysym <= 'z' {
+			// WeChat 4 types an eaten key itself unless marked text exists
+			// when the key returns, and the engine's preedit comes later. A
+			// letter starting a composition shows itself until the
+			// engine's preedit replaces it, as Squirrel sets marked text
+			// inside the key handler.
+			c.marked = append(c.marked[:0], byte(keysym))
+			c.a.Preedit(c.marked, 1)
+		}
 		return true
 
 	case policy.Ask:
