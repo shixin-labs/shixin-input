@@ -82,6 +82,21 @@ try {
         @{ Name = 'marisa-trie'; Flags = @('-DBUILD_TESTING=OFF', '-DENABLE_TOOLS=OFF') },
         @{ Name = 'opencc'; Flags = @('-DBUILD_TESTING=OFF') }
     )
+    # Dependencies change only with the librime pin and these options. Reuse
+    # an install (for example a CI cache) whose stamp matches exactly.
+    $rimeRevision = (& git -C $source rev-parse HEAD).Trim()
+    Check-Native 'read librime revision'
+    $depsStamp = (@($rimeRevision, $Arch) + $common +
+        ($dependencies | ForEach-Object { "$($_.Name): $($_.Flags -join ' ')" })) -join "`n"
+    $depsStampFile = Join-Path $prefix 'shixin-deps.stamp'
+    $depsCurrent = (Test-Path $depsStampFile) -and
+        ((Get-Content $depsStampFile -Raw).TrimEnd() -eq $depsStamp)
+    if ($depsCurrent) {
+        Write-Host "Reusing librime dependencies in $prefix"
+        $dependencies = @()
+    } else {
+        Remove-Item $prefix -Recurse -Force -ErrorAction SilentlyContinue
+    }
     foreach ($dependency in $dependencies) {
         $name = $dependency.Name
         $build = Join-Path $work "build/$name"
@@ -91,6 +106,7 @@ try {
         & cmake --build $build --config Release --target install --parallel $Jobs
         Check-Native "build $name"
     }
+    if (-not $depsCurrent) { Set-Content -Path $depsStampFile -Value $depsStamp -Encoding utf8NoBOM }
 
     $build = Join-Path $work 'build/rime'
     $options = $common + @('-DBUILD_STATIC=ON', '-DBUILD_SHARED_LIBS=ON',
@@ -118,6 +134,16 @@ try {
     $openccOut = Join-Path $out 'share/opencc'
     New-Item -ItemType Directory -Force $openccOut | Out-Null
     Copy-Item (Join-Path $opencc '*') $openccOut -Recurse -Force
+    # Packaging takes notices from this output, not the submodule.
+    $licensesOut = Join-Path $out 'licenses'
+    Remove-Item $licensesOut -Recurse -Force -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory $licensesOut | Out-Null
+    Copy-Item (Join-Path $source 'LICENSE') (Join-Path $licensesOut 'librime (BSD-3-Clause).txt')
+    foreach ($dependency in (Get-ChildItem (Join-Path $source 'deps') -Directory)) {
+        foreach ($notice in (Get-ChildItem $dependency.FullName -File | Where-Object Name -Match '^(LICENSE|COPYING|NOTICE)')) {
+            Copy-Item $notice.FullName (Join-Path $licensesOut ($dependency.Name + '-' + $notice.Name + '.txt'))
+        }
+    }
     if ($Test) {
         $env:Path = $dll.DirectoryName + ';' + $savedPath
         & ctest --test-dir $build -C Release --output-on-failure

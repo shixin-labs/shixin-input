@@ -101,8 +101,10 @@ try {
         $pe=[BitConverter]::ToInt32($bytes,0x3c)
         if ([BitConverter]::ToUInt16($bytes,$pe+4) -eq $machine) { Copy-Item $file.FullName $lib }
     }
+    # Packaging takes notices from the staged libraries, not the submodule.
+    New-Item -ItemType Directory "$lib/licenses" | Out-Null
+    Copy-Item "$source/LICENSE" "$lib/licenses/llama.cpp (MIT).txt"
     if (-not $NoVulkan) {
-        New-Item -ItemType Directory "$lib/licenses" | Out-Null
         $notice = "$lib/licenses/Khronos-headers.txt"
         Copy-Item "$root/packaging/windows/Khronos-headers.txt" $notice
         # Retain the actual SDK headers' copyright notices as SDKs advance.

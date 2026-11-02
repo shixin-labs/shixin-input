@@ -1,7 +1,8 @@
 # Produce a signed Windows installer, or an explicitly unsigned manual preview.
 # Requires native Windows, PowerShell 7, Go, Visual Studio C++, Windows SDK,
-# fetched Rime data and our matching build-librime.ps1 output. Uses only
-# installed SDK tools and Windows Installer; never downloads executable tools.
+# fetched Rime data and our matching build-librime.ps1 output with its staged
+# license notices. Uses only installed SDK tools and Windows Installer; never
+# downloads executable tools.
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)][string]$Version,
@@ -15,6 +16,7 @@ param(
     [string]$Data,
     [string]$Librime,
     [string]$OpenCC,
+    [string]$LibrimeLicenses,
     [string]$Llama
 )
 $ErrorActionPreference='Stop'
@@ -142,8 +144,13 @@ try {
     $licenses=Join-Path $payload 'licenses'
     New-Item -ItemType Directory $licenses | Out-Null
     Copy-Item LICENSE "$licenses/Shixin (GPL-3.0-or-later).txt"
-    Copy-Item third_party/librime/LICENSE "$licenses/librime (BSD-3-Clause).txt"
-    Copy-Item third_party/llama.cpp/LICENSE "$licenses/llama.cpp (MIT).txt"
+    # build-librime.ps1 and build-llama.ps1 stage their notices next to the
+    # libraries, so packaging doesn't need the submodule sources.
+    if (-not $LibrimeLicenses) { $LibrimeLicenses=Join-Path $root "build/librime-windows-$Arch/out/licenses" }
+    if (-not (Test-Path "$LibrimeLicenses/librime (BSD-3-Clause).txt")) { throw 'Rebuild librime to stage its license notices' }
+    if (-not (Test-Path "$Llama/licenses/llama.cpp (MIT).txt")) { throw 'Rebuild llama.cpp to stage its license notice' }
+    Copy-Item "$LibrimeLicenses/*" $licenses
+    Copy-Item "$Llama/licenses/llama.cpp (MIT).txt" "$licenses/llama.cpp (MIT).txt"
     Copy-Item "$Llama/licenses/Khronos-headers.txt" "$licenses/Khronos-headers.txt"
     Copy-Item "$Data/LICENSE" "$licenses/rime-ice.txt"
     Copy-Item (Join-Path (& go env GOROOT).Trim() 'LICENSE') "$licenses/Go.txt"
@@ -153,11 +160,6 @@ try {
         $prefix=$pair[0] -replace '[^A-Za-z0-9.-]','_'
         foreach ($notice in (Get-ChildItem $pair[1] -File | Where-Object Name -Match '^(LICENSE|COPYING|NOTICE)')) {
             Copy-Item $notice.FullName (Join-Path $licenses ($prefix+'-'+$notice.Name+'.txt'))
-        }
-    }
-    foreach ($dependency in (Get-ChildItem third_party/librime/deps -Directory)) {
-        foreach ($notice in (Get-ChildItem $dependency.FullName -File | Where-Object Name -Match '^(LICENSE|COPYING|NOTICE)')) {
-            Copy-Item $notice.FullName (Join-Path $licenses ($dependency.Name+'-'+$notice.Name+'.txt'))
         }
     }
     # The Setup filename otherwise triggers Windows' installer heuristics.

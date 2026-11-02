@@ -183,13 +183,15 @@ The script uses installed SDK tools, Windows Installer automation and
 `makecab`; it downloads no installer compiler. The MSI embeds up to four
 cabinets, compressed in parallel. It compiles all supported
 schemas with an isolated offline builder and bundles prebuilt dictionaries,
-Rime/OpenCC data and license notices. Outputs are
+Rime/OpenCC data and license notices. The librime and llama.cpp builds stage
+their license notices beside their libraries, so packaging doesn't read the
+submodules. Outputs are
 `build/dist/ShixinSetup-<arch>.exe`. Publish each installer as the matching
 GitHub release asset. The ARM64 installer includes native ARM64 and emulated
 x64 TSF DLLs behind one [ARM64X pure forwarder](https://learn.microsoft.com/en-us/windows/arm/arm64x-build#building-an-arm64x-pure-forwarder-dll); both public export paths are tested
 before packaging. The script builds llama.cpp with Vulkan unless `-Llama`
 supplies a prebuilt directory, including `licenses/Khronos-headers.txt`
-from the build. All five llama DLLs are bundled and signed.
+and `licenses/llama.cpp (MIT).txt` from the build. All five llama DLLs are bundled and signed.
 Architecture/import checks reject mismatches and unbundled dependencies,
 including missing transitive Visual C++ runtime DLLs or an OpenMP runtime.
 Microsoft CRTs are verified again after version stamping to ensure their
