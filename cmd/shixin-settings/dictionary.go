@@ -217,9 +217,18 @@ func (a *app) candidatePins(c *ui.Context) {
 			ui.Row(c.Key(p)).Padding(8, 14).Gap(12).AlignItems(ui.Center).Children(func() {
 				ui.Text(c, p.Code).FontSize(12).Font("monospace").Width(110)
 				ui.Text(c, p.Text).FontSize(13).Grow(1).SingleLine().Ellipsis("…")
-				ui.Button(c, "↑").Label(T("s.d.pin.up")).Disabled(previous < 0).OnClick(func() { s.Pins[i], s.Pins[previous] = s.Pins[previous], s.Pins[i] })
+				ui.Button(c, "↑").Label(T("s.d.pin.up")).Disabled(previous < 0).OnClick(func() { movePinUp(s.Pins, i, previous, p) })
 				iconButton(c, iconTrash, T("s.d.pin.remove")).OnClick(func() { s.Pins = slices.DeleteFunc(s.Pins, func(x settings.Pin) bool { return x == p }) })
 			})
 		}
 	})
+}
+
+// movePinUp swaps the pins at i and previous. The indexes come from the
+// rendered frame; ignore the click if the list changed since.
+func movePinUp(pins []settings.Pin, i, previous int, p settings.Pin) {
+	if previous < 0 || i >= len(pins) || previous >= i || pins[i] != p {
+		return
+	}
+	pins[i], pins[previous] = pins[previous], pins[i]
 }
