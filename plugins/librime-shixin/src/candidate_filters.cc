@@ -47,13 +47,18 @@ class FilterTranslation : public Translation {
         return false;
     return true;
   }
+  // Releases the previous menu's candidates. Idle slots are cleared on
+  // every Apply, so an already released slot returns at once.
   void Clear() {
+    if (!inner_)
+      return;
     inner_.reset();
-    for (auto& c : buffer_)
-      c.reset();
-    for (auto& c : case_)
-      if (c && c.use_count() == 1)
-        c->Clear();
+    for (size_t i = 0; i < n_; i++) {
+      buffer_[i].reset();
+      if (case_[i] && case_[i].use_count() == 1)
+        case_[i]->Clear();
+    }
+    n_ = pos_ = 0;
   }
   void Reset(an<Translation> inner,
              FilterKind kind,
@@ -61,7 +66,6 @@ class FilterTranslation : public Translation {
              const std::vector<PinRule>& pins) {
     Clear();
     inner_ = std::move(inner);
-    n_ = pos_ = 0;
     std::array<FilterItem, kFilterWindow> items;
     size_t start = 0, end = 0;
     while (n_ < kFilterWindow && !inner_->exhausted()) {
@@ -132,11 +136,16 @@ class FilterTranslation : public Translation {
 };
 }  // namespace
 
+// Every selected segment keeps its menu, and so one of these translations,
+// until the composition ends. The pool starts warm for ordinary typing and
+// grows, rarely and only up to kMaxPool, for long piecewise selections.
+constexpr size_t kWarmPool = 4, kMaxPool = 64;
+
 struct CandidateFilter::Storage {
   FilterKind kind;
   bool enabled = false;
   std::vector<PinRule> pins;
-  std::array<an<FilterTranslation>, 4> pool;
+  std::vector<an<FilterTranslation>> pool;
 };
 
 CandidateFilter::CandidateFilter(const Ticket& ticket, FilterKind kind)
@@ -146,6 +155,8 @@ CandidateFilter::CandidateFilter(const Ticket& ticket, FilterKind kind)
   if (!engine_ || !engine_->schema())
     return;
   auto config = engine_->schema()->config();
+  if (!config)
+    return;
   const char* key = kind == FilterKind::LongWord        ? "long_word"
                     : kind == FilterKind::EnglishDemote ? "demote_english"
                     : kind == FilterKind::VSymbols      ? "v_symbols"
@@ -167,9 +178,11 @@ CandidateFilter::CandidateFilter(const Ticket& ticket, FilterKind kind)
     s.enabled = !s.pins.empty();
   } else
     config->GetBool(std::string("shixin_filters/") + key, &s.enabled);
-  if (s.enabled)
-    for (auto& p : s.pool)
-      p = New<FilterTranslation>(kind == FilterKind::Autocap);
+  if (s.enabled) {
+    s.pool.reserve(kMaxPool);
+    for (size_t i = 0; i < kWarmPool; i++)
+      s.pool.push_back(New<FilterTranslation>(kind == FilterKind::Autocap));
+  }
 }
 CandidateFilter::~CandidateFilter() = default;
 
@@ -195,8 +208,8 @@ an<Translation> CandidateFilter::Apply(an<Translation> input, CandidateList*) {
     if (!found)
       return input;
   }
-  // Warmed fixed pools avoid adding allocations on keys. If a previous menu
-  // still owns all slots, preserve upstream order instead of allocating.
+  // Warmed pools avoid allocations on keys. If retained menus own every
+  // slot, add one; at the bound, preserve upstream order instead.
   for (auto& p : s.pool)
     if (p.use_count() == 1)
       p->Clear();
@@ -206,7 +219,11 @@ an<Translation> CandidateFilter::Apply(an<Translation> input, CandidateList*) {
     p->Reset(std::move(input), s.kind, code, s.pins);
     return p;
   }
-  return input;
+  if (s.pool.size() >= kMaxPool)
+    return input;
+  s.pool.push_back(New<FilterTranslation>(s.kind == FilterKind::Autocap));
+  s.pool.back()->Reset(std::move(input), s.kind, code, s.pins);
+  return s.pool.back();
 }
 bool CandidateFilter::AppliesToSegment(Segment* segment) {
   return storage_->kind == FilterKind::VSymbols || segment->HasTag("abc");
