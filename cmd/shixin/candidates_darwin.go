@@ -45,6 +45,9 @@ var cand struct {
 	// The panel's size in the last frame, to place the window before it
 	// shows: until the next frame measures the new candidates.
 	lastW, lastH float64
+	updating     int // depth of updateCandidateWindow, which can nest
+	// canvasW and canvasH are the flyout's size (candidateCanvas).
+	canvasW, canvasH int
 	// The last position logged in debug mode.
 	loggedX, loggedY int
 }
@@ -74,6 +77,7 @@ func newCandidateWindow(tray *mygo.Tray, s *settings.Settings) {
 	cand.screens = make([]candidateScreen, 0, 8)
 	cand.pending.init()
 	initScreenRect()
+	cand.canvasW, cand.canvasH = candWindowW, candWindowH
 	cand.flyout = mygo.NewFlyout(mygo.FlyoutOptions{
 		Tray:    tray,
 		Hidden:  true,
@@ -134,7 +138,6 @@ func candView(c *ui.Context) {
 	style.MaxWidth, style.MaxHeight = candidateCardBounds(work, candWindowW, candWindowH, shadowPad)
 	w, h := candview.Measure(c, &cand.state, &style)
 	cand.lastW, cand.lastH = float64(w), float64(h)
-	refreshOcclusion()
 	if debug {
 		logf("debug: candidates frame: %d items, %gx%g, shown %v, %s", len(cand.state.Items), w, h, cand.shown, windowState(cand.flyout))
 	}
@@ -198,7 +201,15 @@ func positionBesideBadge(window *mygo.Window, rect nsRect, width, height float64
 		caret = modeBesideBadge(caret, s.work, width)
 	}
 	x, y := candidatePosition(caret, s.work, width, height, cand.screens[0].frame.H, shadowPad)
-	window.SetPosition(x, y)
+	if window == cand.flyout {
+		// SetBounds moves and sizes the native window at once. MyGo's
+		// flyout sizing (SetContentSize) re-anchors to the tray icon that
+		// main_darwin.go destroyed at startup.
+		cand.canvasW, cand.canvasH = candidateCanvas(x, y, *s, cand.screens[0].frame.H, candWindowW, candWindowH)
+		window.SetBounds(mygo.Rectangle{X: x, Y: y, Width: cand.canvasW, Height: cand.canvasH})
+	} else {
+		window.SetPosition(x, y)
+	}
 	if debug && window == cand.flyout && (x != cand.loggedX || y != cand.loggedY) {
 		cand.loggedX, cand.loggedY = x, y
 		logf("debug: candidates at %d,%d (%gx%g) for caret {%g %g %g %g} on screen %d of %d, work %+v",
@@ -235,6 +246,13 @@ func queueCandidateUpdate() {
 // still once per composition, and now also outside the app's key callback.
 func updateCandidateWindow() {
 	cand.queued = false
+	// The app's calls below (the caret query) can run the main run loop,
+	// and a queued update with it.
+	cand.updating++
+	defer func() { cand.updating-- }()
+	if debug && cand.updating > 1 {
+		logf("debug: nested candidate update (depth %d)", cand.updating)
+	}
 	if secure := focusedSecureInput(); !cand.pending.visible || imkClient == 0 || secure {
 		if debug && (cand.shown || cand.pending.visible) {
 			logf("debug: candidates hidden: visible %v, client %v, secure %v", cand.pending.visible, imkClient != 0, secure)
@@ -244,13 +262,21 @@ func updateCandidateWindow() {
 		cand.pending.visible, cand.pending.dirty = false, false
 		cand.state.Clear()
 		if cand.shown {
+			cand.shown = false // before the native call, which may nest an update
 			cand.flyout.Hide()
-			cand.shown = false
 		}
 		return
 	}
 	if !cand.caret.valid {
 		readCaret()
+		if !cand.pending.visible || imkClient == 0 {
+			// An update nested in the caret query hid the candidates: don't
+			// show an emptied window.
+			if debug {
+				logf("debug: candidates hidden during the caret query; not showing")
+			}
+			return
+		}
 	}
 	if !cand.framePending {
 		cand.framePending = true
@@ -262,9 +288,8 @@ func updateCandidateWindow() {
 		// that positions it runs after it shows. The frame then fits the
 		// new candidates' size.
 		positionCaretWindow(cand.flyout, nsRect(cand.caret.caret), cand.lastW, cand.lastH)
+		cand.shown = true // before the native call, which may nest an update
 		cand.flyout.ShowInactive()
-		cand.shown = true
-		refreshOcclusion()
 		if debug {
 			x, y := cand.flyout.Position()
 			logf("debug: candidates shown at %d,%d, visible %v, %s", x, y, cand.flyout.IsVisible(), windowState(cand.flyout))
@@ -296,29 +321,20 @@ func hideCandidates() {
 	showCandidates(&empty)
 }
 
-// refreshOcclusion asks macOS whether any of the candidate window shows.
-// A window shown over some apps (企业微信, ChatGPT) kept reporting itself
-// occluded, so MyGo, which draws nothing for a window out of sight, never
-// put the panel on screen; asking for the state on each show and frame,
-// as a debug log first did, made it appear. Main thread, in the UI frame
-// or the update callback, never on the key path.
-func refreshOcclusion() {
-	if w := flyoutHandle(); w != 0 {
-		queryOcclusion(w)
-	}
+// windowVisible reports whether macOS says some of window shows.
+func windowVisible(window *mygo.Window) bool {
+	const occlusionVisible = 1 << 1
+	w := windowHandle(window)
+	return w != 0 && send(w, selOcclusionState)&occlusionVisible != 0
 }
 
-// flyoutHandle and queryOcclusion are refreshOcclusion's native calls;
-// tests replace them.
-var (
-	flyoutHandle = func() uintptr {
-		if cand.flyout == nil {
-			return 0
-		}
-		return cand.flyout.NativeHandle()
+// windowHandle is window's NSWindow, or 0 before it has one.
+func windowHandle(window *mygo.Window) uintptr {
+	if window == nil {
+		return 0
 	}
-	queryOcclusion = func(w uintptr) { send(w, selOcclusionState) }
-)
+	return window.NativeHandle()
+}
 
 // windowState describes, for debug logs, how macOS sees window: whether
 // any of it shows (occlusionState), its space, number and level.

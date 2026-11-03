@@ -95,6 +95,22 @@ func candidatePosition(caret, work candidateRect, width, height, primaryHeight, 
 	return int(math.Floor(x - margin)), int(math.Floor(primaryHeight - y - height - margin))
 }
 
+// candidateCanvas sizes the transparent flyout placed with its top-left
+// corner at (x, y), in MyGo's top-left global points, to end at screen s's
+// right and bottom edges, at most maxW×maxH. With displays that have
+// separate Spaces, macOS shows a window spanning two displays only on the
+// one holding most of it: a full-size canvas near the bottom right of one
+// display could belong to its neighbour, and the panel in its top-left
+// corner then never showed. The panel, kept inside s's work area, always
+// fits the canvas.
+func candidateCanvas(x, y int, s candidateScreen, primaryHeight float64, maxW, maxH int) (int, int) {
+	right := s.frame.X + s.frame.W
+	bottom := primaryHeight - s.frame.Y // in top-left coordinates
+	w := min(maxW, int(math.Floor(right-float64(x))))
+	h := min(maxH, int(math.Floor(bottom-float64(y))))
+	return max(w, 1), max(h, 1)
+}
+
 // modeBesideBadge moves the caret so the mode bubble clears macOS's own
 // input source badge, which is centered under the caret after a switch:
 // to its right, or to its left at the work area's right edge.

@@ -213,11 +213,19 @@ are sent once per connection; results refer to them by ID.
     there once per composition, was never seen. The mode bubble is not
     shown at an unusable caret. Placement never converts NaN to window
     coordinates.
-  - On each show and drawn frame, the front asks macOS for the candidate
-    window's occlusion state. Shown over some apps (企业微信, ChatGPT),
-    the window kept reporting itself occluded, and MyGo, which puts no
-    frames on screen for a window out of sight, never painted it
+  - The candidate flyout is a transparent canvas of up to 1400×560
+    points with the panel at its top-left corner, sized on each placement
+    to end at the caret screen's right and bottom edges. With displays
+    that have separate Spaces, macOS shows a window spanning two displays
+    only on the one holding most of it: a full-size canvas placed low and
+    to the right on one display belonged to its neighbour, and the panel
+    never showed. The panel, kept inside the screen's work area, always
+    fits the canvas
     ([retrospective](retrospectives/2026-11-candidate-window.md)).
+  - The window update re-checks, after its synchronous caret query, that
+    candidates are still wanted, and sets its shown flag before the native
+    show or hide: an update nested in those calls could otherwise leave an
+    emptied window shown.
   - These calls can run the main run loop, and a queued `Drain` with it,
     before they return. `Drain` ignores a nested call (asking the outer
     one to look again for results that arrived meanwhile): the nested one

@@ -144,3 +144,106 @@ func TestCandidatePositionNaN(t *testing.T) {
 		}
 	}
 }
+
+// The canvas never reaches past its screen's right or bottom edge, so a
+// second display can't take the window; the panel always fits in it.
+func TestCandidateCanvas(t *testing.T) {
+	// A 1800×1169 built-in display, and a 2560×1440 display to its right.
+	builtIn := candidateScreen{frame: candidateRect{0, 0, 1800, 1169}, work: candidateRect{57, 0, 1743, 1130}}
+	const primary = 1169
+	for _, tt := range []struct {
+		name string
+		x, y int
+		w, h int
+	}{
+		{"room for all", 100, 100, 1400, 560},
+		{"right edge", 686, 300, 1114, 560}, // Slack, caret x 698: it spanned into the 5K display
+		{"bottom", 300, 1082, 1400, 87},     // near the bottom: only 87 points left
+		{"both", 897, 1056, 903, 113},       // the failing Slack composition at 14:14
+		{"at the edge", 1799, 1168, 1, 1},   // never zero
+	} {
+		w, h := candidateCanvas(tt.x, tt.y, builtIn, primary, 1400, 560)
+		if w != tt.w || h != tt.h {
+			t.Errorf("%s: canvas %dx%d, want %dx%d", tt.name, w, h, tt.w, tt.h)
+		}
+	}
+	// The panel placed by candidatePosition always fits the canvas.
+	for _, caret := range []candidateRect{{698, 79, 1, 18}, {1700, 79, 1, 18}, {909, 105, 1, 18}, {919, 294, 1, 19}, {1790, 1100, 0, 18}} {
+		for _, size := range [][2]float64{{232, 60}, {600, 60}, {180, 400}} {
+			x, y := candidatePosition(caret, builtIn.work, size[0], size[1], primary, 12)
+			w, h := candidateCanvas(x, y, builtIn, primary, 1400, 560)
+			if float64(w) < size[0]+12 || float64(h) < size[1]+12 {
+				t.Errorf("caret %+v panel %v: canvas %dx%d too small", caret, size, w, h)
+			}
+		}
+	}
+}
+
+// owner is the screen macOS shows a window on when displays have separate
+// Spaces: the one holding most of it. win is in top-left global points,
+// screens in Cocoa's bottom-left coordinates about the primary screen.
+func owner(win candidateRect, screens []candidateScreen, primaryHeight float64) int {
+	best, area := -1, 0.0
+	for i, s := range screens {
+		top := primaryHeight - (s.frame.Y + s.frame.H) // the screen in top-left coordinates
+		w := min(win.X+win.W, s.frame.X+s.frame.W) - max(win.X, s.frame.X)
+		h := min(win.Y+win.H, top+s.frame.H) - max(win.Y, top)
+		if w > 0 && h > 0 && w*h > area {
+			best, area = i, w*h
+		}
+	}
+	return best
+}
+
+// With a second display anywhere around the first, the candidate window
+// placed at any caret belongs to the caret's display, and the panel lies
+// on it: a window spanning two displays shows only on the one holding most
+// of it, and a full-size canvas there hid the panel.
+func TestCandidateWindowStaysOnCaretDisplay(t *testing.T) {
+	const primary = 1169
+	builtIn := candidateScreen{frame: candidateRect{0, 0, 1800, 1169}, work: candidateRect{57, 0, 1743, 1130}}
+	second := func(x, y float64) candidateScreen {
+		return candidateScreen{frame: candidateRect{x, y, 2560, 1440}, work: candidateRect{x, y, 2560, 1415}}
+	}
+	arrangements := map[string][]candidateScreen{
+		"right, offset (the report)": {builtIn, second(1800, -271)},
+		"left":                       {builtIn, second(-2560, 0)},
+		"above":                      {builtIn, second(-380, 1169)},
+		"below":                      {builtIn, second(-380, -1440)},
+	}
+	// The macOS flyout's constants (candidates_darwin.go), here so that
+	// this platform-free test builds everywhere.
+	const pad, canvasW, canvasH = 12, 1400, 560
+	panels := [][2]float64{{232, 60}, {600, 60}, {180, 400}}
+	for name, screens := range arrangements {
+		for si, s := range screens {
+			for fx := 0.0; fx <= 1; fx += 0.05 {
+				for fy := 0.0; fy <= 1; fy += 0.05 {
+					caret := candidateRect{X: s.work.X + fx*(s.work.W-1), Y: s.work.Y + fy*(s.work.H-20), W: 1, H: 18}
+					if candidateScreenAt(caret, screens) != si {
+						continue
+					}
+					for _, p := range panels {
+						x, y := candidatePosition(caret, s.work, p[0], p[1], primary, pad)
+						w, h := candidateCanvas(x, y, s, primary, canvasW, canvasH)
+						win := candidateRect{float64(x), float64(y), float64(w), float64(h)}
+						if got := owner(win, screens, primary); got != si {
+							t.Fatalf("%s: caret %+v panel %v: window %+v shown on screen %d, caret on %d", name, caret, p, win, got, si)
+						}
+						panel := candidateRect{win.X + pad, win.Y + pad, p[0], p[1]}
+						if panel.X+panel.W > win.X+win.W || panel.Y+panel.H > win.Y+win.H || owner(panel, screens, primary) != si {
+							t.Fatalf("%s: caret %+v: panel %+v outside its window %+v or screen", name, caret, panel, win)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// The reported failure: the old fixed canvas belonged to the other display.
+	screens := arrangements["right, offset (the report)"]
+	x, y := candidatePosition(candidateRect{698, 79, 1, 18}, builtIn.work, 232, 60, primary, pad)
+	if owner(candidateRect{float64(x), float64(y), canvasW, canvasH}, screens, primary) != 1 {
+		t.Fatal("the model no longer shows the reported failure of the fixed-size canvas")
+	}
+}
