@@ -205,6 +205,11 @@ are sent once per connection; results refer to them by ID.
     candidate window to it (at the last measured size) before showing it.
     Showing first left it for a frame where the last composition was,
     often in another app.
+  - These calls can run the main run loop, and a queued `Drain` with it,
+    before they return. `Drain` ignores a nested call (asking the outer
+    one to look again for results that arrived meanwhile): the nested one
+    found the results still queued and applied them twice, typing a commit
+    twice whenever the app's calls were slow.
   - When several results are queued, apply every commit in order, but only
     the last marked text and candidates.
   - **First letter:** when an eaten lowercase letter starts a composition,

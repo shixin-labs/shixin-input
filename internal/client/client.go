@@ -120,6 +120,9 @@ type Client struct {
 	sp           spacer
 	contexts     [16]appContext
 	contextTick  uint64
+	// draining is set while Drain applies results, and redrain when a
+	// nested Drain was skipped meanwhile (see Drain).
+	draining, redrain bool
 
 	// Shared with the connection goroutine, without locks: the main
 	// thread never waits on the reader.
@@ -627,7 +630,30 @@ func (c *Client) ChangePage(backward bool) {
 
 // Drain applies queued results. Commits are applied in order; the window
 // and the marked text only for the last result (DESIGN §3.3). Main thread.
+//
+// Drain may be called again from within itself: on macOS, inserting text
+// is a synchronous call into the app, which can run the main run loop, and
+// with it a queued Drain, before it returns. The results being applied
+// are still queued then, and a nested Drain would apply them again (the
+// same commit typed twice). A nested call only asks the outer one to look
+// again, for results that arrived meanwhile.
 func (c *Client) Drain() {
+	if c.draining {
+		c.redrain = true
+		return
+	}
+	c.draining = true
+	for {
+		c.drainOnce()
+		if !c.redrain {
+			break
+		}
+		c.redrain = false
+	}
+	c.draining = false
+}
+
+func (c *Client) drainOnce() {
 	c.waking.Store(false)
 	h, t := c.head.Load(), c.tail.Load()
 	if h == t {
