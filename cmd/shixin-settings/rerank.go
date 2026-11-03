@@ -138,7 +138,26 @@ func (a *app) rerankPerf(c *ui.Context, r *ipc.RerankStats) {
 		}
 		return fmt.Sprintf("%.1f", float64(n)*100/float64(r.Requests))
 	}
-	ui.Grid(c).Columns(4).Gap(10).Children(func() {
+	ui.Grid(c).Columns(3).Gap(10).Children(func() {
+		for _, top := range []struct {
+			label, hint string
+		}{
+			{"s.f.rerank.top1", "s.f.rerank.top1.hint"},
+			{"s.f.rerank.top5", "s.f.rerank.top5.hint"},
+		} {
+			value, hint := "–", T("s.f.rerank.no_data")
+			if s := r.Selections; s != nil {
+				n := s.Top1
+				if top.label == "s.f.rerank.top5" {
+					n = s.Top5
+				}
+				if s.Total != 0 {
+					value = fmt.Sprintf("%.1f", float64(n)*100/float64(s.Total))
+				}
+				hint = fmt.Sprintf(T(top.hint), s.Total)
+			}
+			a.metric(c, T(top.label), value, "%", t.Text, hint)
+		}
 		a.metric(c, T("s.f.rerank.applied"), pct(r.Applied), "%", t.Text, T("s.f.rerank.applied.hint"))
 		a.metric(c, T("s.f.rerank.timeouts"), pct(r.Timeouts), "%", t.Text, T("s.f.rerank.timeouts.hint"))
 		for _, q := range []struct {

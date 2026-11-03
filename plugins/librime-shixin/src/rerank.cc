@@ -130,6 +130,18 @@ void RerankTranslation::Fill() {
   }
   rerank::Export(slot, rerank::Hash(input, start, end), abbrev ? rerank::kExportAbbrev : 0, items,
                  n_);
+  // Menus are lazy. The export may be prepared for the active segment or
+  // the immediately preceding Chinese segment while punctuation is added.
+  const auto& comp = ctx_->composition();
+  slot->menu_start = static_cast<uint32_t>(start);
+  slot->menu_id = 0;
+  for (size_t k = comp.size(), checked = 0; k > 0 && checked < 2; checked++) {
+    const auto& seg = comp[--k];
+    if (seg.start == start && seg.menu) {
+      slot->menu_id = reinterpret_cast<uintptr_t>(seg.menu.get());
+      break;
+    }
+  }
   const uint8_t* perm = n_ > 1 ? rerank::Permutation(slot, n_) : nullptr;
   for (int k = 0; k < n_; k++)
     order_[k] = perm ? perm[k] : static_cast<uint8_t>(k);
@@ -150,6 +162,62 @@ an<Translation> RerankFilter::Apply(an<Translation> translation, CandidateList* 
 
 bool RerankFilter::AppliesToSegment(Segment* segment) {
   return segment->HasTag("abc");
+}
+
+RerankProcessor::RerankProcessor(const Ticket& ticket) : Processor(ticket) {
+  Context* ctx = engine_->context();
+  // Run before the engine closes/commits the selected segment. These
+  // callbacks stay entirely in C++; Go only reads the aggregate counters.
+  select_connection_ = ctx->select_notifier().connect(
+      [this](Context* c) { OnSelection(c); }, boost::signals2::at_front);
+  commit_connection_ = ctx->commit_notifier().connect(
+      [this](Context* c) { OnSelection(c); }, boost::signals2::at_front);
+  // The engine's update listener has already rebuilt the menu. Highlight
+  // and page changes keep it; editing or clearing invalidates its rating.
+  update_connection_ = ctx->update_notifier().connect(
+      [this](Context* c) { OnUpdate(c); });
+}
+
+RerankProcessor::~RerankProcessor() {
+  select_connection_.disconnect();
+  commit_connection_.disconnect();
+  update_connection_.disconnect();
+}
+
+void RerankProcessor::OnUpdate(Context* ctx) {
+  auto* slot = rerank::SlotAt(SlotIndex(ctx));
+  if (!slot)
+    return;
+  const auto& comp = ctx->composition();
+  for (size_t k = comp.size(), checked = 0; k > 0 && checked < 2; checked++) {
+    if (reinterpret_cast<uintptr_t>(comp[--k].menu.get()) == slot->menu_id)
+      return;  // paging/highlight, or a retained prefix before punctuation
+  }
+  slot->rated_seq = 0;
+  // A downstream filter may have forced the export while AddFilter ran,
+  // before librime assigned the new menu to its segment.
+  slot->menu_id = 0;
+  for (size_t k = comp.size(), checked = 0; k > 0 && checked < 2; checked++) {
+    const auto& seg = comp[--k];
+    if (seg.start == slot->menu_start && seg.menu) {
+      slot->menu_id = reinterpret_cast<uintptr_t>(seg.menu.get());
+      break;
+    }
+  }
+}
+
+void RerankProcessor::OnSelection(Context* ctx) {
+  auto* slot = rerank::SlotAt(SlotIndex(ctx));
+  if (!slot || !slot->enabled || !slot->rated_seq)
+    return;
+  const auto& comp = ctx->composition();
+  for (size_t k = comp.size(), checked = 0; k > 0 && checked < 2; checked++) {
+    const auto& seg = comp[--k];
+    if (seg.menu && reinterpret_cast<uintptr_t>(seg.menu.get()) == slot->menu_id && seg.GetSelectedCandidate()) {
+      rerank::RecordSelection(slot, seg.selected_index);
+      return;
+    }
+  }
 }
 
 ProcessResult RerankProcessor::ProcessKeyEvent(const KeyEvent& key_event) {

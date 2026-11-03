@@ -66,6 +66,12 @@ func sampleStats() *Stats {
 	return m
 }
 
+func sampleSelectionStats() *Stats {
+	m := sampleRerankStats()
+	m.Rerank.Selections = &RerankSelections{Total: 100, Top1: 65, Top5: 90}
+	return m
+}
+
 // vectors lists one encoded sample of every message. The C++ codecs
 // (frontends/) are tested against the same testdata/golden.txt.
 func vectors() []struct {
@@ -95,6 +101,7 @@ func vectors() []struct {
 		{"stats_request", (&StatsRequest{Reset: true}).Append(nil)},
 		{"stats", sampleStats().Append(nil)},
 		{"stats_rerank", sampleRerankStats().Append(nil)},
+		{"stats_rerank_selections", sampleSelectionStats().Append(nil)},
 		{"caret", (&Caret{Ctx: 1, Left: -1920, Top: 100, Right: -1918, Bottom: 124}).Append(nil)},
 		{"result_auto_space", autoSpace.Append(nil)},
 	}
@@ -142,6 +149,7 @@ func TestRoundTrip(t *testing.T) {
 		{&Migrate{Endpoint: []byte("e")}, &Migrate{}, TypeMigrate},
 		{&StatsRequest{Reset: true}, &StatsRequest{}, TypeStatsRequest},
 		{sampleRerankStats(), &Stats{}, TypeStats},
+		{sampleSelectionStats(), &Stats{}, TypeStats},
 		{&Caret{Ctx: 9, Left: -400, Top: 20, Right: -398, Bottom: 44}, &Caret{}, TypeCaret},
 	} {
 		frame := c.in.(interface{ Append([]byte) []byte }).Append(nil)
@@ -159,8 +167,9 @@ func TestRoundTrip(t *testing.T) {
 		// Truncated payloads are rejected, never misread. Stats without
 		// the 智能排序 section are an older engine's, and valid.
 		old := len(sampleStats().Append(nil)) - 5
+		oldRerank := len(sampleRerankStats().Append(nil)) - 5
 		for i := 0; i < len(payload); i++ {
-			if c.t == TypeStats && i == old {
+			if c.t == TypeStats && (i == old || i == oldRerank) {
 				continue
 			}
 			if err := c.out.Decode(payload[:i]); err == nil {
@@ -182,6 +191,29 @@ func TestRoundTrip(t *testing.T) {
 	frame := AppendPolicy(nil, samplePolicy())
 	if err := DecodePolicy(frame[5:], &p); err != nil || !reflect.DeepEqual(&p, samplePolicy()) {
 		t.Errorf("policy round trip: %v %+v", err, p)
+	}
+}
+
+func TestRerankSelectionsCompatibility(t *testing.T) {
+	var st Stats
+	if err := st.Decode(sampleSelectionStats().Append(nil)[5:]); err != nil || st.Rerank.Selections.Total != 100 {
+		t.Fatalf("selection stats: %+v, %v", st, err)
+	}
+	if err := st.Decode(sampleRerankStats().Append(nil)[5:]); err != nil || st.Rerank.Selections != nil {
+		t.Fatalf("legacy rerank stats retained selections: %+v, %v", st, err)
+	}
+	for _, counts := range []RerankSelections{{Total: 10, Top1: 9, Top5: 8}, {Total: 10, Top5: 11}} {
+		m := sampleRerankStats()
+		m.Rerank.Selections = &counts
+		if err := st.Decode(m.Append(nil)[5:]); err == nil {
+			t.Fatalf("accepted inconsistent counts: %+v", counts)
+		}
+	}
+	frame := sampleSelectionStats().Append(nil)
+	// A future extension version is ignored, leaving older fields usable.
+	frame[len(frame)-25] = 2
+	if err := st.Decode(frame[5:]); err != nil || st.Rerank.Selections != nil {
+		t.Fatalf("unknown extension version: %+v, %v", st, err)
 	}
 }
 

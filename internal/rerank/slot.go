@@ -54,8 +54,13 @@ type Slot struct {
 	Perm        [MaxOptions]uint8 // Perm[k]: the entry shown at position k
 	_           uint16
 	// Counters written by the filter.
-	Applied  uint32 // menus built with an imported order
-	Rejected uint32 // imported orders that weren't valid permutations
+	Applied                uint32 // menus built with an imported order
+	Rejected               uint32 // imported orders that weren't valid permutations
+	RatedSeq               uint32 // valid AI response for this export, including identity
+	Selections, Top1, Top5 uint64 // native selections at absolute displayed indexes
+	MenuID                 uint64 // native-only menu identity; never sent over IPC
+	MenuStart              uint32
+	_                      uint32
 }
 
 // SlotSize is the size of a Slot, which librime checks at attach time.

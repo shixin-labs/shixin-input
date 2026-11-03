@@ -375,6 +375,7 @@ func sampleStats() *ipc.Stats {
 		st.KeyTime.Add(time.Duration(us) * time.Microsecond)
 	}
 	st.Rerank = &ipc.RerankStats{On: true, Ready: true, Requests: 1480, Applied: 1466, Timeouts: 14, Superseded: 3, Dropped: 14}
+	st.Rerank.Selections = &ipc.RerankSelections{Total: 500, Top1: 320, Top5: 460}
 	for i := range 1480 {
 		st.Rerank.Wait.Add(time.Duration(6000+(i*53)%9000) * time.Microsecond)
 	}

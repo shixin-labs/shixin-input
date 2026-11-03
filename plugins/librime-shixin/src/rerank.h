@@ -1,7 +1,7 @@
 // shixin_rerank: 智能排序 inside librime (DESIGN §7.2).
 //
 //   filter     first in the filter list, on abc segments. It exports the
-//              first candidates with the span of #1 into the session's
+//              first candidates starting at #1's input position into the session's
 //              rerank slot (rerank_slot.h) and, when the slot holds an
 //              order imported for that export, shows them in that order.
 //              Everything after them, and every candidate when the slot is
@@ -18,6 +18,8 @@
 #include <rime/filter.h>
 #include <rime/key_event.h>
 #include <rime/processor.h>
+
+namespace rime { class Context; }
 
 namespace shixin {
 
@@ -36,8 +38,14 @@ class RerankFilter : public rime::Filter {
 
 class RerankProcessor : public rime::Processor {
  public:
-  explicit RerankProcessor(const rime::Ticket& ticket) : Processor(ticket) {}
+  explicit RerankProcessor(const rime::Ticket& ticket);
+  ~RerankProcessor() override;
   rime::ProcessResult ProcessKeyEvent(const rime::KeyEvent& key_event) override;
+
+ private:
+  void OnSelection(rime::Context* ctx);
+  void OnUpdate(rime::Context* ctx);
+  rime::connection select_connection_, commit_connection_, update_connection_;
 };
 
 }  // namespace shixin

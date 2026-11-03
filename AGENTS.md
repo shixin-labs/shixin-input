@@ -73,7 +73,8 @@ M1 (macOS MVP) is done; M2 (DESIGN §10) is in progress. Built so far:
   `SHIXIN_AI_MODEL` overrides the path in development). On a machine too
   slow for the model, the engine stops holding results. AI can promote a
   shorter prefix word ahead of a longer phrase; selecting it preserves
-  the remaining pinyin.
+  the remaining pinyin. The Performance page shows top-1/top-5 selection
+  rates from AI-rated menus, alongside response rates and wait latency.
 
 ## Layout
 
@@ -266,6 +267,7 @@ and tools that touch Rime use scratch user dirs, never the live one.
 |---|---|
 | With a fake scorer: held results reordered, timeouts, superseded results, never-held keys, per-app context, zero allocations | `go test -v ./internal/engine -run TestRerank` · `go test ./internal/rerank` (`SHIXIN_TEST_RERANK=off` runs the engine tests and `BenchmarkKey` without it) |
 | AI ranking across phrase lengths, partial selections and unchanged fallback order | `go test -v ./internal/engine -run TestRerankShorterPrefix` |
+| AI top-1/top-5 selection counters, paging, clicks, implicit commits and unrated-menu exclusion / UI and optional Stats extension | `go test -v ./internal/engine -run TestRerankSelections` · `go test ./cmd/shixin-settings -run TestRerankSelectionMetrics` · `go test ./internal/ipc -run 'Test(RoundTrip\|RerankSelectionsCompatibility\|Golden)'` |
 | Engine cost on rime-ice: export, hold and applying orders (简拼 p99 gate, in the replay corpus run) | `go test -v ./internal/engine -run TestReplay` |
 | shixin-ai: binding, scorer, reference agreement, accuracy and latency gates (run alone; the gate skips with `-short`), protocol and Remote | `go test -p 1 -v ./internal/llama ./internal/ai ./internal/rerank` (the reference-agreement test needs `build/laya/abbr_ref.jsonl` from the 智能排序 spike's code, which lives outside this repository, and skips without it) |
 | Model download from the published URLs (network; off by default) | `SHIXIN_TEST_NETWORK=1 go test ./internal/models` |

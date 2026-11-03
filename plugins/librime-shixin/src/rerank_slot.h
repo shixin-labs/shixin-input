@@ -56,6 +56,13 @@ struct Slot {
   // Counters written by the filter.
   uint32_t applied;   // menus built with an imported order
   uint32_t rejected;  // imported orders that weren't valid permutations
+  uint32_t rated_seq;  // engine: valid AI response for this export, including identity
+  uint64_t selections;  // native selection events on AI-rated menus
+  uint64_t top1;
+  uint64_t top5;
+  uint64_t menu_id;  // native-only identity of the menu that produced the export
+  uint32_t menu_start;
+  uint32_t reserved3;
 };
 
 static_assert(sizeof(Entry) == 12, "Entry layout is shared with Go");
@@ -63,7 +70,11 @@ static_assert(offsetof(Slot, entries) == 16, "Slot layout is shared with Go");
 static_assert(offsetof(Slot, arena) == 16 + 12 * kMaxEntries, "Slot layout is shared with Go");
 static_assert(offsetof(Slot, enabled) == 16 + 12 * kMaxEntries + kArenaSize,
               "Slot layout is shared with Go");
-static_assert(sizeof(Slot) == offsetof(Slot, enabled) + 84, "Slot layout is shared with Go");
+static_assert(offsetof(Slot, rated_seq) == offsetof(Slot, enabled) + 84,
+              "Slot layout is shared with Go");
+static_assert(offsetof(Slot, selections) == offsetof(Slot, enabled) + 88,
+              "Slot layout is shared with Go");
+static_assert(sizeof(Slot) == offsetof(Slot, enabled) + 128, "Slot layout is shared with Go");
 
 // The slot of session index i, or nullptr if no slots are attached or i is
 // out of range.
@@ -109,6 +120,10 @@ void Export(Slot* slot, uint32_t hash, uint16_t flags, const Item* items, int n)
 // export and is a permutation of its n entries that leaves fixed entries
 // in place, or nullptr.
 const uint8_t* Permutation(Slot* slot, int n);
+
+// RecordSelection counts one choice at its absolute displayed menu index.
+// Cancels, stale/unrated menus and duplicate notifications do not count.
+void RecordSelection(Slot* slot, size_t index);
 
 }  // namespace shixin::rerank
 

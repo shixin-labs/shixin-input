@@ -2013,12 +2013,20 @@ Model choice:
   Unicode), sent only by the engine. It calls
   `Context::RefreshNonConfirmedComposition()`, so the filter runs again
   with the imported order. The engine drops client keys with that code.
-- **Slots.** One fixed-size slot per session (4,964 bytes), in anonymous
+  Native selection/commit listeners count choices at their final displayed
+  index before librime closes the segment. A menu is eligible only after
+  the engine accepts a timely AI response, including an unchanged order.
+  Paging preserves eligibility; editing, clearing, focus changes and turning
+  AI off invalidate it. Punctuation can commit the retained Chinese menu
+  immediately before its own segment. The listeners inspect at most two
+  segments, do no I/O, and never call Go.
+- **Slots.** One fixed-size slot per session (5,008 bytes), in anonymous
   memory the engine maps outside the Go heap at startup: 256 slots. A
   session created beyond that doesn't rerank. Each slot holds:
   - the export: sequence, hash, 64 entries and a 4 KiB string arena
   - the import: enabled flag, sequence and permutation
-  - counters: applied and rejected
+  - counters: applied, rejected, selections, top-1 and top-5 selections
+  - the rated export sequence and native-only menu identity
 
   The layout is in `rerank_slot.h` and mirrored by `rerank.Slot`, with
   offset tests on both sides. The engine registers the region once
@@ -2267,6 +2275,19 @@ under the user, so none ever does. Instead:
   `KeyTime`):
   - the share of keys that got the model's order, and that timed out
   - how long held results waited: p50, p99
+  - top-1 and top-5 selection rates: choices at displayed index 1 or 1–5,
+    divided by all choices from menus with a timely valid AI response.
+    Keyboard choices (including after paging), candidate clicks and implicit commits count;
+    cancelling without a selection, raw-input commits and unrated/timeout
+    menus do not. Partial candidate selections each count once. Pins and
+    display conversions are reflected in the displayed rank. These are
+    observed selection rates, not ground-truth model accuracy.
+    The UI shows the sample count in each tooltip, and “–” for no samples
+    or older engines without the counters. Counts cover the current engine
+    process, survive session reuse and are not persisted or logged. Clearing
+    the latency histogram does not reset them.
+    Stats append a versioned `SEL\x01` section after the wait histogram;
+    older settings apps ignore it and newer apps accept legacy Stats.
   - Not yet: prefill time, `shixin-ai` memory.
 
 #### Budgets

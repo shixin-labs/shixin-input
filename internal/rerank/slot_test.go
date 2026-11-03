@@ -19,7 +19,11 @@ func TestSlotLayout(t *testing.T) {
 		{"import_seq", unsafe.Offsetof(s.ImportSeq), 16 + 12*MaxOptions + ArenaSize + 4},
 		{"perm", unsafe.Offsetof(s.Perm), 16 + 12*MaxOptions + ArenaSize + 10},
 		{"applied", unsafe.Offsetof(s.Applied), 16 + 12*MaxOptions + ArenaSize + 76},
-		{"sizeof(Slot)", SlotSize, 16 + 12*MaxOptions + ArenaSize + 84},
+		{"rated_seq", unsafe.Offsetof(s.RatedSeq), 16 + 12*MaxOptions + ArenaSize + 84},
+		{"selections", unsafe.Offsetof(s.Selections), 16 + 12*MaxOptions + ArenaSize + 88},
+		{"menu_id", unsafe.Offsetof(s.MenuID), 16 + 12*MaxOptions + ArenaSize + 112},
+		{"menu_start", unsafe.Offsetof(s.MenuStart), 16 + 12*MaxOptions + ArenaSize + 120},
+		{"sizeof(Slot)", SlotSize, 16 + 12*MaxOptions + ArenaSize + 128},
 	} {
 		if c.got != c.want {
 			t.Errorf("%s = %d, want %d", c.name, c.got, c.want)

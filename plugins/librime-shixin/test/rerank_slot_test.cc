@@ -103,6 +103,32 @@ TEST(RerankSlot, ChangedSpanInvalidatesOrder) {
   EXPECT_EQ(Permutation(f.slot.get(), 2), nullptr);
 }
 
+TEST(RerankSlot, CountsRatedSelectionsOnceAtDisplayedPosition) {
+  Fixture f;
+  f.Add("北京");
+  f.Add("背景");
+  f.Export();
+  RecordSelection(f.slot.get(), 0);  // no AI response
+  EXPECT_EQ(f.slot->selections, 0u);
+  for (size_t index : {0, 4, 5, 50}) {
+    f.slot->rated_seq = f.slot->export_seq;
+    RecordSelection(f.slot.get(), index);
+    RecordSelection(f.slot.get(), index);  // select then commit notification
+  }
+  EXPECT_EQ(f.slot->selections, 4u);
+  EXPECT_EQ(f.slot->top1, 1u);
+  EXPECT_EQ(f.slot->top5, 2u);
+  f.slot->rated_seq = f.slot->export_seq;
+  f.slot->enabled = 0;
+  RecordSelection(f.slot.get(), 0);
+  EXPECT_EQ(f.slot->selections, 4u);
+  f.slot->enabled = 1;
+  f.Export(8);  // a new menu invalidates the old rating
+  EXPECT_EQ(f.slot->rated_seq, 0u);
+  RecordSelection(f.slot.get(), 0);
+  EXPECT_EQ(f.slot->selections, 4u);
+}
+
 TEST(RerankSlot, AppliesOnlyMatchingPermutations) {
   Fixture f;
   f.Add("台湾");

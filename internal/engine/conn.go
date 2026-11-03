@@ -137,10 +137,11 @@ func (c *Conn) sendStats(st *Stats, librime string, native bool, started time.Ti
 		KeyTime:   st.KeyTime,
 	}
 	if rr := &c.e.rr; rr.attached {
-		r := &rr.stats
+		r := c.e.rerankStats()
 		m.Rerank = &ipc.RerankStats{On: rr.on, Ready: rr.scorer.Ready(), Slow: rr.slow,
 			Requests: r.Requests, Applied: r.Applied, Timeouts: r.Timeouts,
-			Superseded: r.Superseded, Dropped: r.Dropped, Rejected: r.Rejected, Wait: r.Wait}
+			Superseded: r.Superseded, Dropped: r.Dropped, Rejected: r.Rejected, Wait: r.Wait,
+			Selections: &ipc.RerankSelections{Total: r.Selections, Top1: r.Top1, Top5: r.Top5}}
 	}
 	c.enqueue(m.Append(b))
 }

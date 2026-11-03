@@ -63,6 +63,10 @@ struct Reader {
     auto a = u16();
     return a | uint32_t(u16()) << 16;
   }
+  uint64_t u64() {
+    auto a = u32();
+    return a | uint64_t(u32()) << 32;
+  }
   std::string_view string() {
     auto n = u32();
     return take(n);

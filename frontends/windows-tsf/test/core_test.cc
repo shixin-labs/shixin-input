@@ -44,6 +44,7 @@ static void golden() {
   std::ifstream file(std::filesystem::u8path(SHIXIN_GOLDEN));
   CHECK(file.good());
   std::string line;
+  std::string legacy_rerank_stats;
   while (std::getline(file, line)) {
     if (line.empty() || line[0] == '#')
       continue;
@@ -57,6 +58,21 @@ static void golden() {
     CHECK(n + 4 == view.size());
     auto type = uint8_t(view[4]);
     auto payload = view.substr(5);
+    if (name == "stats_rerank")
+      legacy_rerank_stats.assign(payload);
+    if (name == "stats_rerank_selections") {
+      // Stats are consumed by the Go settings host. The DLL can keep
+      // ignoring them; the optional versioned section is append-only.
+      CHECK(type == Stats);
+      CHECK(!legacy_rerank_stats.empty());
+      CHECK(payload.substr(0, legacy_rerank_stats.size()) == legacy_rerank_stats);
+      Reader selection_stats(payload.substr(legacy_rerank_stats.size()));
+      CHECK(selection_stats.take(4) == std::string_view("SEL\x01", 4));
+      CHECK(selection_stats.u64() == 100);
+      CHECK(selection_stats.u64() == 65);
+      CHECK(selection_stats.u64() == 90);
+      CHECK(selection_stats.good);
+    }
     Frame encoded;
     if (name == "hello") {
       hello(encoded, 1, 1234, "com.apple.TextEdit");

@@ -532,8 +532,7 @@ func (e *Engine) handleControl(r *request) {
 	c := r.conn
 	switch r.kind {
 	case reqStats:
-		e.stats.Rerank = e.rr.stats
-		e.stats.Rerank.Slow = e.rr.slow
+		e.stats.Rerank = e.rerankStats()
 		e.stats.Pooled = len(e.pool)
 		r.stats <- e.stats
 		if r.flags != 0 {

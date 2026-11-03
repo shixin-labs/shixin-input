@@ -222,8 +222,18 @@ type RerankStats struct {
 	// Results held for an order: sent with it, timed out, superseded by
 	// a newer request; orders that came too late, or were invalid.
 	Requests, Applied, Timeouts, Superseded, Dropped, Rejected uint64
-	Wait                                                       perf.Hist // how long held results waited
+	Wait                                                       perf.Hist         // how long held results waited
+	Selections                                                 *RerankSelections // nil from older engines
 }
+
+// RerankSelections counts observed choices, not model ground-truth accuracy.
+// The denominator is selections from menus with a timely valid AI order.
+type RerankSelections struct {
+	Total, Top1, Top5 uint64
+}
+
+// Versioned optional stats extension; older peers ignore trailing fields.
+const rerankSelectionsTag = "SEL\x01"
 
 // ---------------------------------------------------------------- encoding
 
@@ -401,6 +411,12 @@ func (m *Stats) Append(dst []byte) []byte {
 			dst = AppendU64(dst, v)
 		}
 		dst = r.Wait.Append(dst)
+		if s := r.Selections; s != nil {
+			dst = append(dst, rerankSelectionsTag...)
+			for _, v := range [...]uint64{s.Total, s.Top1, s.Top5} {
+				dst = AppendU64(dst, v)
+			}
+		}
 	}
 	return EndFrame(dst, off)
 }
@@ -574,8 +590,20 @@ func (m *Stats) Decode(payload []byte) error {
 	if r.Bad() {
 		return ErrMalformed
 	}
-	if _, err := rs.Wait.Decode(r.Rest()); err != nil {
+	rest, err = rs.Wait.Decode(r.Rest())
+	if err != nil {
 		return ErrMalformed
+	}
+	if len(rest) > 0 && len(rest) < len(rerankSelectionsTag) && string(rest) == rerankSelectionsTag[:len(rest)] {
+		return ErrMalformed
+	}
+	if len(rest) >= len(rerankSelectionsTag) && string(rest[:len(rerankSelectionsTag)]) == rerankSelectionsTag {
+		r = NewDecoder(rest[len(rerankSelectionsTag):])
+		s := &RerankSelections{Total: r.U64(), Top1: r.U64(), Top5: r.U64()}
+		if r.Bad() || s.Top1 > s.Top5 || s.Top5 > s.Total {
+			return ErrMalformed
+		}
+		rs.Selections = s
 	}
 	m.Rerank = rs
 	return nil

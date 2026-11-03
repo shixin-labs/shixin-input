@@ -103,8 +103,11 @@ void Export(Slot* slot, uint32_t hash, uint16_t flags, const Item* items, int n)
   slot->arena_used = used;
   slot->input_hash = hash;
   slot->export_flags = flags;
-  if (!same && ++slot->export_seq == 0)
-    slot->export_seq = 1;
+  if (!same) {
+    slot->rated_seq = 0;
+    if (++slot->export_seq == 0)
+      slot->export_seq = 1;
+  }
 }
 
 const uint8_t* Permutation(Slot* slot, int n) {
@@ -124,6 +127,15 @@ const uint8_t* Permutation(Slot* slot, int n) {
     seen |= bit;
   }
   return slot->perm;
+}
+
+void RecordSelection(Slot* slot, size_t index) {
+  if (!slot || !slot->enabled || !slot->rated_seq || slot->rated_seq != slot->export_seq)
+    return;
+  slot->rated_seq = 0;
+  slot->selections++;
+  slot->top1 += index == 0;
+  slot->top5 += index < 5;
 }
 
 }  // namespace shixin::rerank

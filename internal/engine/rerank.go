@@ -43,12 +43,13 @@ const DefaultRerankTimeout = 16 * time.Millisecond
 
 // RerankStats count what happened to orders (性能 page).
 type RerankStats struct {
-	Requests   uint64 // exports sent to the scorer
-	Applied    uint64 // results sent with the scorer's order
-	Timeouts   uint64 // results sent in rime's order: no order in time
-	Superseded uint64 // results sent in rime's order: a newer request came first
-	Dropped    uint64 // orders that came after their result was sent
-	Rejected   uint64 // orders librime refused as invalid
+	Requests               uint64 // exports sent to the scorer
+	Applied                uint64 // results sent with the scorer's order
+	Timeouts               uint64 // results sent in rime's order: no order in time
+	Superseded             uint64 // results sent in rime's order: a newer request came first
+	Dropped                uint64 // orders that came after their result was sent
+	Rejected               uint64 // orders librime refused as invalid
+	Selections, Top1, Top5 uint64 // choices in AI-rated menus, at displayed positions
 	// Wait is how long held results waited, for an order or the timeout.
 	Wait perf.Hist
 	// Slow: orders came too late here, so results aren't held (probes
@@ -157,6 +158,7 @@ func (e *Engine) setRerank(on bool) {
 			e.release(int32(i), nil)
 		}
 		sl := r.slots.At(i)
+		sl.RatedSeq = 0
 		if !on {
 			sl.ClearImport()
 		}
@@ -214,6 +216,7 @@ func (e *Engine) addSession(s *rime.Session) {
 	r.state[i] = sessionRerank{sess: s}
 	sl := r.slots.At(int(i))
 	sl.Enabled = 0
+	sl.RatedSeq = 0
 	sl.ClearImport()
 	s.SetProperty(rerank.SlotProperty, strconv.Itoa(int(i)))
 }
@@ -265,6 +268,7 @@ func (e *Engine) focusRerank(c *Conn, s *rime.Session, app string, secure bool) 
 	}
 	sl.ClearImport()
 	st.secure = secure
+	sl.RatedSeq = 0
 	if secure || !r.on {
 		sl.Enabled = 0
 		return
@@ -366,7 +370,7 @@ func (e *Engine) release(i int32, perm []uint8) bool {
 	rr.stats.Wait.Add(t0.Sub(st.since))
 	rr.unhold(i)
 	s := st.sess
-	identity := true
+	identity := len(perm) == 0 || len(perm) == int(sl.Count)
 	for k, v := range perm {
 		identity = identity && v == uint8(k)
 	}
@@ -380,6 +384,9 @@ func (e *Engine) release(i int32, perm []uint8) bool {
 			ok = false
 		}
 	}
+	if ok && len(perm) >= 2 && len(perm) == int(sl.Count) {
+		sl.RatedSeq = sl.ExportSeq
+	}
 	if st.conn != nil && !st.conn.dead.Load() {
 		e.read(s)
 		e.send(st.conn, st.ctx, st.seq, st.handled)
@@ -387,6 +394,22 @@ func (e *Engine) release(i int32, perm []uint8) bool {
 	// One sample per key: its work before and after the wait.
 	e.stats.KeyTime.Add(st.work + time.Since(t0))
 	return ok
+}
+
+// rerankStats snapshots the native counters only on the cold stats path.
+// Slot counters survive session reuse, so selections remain engine-wide.
+func (e *Engine) rerankStats() RerankStats {
+	r := e.rr.stats
+	r.Slow = e.rr.slow
+	if e.rr.attached {
+		for i := 0; i < e.rr.slots.Len(); i++ {
+			s := e.rr.slots.At(i)
+			r.Selections += s.Selections
+			r.Top1 += s.Top1
+			r.Top5 += s.Top5
+		}
+	}
+	return r
 }
 
 // unhold forgets slot i's held result and rearms the timer.
