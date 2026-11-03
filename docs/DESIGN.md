@@ -577,7 +577,16 @@ Results: `docs/spikes/m0-4-handoff.md`.
   images. Result application only updates fixed-size state and queues a
   preallocated `dispatch_async_f` callback. That callback queries the caret
   and shows the bubble after `handleEvent:` returns. One reusable timer
-  queues expiration; stale callbacks consult the latest deadline.
+  queues expiration; stale callbacks consult the latest deadline. Switching
+  apps, macOS often deactivates and reactivates the input method within a
+  few milliseconds, with a new proxy for the same app: a deactivation keeps
+  the bubble and a pending notification (including 拾新's announcement) for
+  100 ms, and the same app coming back (by bundle ID) carries on. Without
+  this the bubble flashed for a few milliseconds or never showed. The
+  bubble's 900 ms start once macOS reports it visible (occlusionState,
+  checked once a frame for at most half a second): a window just shown
+  reports itself occluded, and while an app switch animates, painting can
+  lag by a good part of the duration.
 - **macOS main thread** (Shixin.app) does only IMK calls, applying results,
   and candidate drawing. App Nap is disabled with
   `NSProcessInfo.beginActivity(.userInitiated | .latencyCritical)`.

@@ -33,15 +33,17 @@ var imkClient uintptr
 func setClient(sender uintptr, force bool) {
 	if sender == imkClient {
 		if force {
-			focusModeIndicator(sender)
-			focusIn(sender)
+			bundle, app := clientApp(sender)
+			focusModeIndicator(sender, app)
+			focusIn(sender, bundle, app)
 		} else {
 			core.SetSecure(focusedSecureInput())
 		}
 		return
 	}
 	cand.caret.reset()
-	focusModeIndicator(sender)
+	bundle, app := clientApp(sender)
+	focusModeIndicator(sender, app)
 	if imkClient != 0 {
 		core.FocusOut() // finish in the old text field before replacing its proxy
 		send(imkClient, selRelease)
@@ -49,15 +51,20 @@ func setClient(sender uintptr, force bool) {
 	imkClient = send(sender, selRetain)
 	// A new text field, possibly in an app that never called
 	// activateServer: (e.g. after a front restart).
-	focusIn(sender)
+	focusIn(sender, bundle, app)
+}
+
+// clientApp reads the bundle ID of sender's app once per focus change.
+func clientApp(sender uintptr) (bundle uintptr, app string) {
+	bundle = send(sender, selBundleID)
+	return bundle, goString(bundle)
 }
 
 // focusIn tells the engine which app sender's text field is in, and
 // whether it is secure. Cold path.
-func focusIn(sender uintptr) {
-	bundle := send(sender, selBundleID)
+func focusIn(sender, bundle uintptr, app string) {
 	setSecureClient(bundle)
-	core.FocusIn(goString(bundle), focusedSecureInput())
+	core.FocusIn(app, focusedSecureInput())
 }
 
 // handleDur measures handleEvent: the time Shixin holds the app's thread.
@@ -127,6 +134,10 @@ func handleModifier(keyCode uint16, flags uint64) bool {
 	return core.HandleKey(keysym, mods)
 }
 
+// appCalls is the depth of Shixin's text calls into the app, during which
+// the app's own callbacks can come (debug logs). Main thread.
+var appCalls int
+
 func activateServer(self objc.ID, cmd objc.SEL, sender objc.ID) {
 	setClient(uintptr(sender), true)
 	if debug {
@@ -144,7 +155,7 @@ func deactivateServer(self objc.ID, cmd objc.SEL, sender objc.ID) {
 // finishInput is also the input-source notification fallback on macOS 26.
 // Releasing the proxy makes a later deactivateServer: harmless.
 func finishInput() {
-	focusModeIndicator(0)
+	leaveModeIndicator()
 	if imkClient == 0 {
 		return
 	}
@@ -158,7 +169,7 @@ func finishInput() {
 func commitComposition(self objc.ID, cmd objc.SEL, sender objc.ID) {
 	// The app ends the composition (e.g. a click elsewhere in the text).
 	if debug {
-		logf("debug: app asked to commit the composition")
+		logf("debug: app asked to commit the composition (inside our app call: %v)", appCalls > 0)
 	}
 	setClient(uintptr(sender), false)
 	core.CommitComposition()
@@ -207,7 +218,9 @@ func (frontApplier) Commit(text []byte) {
 		debugRanges("insert", text)
 	}
 	ns := nsString(text)
+	appCalls++
 	send(imkClient, selInsertText, ns, nsNotFound, 0)
+	appCalls--
 	send(ns, selRelease)
 	if debug {
 		debugRanges("inserted", nil)
@@ -221,7 +234,9 @@ func (frontApplier) Preedit(text []byte, cursor int) {
 	ns := nsString(text)
 	sel := utf16Len(text[:min(max(cursor, 0), len(text))])
 	// selectionRange {sel, 0}, replacementRange {NSNotFound, 0}
+	appCalls++
 	send(imkClient, selSetMarkedText, ns, uintptr(sel), 0, nsNotFound, 0)
+	appCalls--
 	send(ns, selRelease)
 	if debug {
 		debugRanges("marked", text)

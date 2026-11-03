@@ -27,6 +27,7 @@ var modeBubble struct {
 	timer    *time.Timer
 	queued   bool
 	shown    bool
+	paint    paintWait // main thread only
 }
 
 func newModeWindow(tray *mygo.Tray) {
@@ -78,8 +79,27 @@ func queueModeBubble() {
 	}
 }
 
-func focusModeIndicator(client uintptr) {
-	if modeBubble.state.focus(client) {
+// focusModeIndicator runs when client, a field of app, becomes the text
+// field (activation or a new proxy). The caller reads app once for this
+// and the engine's focus.
+func focusModeIndicator(client uintptr, app string) {
+	changed := modeBubble.state.focusApp(client, app, time.Now())
+	if debug {
+		m := &modeBubble.state
+		logf("debug: mode focus %s (client %v): update %v, switched %v, pending %v", app, client != 0, changed, m.switched, m.pending)
+	}
+	if changed {
+		queueModeBubble()
+	}
+}
+
+// leaveModeIndicator runs when the text field goes away (deactivation).
+func leaveModeIndicator() {
+	changed := modeBubble.state.left(time.Now())
+	if debug {
+		logf("debug: mode left %s: update %v", modeBubble.state.leftApp, changed)
+	}
+	if changed {
 		queueModeBubble()
 	}
 }
@@ -101,6 +121,9 @@ func dismissModeBubble() {
 // and disconnects use an empty result (Ctx 0) and must not invent a mode.
 func observeModeResult(r *ipc.Result) {
 	if r.Ctx != 0 && modeBubble.state.observe(r.Flags&ipc.ResultASCII != 0) {
+		if debug {
+			logf("debug: mode result: show ascii %v", modeBubble.state.ascii)
+		}
 		queueModeBubble()
 	}
 	if len(r.Candidates) > 0 {
@@ -115,10 +138,18 @@ func updateModeBubble() {
 	m := &modeBubble.state
 	refresh := m.pending
 	now := time.Now()
-	if imkClient == 0 || imkClient != m.client || cand.shown || focusedSecureInput() {
+	// A field that left (imkClient and m.client both 0) is the grace's:
+	// visible ends it.
+	if imkClient != m.client || cand.shown || imkClient != 0 && focusedSecureInput() {
+		if debug && (m.pending || !m.until.IsZero()) {
+			logf("debug: mode dismissed: client match %v, candidates %v", imkClient == m.client, cand.shown)
+		}
 		m.dismiss()
 	}
 	if !m.visible(now) {
+		if debug && modeBubble.shown {
+			logf("debug: mode hidden")
+		}
 		modeBubble.timer.Stop()
 		if modeBubble.shown {
 			modeBubble.window.Hide()
@@ -128,7 +159,7 @@ func updateModeBubble() {
 	}
 	// Query afresh on each notification; the candidate cache belongs to a
 	// composition and can point at a different caret after a mode switch.
-	if refresh || !modeBubble.shown {
+	if (refresh || !modeBubble.shown) && imkClient != 0 {
 		var caret nsRect
 		send(imkClient, selAttributesAt, 0, uintptr(unsafe.Pointer(&caret)))
 		refreshCandidateScreens()
@@ -146,6 +177,16 @@ func updateModeBubble() {
 		modeBubble.window.Invalidate()
 		modeBubble.window.ShowInactive()
 		modeBubble.shown = true
+		modeBubble.paint.start()
+		if debug {
+			logf("debug: mode shown, ascii %v, %s", m.ascii, windowState(modeBubble.window))
+		}
 	}
-	modeBubble.timer.Reset(time.Until(m.until))
+	waiting := modeBubble.paint.waiting
+	if modeBubble.paint.check(m, windowVisible(modeBubble.window), now) {
+		purego.SyscallN(dispatchAfterF, uintptr(dispatchTime(0, caretRetryDelay*1e6)), mainQueue, 0, modeBubble.callback)
+	} else if debug && waiting && modeBubble.paint.checks > 0 {
+		logf("debug: mode visible after %d frame checks", modeBubble.paint.checks)
+	}
+	modeBubble.timer.Reset(time.Until(m.deadline()))
 }
