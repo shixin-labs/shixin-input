@@ -38,8 +38,9 @@ type Entry struct {
 // rerank_slot.h); change both together. Slots live outside the Go heap
 // (NewSlots), and only the engine thread touches them.
 type Slot struct {
-	// Written by the filter.
-	ExportSeq   uint32 // changes with every new export; 0: none yet
+	// Written by the filter; the engine can advance ExportSeq and clear
+	// Count when context or session ownership changes.
+	ExportSeq   uint32 // advances on candidate or engine-context changes; 0: none yet
 	InputHash   uint32
 	Count       uint16
 	ExportFlags uint16
@@ -86,6 +87,20 @@ func (s *Slot) Import(perm []uint8) {
 
 // ClearImport drops the imported order, so the next refresh shows rime's.
 func (s *Slot) ClearImport() { s.ImportSeq = 0 }
+
+// InvalidateExport advances the response identity when the app's context
+// changes. An old reply cannot satisfy a new hold for identical input.
+// Count stays zero until native translation actually exports a new menu,
+// so a still-visible old menu cannot be scored again by a navigation key.
+func (s *Slot) InvalidateExport() {
+	s.ExportSeq++
+	if s.ExportSeq == 0 {
+		s.ExportSeq = 1
+	}
+	s.ClearImport()
+	s.RatedSeq = 0
+	s.Count = 0
+}
 
 // Imported reports whether the slot holds an order for its current export.
 func (s *Slot) Imported() bool { return s.ImportSeq != 0 && s.ImportSeq == s.ExportSeq }

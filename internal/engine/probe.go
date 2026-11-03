@@ -211,6 +211,11 @@ func (e *Engine) buildPolicies(p *prober, schema string) (*schemaPolicies, error
 			Hotkeys:        sc.hotkeys,
 			Notify:         sc.notify,
 		}
+		if !ascii && e.rr.attached {
+			// Observe editing shortcuts asynchronously; the app still owns
+			// them and no new wait is added to any client.
+			pol.CommandDefault = policy.Act(policy.PassNotify, policy.Same)
+		}
 		for c := byte(0x20); c < 0x7f; c++ {
 			if sc.bound[uint32(c)] {
 				pol.Printable[c-0x20] = ask
@@ -223,6 +228,9 @@ func (e *Engine) buildPolicies(p *prober, schema string) (*schemaPolicies, error
 			a := probeAction(p.key(uint32(c), mods))
 			if !ascii {
 				a = afterDigits(sc, c, a)
+				if e.rr.attached && a.Disposition() == policy.Pass {
+					a = policy.Act(policy.PassNotify, policy.Same)
+				}
 			}
 			pol.Printable[c-0x20] = a
 		}

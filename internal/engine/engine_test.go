@@ -265,14 +265,15 @@ func TestPolicies(t *testing.T) {
 		{'/', 0, eatC},   // opens a menu of choices
 		{'1', 0, notify}, // the engine tracks digits for 3.5
 		{'.', 0, eatU},   // after a digit, a pending separator
-		{' ', 0, pass},
-		{policy.KeyReturn, 0, pass},
+		{' ', 0, caret},
+		{policy.KeyTab, 0, caret},
+		{policy.KeyReturn, 0, caret},
 		{policy.KeyLeft, 0, caret},
 		{policy.KeyShiftL, 0, notify},
 		{policy.KeyControlL, 0, pass}, // switch_key Control_L: noop
 		{'`', policy.ControlMask, ask},
 		{'.', policy.ControlMask, ask}, // key_binder always binding
-		{'c', policy.SuperMask, pass},
+		{'c', policy.SuperMask, caret},
 		{0xffc1, 0, ask}, // F4
 	})
 	r := cl.typ("ni")

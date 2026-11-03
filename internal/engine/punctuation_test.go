@@ -15,9 +15,13 @@ func TestEnglishPunctuationPolicies(t *testing.T) {
 	}
 	for _, ascii := range []bool{false, true} {
 		cl.setASCII(ascii)
+		punct := policy.Pass
+		if !ascii && testEngine(t).rr.attached {
+			punct = policy.PassNotify
+		}
 		for _, key := range []uint32{',', '.', '/'} {
-			if got := cl.policy().Lookup(key, 0); got.Disposition() != policy.Pass {
-				t.Errorf("English punctuation, ascii=%v: %q = %v, want PASS", ascii, rune(key), got)
+			if got := cl.policy().Lookup(key, 0); got.Disposition() != punct {
+				t.Errorf("English punctuation, ascii=%v: %q = %v, want %v", ascii, rune(key), got, punct)
 			}
 			if r := cl.key(key, 0); r.Flags&ipc.ResultHandled != 0 {
 				t.Errorf("English punctuation consumed idle %q", rune(key))

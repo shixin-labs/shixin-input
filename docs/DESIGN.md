@@ -1964,10 +1964,39 @@ Model choice:
 - **Never recorded:**
   - Secure fields. Their app's ring is left untouched.
   - English typed in ASCII mode, which is `PASS` with no IPC.
-- **Caret moves.** The client makes idle arrows, Home/End, Backspace and
-  mouse clicks `PASS_NOTIFY` (async, as for Shift today). The engine then
-  appends the same soft break: earlier text is kept, but a caret move or
-  deletion means what follows may not continue it.
+- **Caret moves and edits.** With reranking available, idle passed
+  printable keys (including Space), arrows, Home/End, Backspace, Delete,
+  Return, Tab and editing shortcuts use
+  `PASS_NOTIFY`: the app owns the key and the engine hears about it
+  asynchronously, without adding a wait. Explicit Rime hotkeys keep their
+  existing policy.
+  - A plain Backspace removes one ASCII or Han character from the known
+    suffix of the latest IME commit and sends a revised context. For
+    example, `产品` then raw `hua` committed with Return is `产品hua`;
+    three Backspaces restore `产品`, so the next `hua` can rank `化` first.
+    Key releases never delete a second character.
+    A changed context also invalidates the cached candidate order, even
+    when a repeated one-letter code produces an otherwise identical export.
+    It advances the export sequence as well, so a delayed response for the
+    old context cannot satisfy a new hold for that code.
+    The export count is cleared until native translation builds a new
+    menu; navigation cannot rerank a still-visible old menu.
+  - That suffix stops at the latest commit boundary: front-inserted spacing
+    and earlier app edits are not known to the engine. Deleting beyond it,
+    a word/line deletion, forward Delete, paste/undo or selection shortcuts
+    discard the cached context rather than retain text that may be gone.
+    Copy/save preserve it. Uncertain grapheme boundaries also discard it.
+  - Caret movement and app-inserted printable notifications append a soft
+    break and invalidate that suffix; entering ASCII mode does the same,
+    since ordinary ASCII-mode typing is not reported to the engine.
+    Focus changes also invalidate the suffix through the existing break.
+    A declined ASK that passes an unknown key to the app discards the
+    context too; no extra wait or app query is added.
+    Passed or client-repaired printable characters invalidate the suffix
+    even when Rime commits the preceding composition in that same result.
+  - The context is a bounded typing history, not a document mirror.
+    Unobserved mouse selections and app-side edits remain a limitation;
+    reading surrounding app text is still deferred below.
 - **Lifetime.** Rings live in memory only. They are dropped when 智能排序 is
   turned off or the engine restarts, and evicted per app by LRU.
 - **Not in the first version:**
@@ -1994,6 +2023,8 @@ Model choice:
     buffered candidate's input end, and an export sequence number. An
     unchanged export (the same hash, texts, spans, weights and flags) keeps
     its number, so a refresh doesn't invalidate the order imported for it.
+    The engine can advance that number when the app context or session
+    ownership changes; native export continues from the advanced sequence.
   - **Apply.** If the slot holds an imported permutation for the current
     export sequence, it emits the first N candidates in that order.
     Everything after N follows unchanged. Otherwise it passes the

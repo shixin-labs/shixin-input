@@ -57,3 +57,16 @@ func TestSlots(t *testing.T) {
 		t.Error("out-of-arena entry read")
 	}
 }
+
+func TestInvalidateExport(t *testing.T) {
+	s := Slot{ExportSeq: 7, ImportSeq: 7, RatedSeq: 7, Count: 2, Selections: 3}
+	s.InvalidateExport()
+	if s.ExportSeq != 8 || s.ImportSeq != 0 || s.RatedSeq != 0 || s.Count != 0 || s.Selections != 3 {
+		t.Fatalf("invalidated slot %+v", s)
+	}
+	s.ExportSeq = ^uint32(0)
+	s.InvalidateExport()
+	if s.ExportSeq != 1 {
+		t.Fatalf("wrapped export sequence %d", s.ExportSeq)
+	}
+}

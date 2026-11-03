@@ -95,6 +95,7 @@ func TestScoreFollowsContext(t *testing.T) {
 		{"我们明天一起去", []string{"太晚", "台湾", "抬碗"}, "台湾"},
 		{"今天的天气预报说下午有", []string{"阵雨", "真鱼", "镇域"}, "阵雨"},
 		{"", []string{"你好", "拟好", "泥嚎"}, "你好"},
+		{"产品", []string{"华", "化", "话", "花"}, "化"},
 	} {
 		if err := s.Prefill(1, 1, []byte(c.context)); err != nil {
 			t.Fatal(err)

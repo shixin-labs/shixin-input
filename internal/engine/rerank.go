@@ -154,14 +154,12 @@ func (e *Engine) setRerank(on bool) {
 	r.on = on
 	for i := range r.state {
 		st := &r.state[i]
+		st.asked = 0
 		if st.held {
 			e.release(int32(i), nil)
 		}
 		sl := r.slots.At(i)
-		sl.RatedSeq = 0
-		if !on {
-			sl.ClearImport()
-		}
+		sl.InvalidateExport()
 		if st.conn != nil {
 			sl.Enabled = 0
 			if on && !st.secure {
@@ -216,8 +214,7 @@ func (e *Engine) addSession(s *rime.Session) {
 	r.state[i] = sessionRerank{sess: s}
 	sl := r.slots.At(int(i))
 	sl.Enabled = 0
-	sl.RatedSeq = 0
-	sl.ClearImport()
+	sl.InvalidateExport()
 	s.SetProperty(rerank.SlotProperty, strconv.Itoa(int(i)))
 }
 
@@ -266,7 +263,8 @@ func (e *Engine) focusRerank(c *Conn, s *rime.Session, app string, secure bool) 
 	if st == nil {
 		return
 	}
-	sl.ClearImport()
+	sl.InvalidateExport()
+	st.asked = 0
 	st.secure = secure
 	sl.RatedSeq = 0
 	if secure || !r.on {
@@ -296,7 +294,7 @@ func (e *Engine) sendContext(app int) {
 // what follows may not continue the text before it.
 func caretKey(keysym uint32) bool {
 	switch keysym {
-	case policy.KeyLeft, policy.KeyRight, policy.KeyUp, policy.KeyDown, policy.KeyHome, policy.KeyEnd, policy.KeyPrior, policy.KeyNext, policy.KeyBackSpace, policy.KeyDelete:
+	case policy.KeyLeft, policy.KeyRight, policy.KeyUp, policy.KeyDown, policy.KeyHome, policy.KeyEnd, policy.KeyPrior, policy.KeyNext, policy.KeyBackSpace, policy.KeyDelete, policy.KeyReturn, policy.KeyKPEnter, policy.KeyTab:
 		return true
 	}
 	return false
@@ -304,23 +302,68 @@ func caretKey(keysym uint32) bool {
 
 // noteContext records what read took into the app's context: committed
 // text, or a soft break after a caret move passed to the app.
-func (e *Engine) noteContext(c *Conn, ctx uint32, s *rime.Session, r *request) {
+func (e *Engine) noteContext(c *Conn, ctx uint32, s *rime.Session, r *request, handled bool) {
 	rr := &e.rr
 	_, st, sl := rr.slot(s)
 	if st == nil || sl.Enabled == 0 {
 		return
 	}
 	app := c.focus[ctx].app
+	printable := r.keysym >= 0x20 && r.keysym < 0x7f
+	appKey := r.typ == ipc.TypeKey &&
+		(r.flags&ipc.KeyNotify != 0 || !handled && (r.flags&ipc.KeySync != 0 || printable)) &&
+		(r.mods&policy.ReleaseMask == 0 || printable && r.flags&ipc.KeyNotify != 0)
 	switch {
 	case len(e.commit) > 0:
 		a := rr.apps.Slot(app)
 		rr.apps.Append(a, e.commit)
-		e.sendContext(a)
-	case r.typ == ipc.TypeKey && r.flags&ipc.KeyNotify != 0 && caretKey(r.keysym) && !e.st.IsComposing:
+		// A declined printable can commit the composition, then get
+		// inserted by the app (or repaired by the client) after that
+		// commit. Its untracked character invalidates the known suffix.
+		if e.st.IsASCIIMode || appKey {
+			rr.apps.Break(a)
+		}
+		e.sendContextAfterEdit(a, st, sl)
+	case e.st.IsASCIIMode:
 		a := rr.apps.Slot(app)
 		rr.apps.Break(a)
-		e.sendContext(a)
+		e.sendContextAfterEdit(a, st, sl)
+	case appKey && !e.st.IsComposing:
+		a := rr.apps.Slot(app)
+		switch {
+		case r.keysym >= policy.KeyShiftL && r.keysym <= 0xffee:
+			// Modifier-only notifications don't edit text.
+		case r.keysym == policy.KeyBackSpace && r.mods&(policy.CommandMask|policy.ShiftMask) == 0:
+			rr.apps.Backspace(a)
+		case r.mods&policy.CommandMask != 0:
+			// Copy/save don't edit the text; other shortcuts may paste,
+			// undo, select a range, or delete a word/line.
+			// Printable notifications use ReleaseMask to keep Rime from
+			// inserting them; they still describe a real app key-down.
+			mods := r.mods & (policy.CommandMask | policy.ShiftMask)
+			if !((r.keysym == 'c' || r.keysym == 's') && (mods == policy.ControlMask || mods == policy.SuperMask)) {
+				rr.apps.Clear(a)
+			}
+		case r.keysym == policy.KeyBackSpace || r.keysym == policy.KeyDelete:
+			rr.apps.Clear(a)
+		case caretKey(r.keysym) || r.keysym >= 0x20 && r.keysym < 0x7f:
+			rr.apps.Break(a)
+		default:
+			// A declined ASK can pass an unknown Unicode/system key.
+			rr.apps.Clear(a)
+		}
+		e.sendContextAfterEdit(a, st, sl)
 	}
+}
+
+func (e *Engine) sendContextAfterEdit(app int, st *sessionRerank, sl *rerank.Slot) {
+	if e.rr.sent[app] != e.rr.apps.Rev(app) {
+		// A one-letter code can rebuild an identical export after a commit
+		// or deletion. Its old order was scored against another context.
+		st.asked = 0
+		sl.InvalidateExport()
+	}
+	e.sendContext(app)
 }
 
 // hold asks for an order of a new export on page 1 and keeps the key's

@@ -38,8 +38,9 @@ struct Entry {
 };
 
 struct Slot {
-  // Written by the filter.
-  uint32_t export_seq;  // changes with every new export; 0: none yet
+  // Written by the filter; the engine advances export_seq and clears count
+  // on context or session ownership changes.
+  uint32_t export_seq;  // native candidate or engine-context revision; 0: none yet
   uint32_t input_hash;
   uint16_t count;
   uint16_t export_flags;

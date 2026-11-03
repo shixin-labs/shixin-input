@@ -81,15 +81,16 @@ func TestRerankEndToEnd(t *testing.T) {
 		}
 	}
 	cl := dial(t, e)
-	cases := []struct{ context, code, want string }{
-		{"women mingtian yiqi qu ", "tw", "台湾"},
-		{"jintian xiawu keneng hui xia ", "zy", "阵雨"},
-		{"wo zai xuexiao de ", "tsg", "图书馆"},
-		{"zhege xiangmu de ", "jd", "进度"},
-		{"qing ba wenjian fa dao wo de ", "yx", "邮箱"},
-		{"ta shi yige hen youming de ", "zj", "作家"},
-		{"women yao baohu ", "hj", "环境"},
-		{"zhe jia canting de ", "fw", "服务"},
+	cases := []struct{ context, code, want, eraseRaw string }{
+		{"women mingtian yiqi qu ", "tw", "台湾", ""},
+		{"jintian xiawu keneng hui xia ", "zy", "阵雨", ""},
+		{"wo zai xuexiao de ", "tsg", "图书馆", ""},
+		{"zhege xiangmu de ", "jd", "进度", ""},
+		{"qing ba wenjian fa dao wo de ", "yx", "邮箱", ""},
+		{"ta shi yige hen youming de ", "zj", "作家", ""},
+		{"women yao baohu ", "hj", "环境", ""},
+		{"zhe jia canting de ", "fw", "服务", ""},
+		{"chanpin ", "hua", "化", "hua"},
 	}
 	var waits []time.Duration
 	rimeFirst, first, page := 0, 0, 0
@@ -104,6 +105,20 @@ func TestRerankEndToEnd(t *testing.T) {
 					t.Fatalf("context word %q never finished composing", code)
 				}
 				cl.key(' ', 0)
+			}
+		}
+		if c.eraseRaw != "" {
+			cl.typ(c.eraseRaw)
+			if got := string(cl.key(policy.KeyReturn, 0).Commit); got != c.eraseRaw {
+				t.Fatalf("raw commit %q, want %q", got, c.eraseRaw)
+			}
+			for range c.eraseRaw {
+				if d := cl.policy().Lookup(policy.KeyBackSpace, 0).Disposition(); d != policy.PassNotify {
+					t.Fatalf("idle deletion must notify the engine: %v", d)
+				}
+				cl.seq++
+				cl.send((&ipc.Key{Ctx: 1, Seq: cl.seq, Keysym: policy.KeyBackSpace, Flags: ipc.KeyNotify}).Append(cl.buf[:0]))
+				cl.result()
 			}
 		}
 		// A person takes longer than the context's prefill to type on.

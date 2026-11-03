@@ -6,7 +6,10 @@
 // the key path.
 package rerank
 
-import "unicode/utf8"
+import (
+	"unicode"
+	"unicode/utf8"
+)
 
 const (
 	// Rings is how many apps keep their context at once.
@@ -31,6 +34,7 @@ type ring struct {
 	used   uint64 // clock at the last Focus; 0: free
 	rev    uint32
 	n, end int // rune count; index after the newest rune
+	tail   int // deletable suffix from the latest IME commit at this caret
 	buf    [RingRunes]rune
 }
 
@@ -63,10 +67,12 @@ func (c *Contexts) Append(slot int, text []byte) {
 		return
 	}
 	r := &c.rings[slot]
+	r.tail = 0
 	for len(text) > 0 {
 		ch, size := utf8.DecodeRune(text)
 		text = text[size:]
 		r.push(ch)
+		r.tail = min(r.tail+1, RingRunes)
 	}
 	r.rev++
 }
@@ -77,10 +83,42 @@ func (c *Contexts) Append(slot int, text []byte) {
 // when the caret moves. Breaks don't repeat, and an empty ring stays empty.
 func (c *Contexts) Break(slot int) {
 	r := &c.rings[slot]
+	r.tail = 0
 	if r.n == 0 || r.buf[(r.end+RingRunes-1)%RingRunes] == '\n' {
 		return
 	}
 	r.push('\n')
+	r.rev++
+}
+
+// Backspace removes one known character from the latest IME commit. Once
+// that suffix is exhausted, or a grapheme's size is uncertain, discard the
+// context rather than keep deleted text or guess across an unobserved edit.
+func (c *Contexts) Backspace(slot int) {
+	r := &c.rings[slot]
+	if r.n == 0 {
+		return
+	}
+	at := (r.end + RingRunes - 1) % RingRunes
+	ch := r.buf[at]
+	if r.tail == 0 || !(ch >= 0x20 && ch <= 0x7e || unicode.Is(unicode.Han, ch)) {
+		c.Clear(slot)
+		return
+	}
+	r.buf[at] = 0
+	r.end, r.n, r.tail = at, r.n-1, r.tail-1
+	r.rev++
+}
+
+// Clear forgets one app's context after an edit whose extent is unknown.
+func (c *Contexts) Clear(slot int) {
+	r := &c.rings[slot]
+	r.tail = 0
+	if r.n == 0 {
+		return
+	}
+	clear(r.buf[:])
+	r.n, r.end = 0, 0
 	r.rev++
 }
 

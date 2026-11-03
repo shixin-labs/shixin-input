@@ -625,7 +625,7 @@ func (e *Engine) handleMessage(r *request) {
 			handled = s.ProcessKey(int(r.keysym), int(mods))
 		}
 		e.read(s)
-		e.noteContext(c, r.ctx, s, r)
+		e.noteContext(c, r.ctx, s, r, handled)
 		if !e.hold(c, r, s, handled, t0) {
 			e.send(c, r.ctx, r.seq, handled)
 			e.stats.KeyTime.Add(time.Since(t0))
@@ -647,7 +647,7 @@ func (e *Engine) handleMessage(r *request) {
 		return
 	}
 	e.read(s)
-	e.noteContext(c, r.ctx, s, r)
+	e.noteContext(c, r.ctx, s, r, handled)
 	e.send(c, r.ctx, r.seq, handled)
 }
 

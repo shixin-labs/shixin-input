@@ -84,6 +84,22 @@ TEST(RerankSlot, ArenaOverflowEndsExport) {
   EXPECT_EQ(g.slot->count, kMaxEntries);
 }
 
+TEST(RerankSlot, KeepsEngineContextRevisionForIdenticalCandidates) {
+  Fixture f;
+  f.Add("甲");
+  f.Add("乙");
+  f.Export();
+  f.Import({1, 0});
+  uint32_t old = f.slot->export_seq;
+  f.slot->export_seq++;  // engine invalidated the context for this input
+  f.slot->count = 0;  // no scoring until the native menu is exported again
+  f.Export();
+  EXPECT_EQ(f.slot->export_seq, old + 2);
+  EXPECT_EQ(Permutation(f.slot.get(), 2), nullptr);
+  f.Import({0, 1});
+  EXPECT_NE(Permutation(f.slot.get(), 2), nullptr);
+}
+
 TEST(RerankSlot, ChangedSpanInvalidatesOrder) {
   Fixture f;
   f.Add("北京市");

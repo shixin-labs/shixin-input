@@ -39,6 +39,18 @@ Delete an entry when it's fixed, and mention it in the commit.
 
 ## Front and UI
 
+### AI context cannot follow unobserved app edits
+- The engine tracks IME commits and asynchronous keyboard notifications.
+  Ordinary Backspace can roll back the latest known commit; notified
+  selection, paste/undo, word/line deletion and other uncertain edits discard
+  its history. Mouse selections, shortcuts consumed before IMK sees them,
+  drag/drop and app-side changes are not yet
+  reflected, so an unreported caret or selection change can leave stale
+  ranking context.
+- Add asynchronous invalidation for external selection/text changes and,
+  later, an off-key-path surrounding-text snapshot. Never add a synchronous
+  app query or round trip to a typing key.
+
 ### Intermittent duplicate literal keys (user report)
 - Reported `,` producing `,，`, and `xinghui` committing `x幸会`.
 - The client now applies queued mode replies before key classification.
