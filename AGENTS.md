@@ -81,6 +81,7 @@ M1 (macOS MVP) is done; M2 (DESIGN §10) is in progress. Built so far:
 | `cmd/shixin-setup`, `internal/winsetup`, `packaging/windows` | Signed Windows bootstrapper, publisher/payload verification and MSI authoring |
 | `cmd/shixin-ai` | 智能排序 scorer |
 | `internal/{rime,engine,policy,ipc,client,keymap,settings,dictionary,generation,lifecycle,perf,logx,i18n,rerank,ai,llama,models,netclient,update}` | Shared packages (DESIGN §5.1) |
+| `internal/appsim` | Test-only simulated app text fields (Cocoa, 企业微信/Qt, WeChat 4, Chromium, broken carets), for apps the VM can't run |
 | `internal/ui/{brand,candview,fonts,modeview,skin}` | MyGo views shared by the front and the settings app |
 | `frontends/windows-tsf` | Thin C++ TSF COM server, policy/codec core and tests; CMake for Windows x64/ARM64 |
 | `plugins/librime-shixin` | Native C++ librime components |
