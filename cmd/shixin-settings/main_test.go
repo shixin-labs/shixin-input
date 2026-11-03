@@ -315,13 +315,41 @@ func writeSnapshot(t *testing.T, a *app, lang i18n.Lang, dark bool, height int, 
 	}
 }
 
+// sampleNotes are release notes in the published format, for snapshots.
+const sampleNotes = `拾新 0.2.0：检查并安装更新。
+Shixin 0.2.0 checks for and installs updates.
+
+## 新功能 / New
+
+- **检查更新**（设置 → 关于）：一键下载、校验并安装新版本。
+  **Check for updates** (Settings → About): download, verify and install a new version in one step.
+
+## 修复 / Fixes
+
+- 候选窗在多显示器上的位置正确。
+  The candidate window is placed correctly on multiple displays.
+- 升级后启动更快；` + "`Shixin.dmg`" + ` 已签名并公证。
+  Faster startup after an upgrade; ` + "`Shixin.dmg`" + ` is signed and notarized.
+
+完整限制见 [已知问题](https://github.com/shixin-labs/shixin-input/blob/main/docs/KNOWN-ISSUES.md)。
+See [known issues](https://github.com/shixin-labs/shixin-input/blob/main/docs/KNOWN-ISSUES.md).`
+
+// publishedNotes is a release with real published notes, which scroll.
+func publishedNotes() *shixupdate.Release {
+	b, err := os.ReadFile(filepath.Join("testdata", "release-notes.md"))
+	if err != nil {
+		panic(err)
+	}
+	return &shixupdate.Release{Version: "0.2.2", Newer: true, Size: 50 << 20, Notes: shixupdate.FormatNotes(string(b))}
+}
+
 // aboutStates are the 更新 group's states, rendered by the snapshot test.
 func aboutStates() []struct {
 	name  string
 	state updateState
 } {
 	rel := &shixupdate.Release{Version: "0.2.0", Newer: true, Size: 60 << 20,
-		Notes: "- 新增：检查并安装更新\n- 修复：候选窗在多显示器上的位置\n- Faster startup after an upgrade"}
+		Notes: shixupdate.FormatNotes(sampleNotes)}
 	return []struct {
 		name  string
 		state updateState
@@ -330,6 +358,7 @@ func aboutStates() []struct {
 		{"upd-checking", updateState{phase: updChecking}},
 		{"upd-uptodate", updateState{phase: updUpToDate, rel: &shixupdate.Release{Version: "0.1.0"}}},
 		{"upd-available", updateState{phase: updAvailable, rel: rel}},
+		{"upd-notes", updateState{phase: updAvailable, rel: publishedNotes()}},
 		{"upd-downloading", updateState{phase: updDownloading, rel: rel, done: 24 << 20, total: rel.Size}},
 		{"upd-installing", updateState{phase: updInstalling, rel: rel}},
 		{"upd-failed", updateState{phase: updFailed, rel: rel, err: "update: not installing: the app is signed by team OTHER98765, not the installed ABCDE12345"}},

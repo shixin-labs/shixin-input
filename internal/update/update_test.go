@@ -13,6 +13,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 )
 
 func TestCompare(t *testing.T) {
@@ -77,10 +78,30 @@ func releaseJSON(tag, digest, extra string) string {
 		{"name":%q,"browser_download_url":"https://x/Shixin.dmg","size":1234%s}%s]}`, tag, AssetName, d, extra)
 }
 
-func TestTrimNotes(t *testing.T) {
-	in := "## 安装 / Install\r\n\n**Requires:** macOS 13.\n- open `Shixin.dmg`\n#hashtag stays"
-	want := "安装 / Install\n\nRequires: macOS 13.\n• open Shixin.dmg\n#hashtag stays"
-	if got := trimNotes(in); got != want {
+func TestFormatNotes(t *testing.T) {
+	in := "## 安装 / Install\r\n\n**Requires:** macOS 13.\n- open `Shixin.dmg`\n"
+	if got, want := FormatNotes(in), "## 安装 / Install\n\n**Requires:** macOS 13.  \n- open `Shixin.dmg`"; got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+	// Long notes end at a paragraph break, never inside a block or a
+	// character.
+	para := strings.Repeat("字", 300) + "\n\n"
+	long := strings.Repeat(para, MaxNotes/len(para)+3)
+	got := FormatNotes(long)
+	if !strings.HasSuffix(got, "字\n\n…") || len(got) > MaxNotes+8 || !utf8.ValidString(got) {
+		t.Errorf("long notes: %d bytes, ends %q", len(got), got[len(got)-12:])
+	}
+	// A single long line still ends on a character boundary.
+	got = FormatNotes(strings.Repeat("字", MaxNotes))
+	if !utf8.ValidString(got) || !strings.HasSuffix(got, "字\n\n…") || len(got) > MaxNotes+8 {
+		t.Errorf("one line: %d bytes", len(got))
+	}
+}
+
+func TestHardBreaks(t *testing.T) {
+	in := "新功能\nNew\n\n- 一\n  one\n```\ncode\nkept\n```\nend  \nlast"
+	want := "新功能  \nNew\n\n- 一  \n  one  \n```\ncode\nkept\n```\nend  \nlast"
+	if got := hardBreaks(in); got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}
 }
@@ -90,7 +111,7 @@ func TestParseRelease(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if r.Version != "0.1.2" || r.URL != "https://x/Shixin.dmg" || r.Size != 1234 || r.SHA256 != goodDigest[7:] || r.Notes != "Fixes\n• one" {
+	if r.Version != "0.1.2" || r.URL != "https://x/Shixin.dmg" || r.Size != 1234 || r.SHA256 != goodDigest[7:] || r.Notes != "Fixes  \n- one" {
 		t.Errorf("%+v", r)
 	}
 	r, err = ParseRelease([]byte(releaseJSON("0.1.3", "", "")))
@@ -112,10 +133,10 @@ func TestParseRelease(t *testing.T) {
 			t.Errorf("%s: accepted", name)
 		}
 	}
-	long := strings.Repeat("字", MaxNotes+50)
+	long := strings.Repeat("字", MaxNotes)
 	r, err = ParseRelease([]byte(fmt.Sprintf(`{"tag_name":"v1.0.0","body":%q,"assets":[{"name":%q,"size":1,"browser_download_url":"https://x"}]}`, long, AssetName)))
-	if err != nil || len([]rune(r.Notes)) != MaxNotes+1 {
-		t.Errorf("notes: %d runes, %v", len([]rune(r.Notes)), err)
+	if err != nil || len(r.Notes) > MaxNotes+8 || !strings.HasSuffix(r.Notes, "…") {
+		t.Errorf("notes: %d bytes, %v", len(r.Notes), err)
 	}
 }
 

@@ -28,8 +28,8 @@ import (
 const (
 	// Repo is the GitHub repository whose latest release is offered.
 	Repo = "shixin-labs/shixin-input"
-	// MaxNotes bounds the release notes kept, in characters.
-	MaxNotes = 1500
+	// MaxNotes bounds the release notes kept, in bytes.
+	MaxNotes = 16 << 10
 )
 
 var (
@@ -47,7 +47,7 @@ var ErrMismatch = errors.New("update: the download doesn't match its published s
 // Release is the latest published release.
 type Release struct {
 	Version string // 0.1.2, from the tag v0.1.2
-	Notes   string // plain text, trimmed
+	Notes   string // Markdown, as published, at most about MaxNotes bytes
 	URL     string // the disk image
 	Size    int64
 	SHA256  string // hex, "" if GitHub gave no digest
@@ -114,7 +114,7 @@ func ParseRelease(body []byte) (*Release, error) {
 	if !validVersion(ver) {
 		return nil, fmt.Errorf("update: unusable release tag %q", a.Tag)
 	}
-	r := &Release{Version: ver, Notes: trimNotes(a.Body)}
+	r := &Release{Version: ver, Notes: FormatNotes(a.Body)}
 	for _, as := range a.Assets {
 		if as.Name != AssetName {
 			continue
@@ -135,25 +135,52 @@ func ParseRelease(body []byte) (*Release, error) {
 	return nil, fmt.Errorf("update: release %s has no %s", ver, AssetName)
 }
 
-// trimNotes turns the release's Markdown into plain text for the 关于
-// page: no heading marks, emphasis or code ticks, and bullets for list
-// items. Links and the rest stay as written.
-func trimNotes(s string) string {
-	lines := strings.Split(strings.ReplaceAll(s, "\r\n", "\n"), "\n")
-	for i, l := range lines {
-		if t := strings.TrimLeft(l, "#"); len(t) < len(l) && strings.HasPrefix(t, " ") {
-			l = strings.TrimSpace(t)
-		}
-		if t, ok := strings.CutPrefix(l, "- "); ok {
-			l = "• " + t
-		}
-		lines[i] = strings.NewReplacer("**", "", "`", "").Replace(l)
-	}
-	s = strings.TrimSpace(strings.Join(lines, "\n"))
-	if utf8.RuneCountInString(s) <= MaxNotes {
+// FormatNotes prepares a release's Markdown for the 关于 page: Unix
+// line endings and its line breaks kept, as GitHub shows release notes.
+// Notes longer than MaxNotes are cut at the last paragraph break before it
+// (or a line break, then a character boundary), so that no block is left
+// half written, and end with an ellipsis.
+func FormatNotes(s string) string {
+	s = hardBreaks(strings.TrimSpace(strings.ReplaceAll(s, "\r\n", "\n")))
+	if len(s) <= MaxNotes {
 		return s
 	}
-	return strings.TrimSpace(string([]rune(s)[:MaxNotes])) + "…"
+	cut := s[:MaxNotes]
+	for !utf8.ValidString(cut) {
+		cut = cut[:len(cut)-1]
+	}
+	if i := strings.LastIndex(cut, "\n\n"); i > MaxNotes/2 {
+		cut = cut[:i]
+	} else if i := strings.LastIndexByte(cut, '\n'); i > MaxNotes/2 {
+		cut = cut[:i]
+	}
+	return strings.TrimSpace(cut) + "\n\n…"
+}
+
+// hardBreaks ends each line followed by another, outside code fences,
+// with two spaces: a hard line break in Markdown. GitHub keeps the line
+// breaks of release notes, whose Chinese and English lines alternate,
+// where CommonMark would join them into one line.
+func hardBreaks(s string) string {
+	lines := strings.Split(s, "\n")
+	fence := ""
+	for i, l := range lines {
+		t := strings.TrimLeft(l, " ")
+		if fence != "" {
+			if strings.HasPrefix(t, fence) {
+				fence = ""
+			}
+			continue
+		}
+		if strings.HasPrefix(t, "```") || strings.HasPrefix(t, "~~~") {
+			fence = t[:3]
+			continue
+		}
+		if i+1 < len(lines) && strings.TrimSpace(l) != "" && strings.TrimSpace(lines[i+1]) != "" && !strings.HasSuffix(l, "  ") {
+			lines[i] = l + "  "
+		}
+	}
+	return strings.Join(lines, "\n")
 }
 
 // validVersion accepts what a tag may hold and a directory name may be:

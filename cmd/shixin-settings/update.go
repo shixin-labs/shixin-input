@@ -11,6 +11,8 @@ import (
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
+	"github.com/egoist/mygo/ui/markdown"
+	"github.com/egoist/mygo/ui/markdown/parser"
 
 	shixupdate "shixin/internal/update"
 )
@@ -225,10 +227,46 @@ func (a *app) updateGroup(c *ui.Context) {
 		if u.rel != nil && u.rel.Newer && u.rel.Notes != "" {
 			block(c, func() {
 				ui.Text(c, T("s.u.notes")).FontSize(12).FontWeight(600).TextColor(p.muted)
-				ui.Text(c, u.rel.Notes).FontSize(12.5).LineHeight(1.45)
+				ui.Scroll(c).MaxHeight(notesHeight).Children(func() {
+					markdown.View(c, u.rel.Notes, &notesView)
+				})
 			})
 		}
 	})
+}
+
+// notesHeight is the most the release notes take on the page; longer
+// notes scroll.
+const notesHeight = 320
+
+// notesView shows a release's notes, Markdown from the network, at the
+// page's text size. Only https links open, in the browser; images show as
+// their descriptions, so nothing is fetched until the user clicks.
+var notesView = markdown.Options{
+	// GitHub's syntax, as GitHub renders the notes: no math, so that a
+	// dollar sign stays one.
+	Extensions: parser.GFM,
+	Theme: &markdown.Theme{
+		FontSize:     12.5,
+		LineHeight:   1.45,
+		BlockSpacing: 0.6,
+		Headings: [6]markdown.HeadingStyle{
+			{Size: 1.2, Top: 1, Bottom: 0.4},
+			{Size: 1.1, Top: 1, Bottom: 0.35},
+			{Size: 1, Top: 0.9, Bottom: 0.3},
+		},
+	},
+	OnLink: openNotesLink,
+}
+
+// openExternal opens a URL in the browser; tests replace it.
+var openExternal = func(url string) { go mygo.Shell.OpenExternal(url) }
+
+// openNotesLink opens a link from the release notes if it is https.
+func openNotesLink(url string) {
+	if strings.HasPrefix(url, "https://") {
+		openExternal(url)
+	}
 }
 
 // shorten cuts s to n characters.

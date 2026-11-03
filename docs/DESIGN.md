@@ -1192,8 +1192,12 @@ appear after restarting the app.
   installed build. An ad hoc installed copy has no team, so it can't update
   itself. The install is the Update above (staged copy, `Contents` swap,
   front relaunch), after which the front reopens Settings on 关于 and
-  deletes the download. The release notes are shown as plain text (heading
-  marks, emphasis and code ticks dropped).
+  deletes the download. The release notes are rendered as GitHub Flavored
+  Markdown (MyGo's `ui/markdown`, without math), with their line breaks
+  kept as GitHub shows them, in a scrolling area of at most 320 DIPs. They
+  are kept up to 16 KiB, cut at a paragraph break. Only `https` links open,
+  in the browser, and images show as their descriptions: nothing is fetched
+  from the notes.
 
   `-apply-update` is a child of the settings app it has to stop, and
   macOS's `pgrep` skips its caller's ancestors unless given `-a`; without

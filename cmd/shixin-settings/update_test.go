@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
+	"strings"
 	"sync/atomic"
 	"testing"
 
@@ -125,5 +128,50 @@ func TestShorten(t *testing.T) {
 		if got := shorten(c.s, c.n); got != c.want {
 			t.Errorf("shorten(%q, %d) = %q, want %q", c.s, c.n, got, c.want)
 		}
+	}
+}
+
+// Published notes render as Markdown, their links open only over https,
+// and long notes scroll within notesHeight rather than lengthening the page.
+func TestReleaseNotes(t *testing.T) {
+	b, err := os.ReadFile(filepath.Join("testdata", "release-notes.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	a, _, _ := testApp(t)
+	a.page = "about"
+	a.upd = updateState{phase: updAvailable, rel: &shixupdate.Release{Version: "9.9.9", Newer: true, Notes: shixupdate.FormatNotes(string(b))}}
+	tt := ui.NewTester(a.view, 880, 900)
+	tt.Frame()
+	texts := strings.Join(tt.Texts(), "\n")
+	for _, want := range []string{"新功能 / New", "Downloads", "SHA-256"} {
+		if !strings.Contains(texts, want) {
+			t.Errorf("notes lack %q", want)
+		}
+	}
+	if strings.Contains(texts, "## ") || strings.Contains(texts, "**") {
+		t.Error("Markdown syntax shown as text")
+	}
+	title, ok := tt.Find(T("s.u.notes"))
+	note, ok2 := tt.Find(T("s.u.note"))
+	if !ok || !ok2 {
+		t.Fatal("update group not shown")
+	}
+	if h := note.Y - title.Y; h > notesHeight+80 {
+		t.Errorf("notes take %.0f DIPs, more than their scroll area", h)
+	}
+	opened := 0
+	saved := openExternal
+	openExternal = func(string) { opened++ }
+	t.Cleanup(func() { openExternal = saved })
+	for _, url := range []string{"http://example.com", "file:///etc/passwd", "javascript:alert(1)", "shixin://x"} {
+		openNotesLink(url)
+	}
+	if opened != 0 {
+		t.Errorf("opened %d links that aren't https", opened)
+	}
+	openNotesLink("https://github.com/shixin-labs/shixin-input")
+	if opened != 1 {
+		t.Error("an https link didn't open")
 	}
 }
