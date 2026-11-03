@@ -89,4 +89,8 @@ func TestCaretRetriesAreBounded(t *testing.T) {
 	if tr.caret != fallbackCaret(simScreens) {
 		t.Errorf("window at %+v, want the fallback", tr.caret)
 	}
+	// Given up: later updates of the composition don't ask again.
+	if !tr.valid {
+		t.Error("after the retries, every key still queries the app")
+	}
 }

@@ -7,7 +7,7 @@ package main
 // rectangle until their event loop has laid out the marked text.
 type caretTracker struct {
 	caret   candidateRect
-	valid   bool // the caret was read for this composition
+	valid   bool // the caret was read, or given up on, for this composition
 	known   bool // a usable caret has been read
 	retries int
 }
@@ -31,6 +31,10 @@ func (t *caretTracker) read(answer candidateRect, screens []candidateScreen) (re
 	if !t.known {
 		t.caret = fallbackCaret(screens)
 	}
-	t.retries++
-	return t.retries <= maxCaretRetries
+	if t.retries++; t.retries > maxCaretRetries {
+		// Give up for this composition: no more queries, keys included.
+		t.valid = true
+		return false
+	}
+	return true
 }
