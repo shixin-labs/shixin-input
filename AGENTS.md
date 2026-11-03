@@ -357,6 +357,58 @@ shared into the guest read-only.
   (lengths and character classes, never text). Key codes reveal what was
   typed: remove the file afterwards.
 
+## Debugging user reports
+
+Bugs that only show on a user's machine are the most expensive kind: a
+wrong theory costs the user a round trip, and a wrong fix can break their
+typing. See [`docs/retrospectives/`](docs/retrospectives) for what went
+wrong before.
+
+- **Ask about the setup first,** before forming a theory: macOS or
+  Windows version and Shixin version; the number of displays, their
+  arrangement, scaling and refresh rate (and whether macOS displays have
+  separate Spaces); the app, and where in it the text field is (a field
+  near a screen edge is placed differently); when it started; every time,
+  or what makes it happen. The test VM and the development machine have
+  one display each, so they can't reproduce what depends on a second.
+- **Measure before you fix.** Add debug logs that answer the question
+  (numbers only: positions, sizes, states, timings, never text) and read
+  them from the affected machine before changing behavior there. Log
+  every layer a symptom passes through: for a window, its placement, its
+  screen and how much of it lies on that screen, show and hide with their
+  reason, and drawn frames.
+- **"Shown and visible" isn't "seen".** AppKit, the window server and the
+  renderer can all report a window on screen while the user sees nothing:
+  macOS shows a window that spans displays with separate Spaces only on
+  the display holding most of it. Check which screen owns the window.
+- **One change per test build,** as an A/B against a build that shows the
+  problem, and say what each outcome would mean before the user tests it.
+  Don't ship a fix to the user's machine on a theory; if a build must be
+  tried there, have a working build ready to restore at a higher version
+  (the installers refuse downgrades), and restore it as soon as a test
+  build makes things worse.
+- **Debug mode isn't passive.** Its logging makes extra synchronous calls
+  into the app (marked/selected ranges, the character before the caret),
+  which changes timing and can run Shixin's queued work inside those
+  calls. Check a behavior with debug logging on and off.
+- **Reproduce locally when the setup allows,** with a standalone harness
+  for the component (outside the repository, under `/tmp` or `build/`),
+  and the app simulator (`internal/appsim`) for app behavior the VM can't
+  run. When it doesn't reproduce, note what differs from the user's setup
+  rather than concluding the code is right.
+- **Diagnostic builds of dependencies** (a traced MyGo, for example) are
+  local copies under `build/` used through `GOFLAGS=-modfile=<a path
+  without spaces>`; never edit or commit `go.mod` for them, and don't
+  patch a dependency on a guess.
+- **A fix comes with a test that fails without it.** Disable the fix, see
+  the test fail, restore it.
+- **Get a second opinion** for a long investigation (a review agent with
+  the evidence so far), and record the outcome in a retrospective under
+  `docs/retrospectives/`, including the wrong turns.
+- **Users' machines:** read-only diagnosis is fine; installing builds,
+  enabling debug logging (which logs key codes) or changing settings there
+  needs the user's agreement, and debug logging is switched off when done.
+
 ## Dictionary maintenance
 
 Dictionary settings import standard Sogou `.scel`, Sogou for Mac's `SGPU`
