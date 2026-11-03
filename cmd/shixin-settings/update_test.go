@@ -138,6 +138,10 @@ func TestReleaseNotes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Signed builds show the notes; unsigned previews update by hand.
+	savedPlat := plat
+	plat.manualPreview = false
+	t.Cleanup(func() { plat = savedPlat })
 	a, _, _ := testApp(t)
 	a.page = "about"
 	a.upd = updateState{phase: updAvailable, rel: &shixupdate.Release{Version: "9.9.9", Newer: true, Notes: shixupdate.FormatNotes(string(b))}}
