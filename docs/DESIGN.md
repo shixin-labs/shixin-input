@@ -213,6 +213,11 @@ are sent once per connection; results refer to them by ID.
     there once per composition, was never seen. The mode bubble is not
     shown at an unusable caret. Placement never converts NaN to window
     coordinates.
+  - On each show and drawn frame, the front asks macOS for the candidate
+    window's occlusion state. Shown over some apps (企业微信, ChatGPT),
+    the window kept reporting itself occluded, and MyGo, which puts no
+    frames on screen for a window out of sight, never painted it
+    ([retrospective](retrospectives/2026-11-candidate-window.md)).
   - These calls can run the main run loop, and a queued `Drain` with it,
     before they return. `Drain` ignores a nested call (asking the outer
     one to look again for results that arrived meanwhile): the nested one

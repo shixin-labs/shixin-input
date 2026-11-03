@@ -52,6 +52,15 @@ Delete an entry when it's fixed, and mention it in the commit.
   The assertions now check exact output, and the all-package Go race gate
   covers mode changes, passed-key ownership and concurrent result-ring reuse.
 
+### Candidate window occlusion (macOS)
+- Over some apps (企业微信, ChatGPT and others) the candidate window was on
+  screen but never painted. Querying its occlusion state on each show and
+  drawn frame makes it appear; that this is the mechanism, rather than a
+  timing side effect, is being confirmed with debug logging off. If it is,
+  MyGo should not hold a window's frames on AppKit's stale occlusion state:
+  report it upstream and remove the workaround. See the
+  [retrospective](retrospectives/2026-11-candidate-window.md).
+
 ### Windows release gaps
 - Version 0.2.0 distributes unsigned x64/ARM64 previews with manual updates.
   Their integrity checks do not authenticate the publisher, and Windows

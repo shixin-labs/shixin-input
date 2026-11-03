@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"runtime"
 	"unsafe"
 
@@ -44,6 +45,8 @@ var cand struct {
 	// The panel's size in the last frame, to place the window before it
 	// shows: until the next frame measures the new candidates.
 	lastW, lastH float64
+	// The last position logged in debug mode.
+	loggedX, loggedY int
 }
 
 // look is the candidate window's part of the settings.
@@ -70,15 +73,7 @@ func newCandidateWindow(tray *mygo.Tray, s *settings.Settings) {
 	fonts.Warm(cand.look.fontFamily, cand.look.fontSize)
 	cand.screens = make([]candidateScreen, 0, 8)
 	cand.pending.init()
-	// NSRect returns use objc_msgSend_stret on Intel, objc_msgSend on ARM.
-	addr := msgSend
-	if runtime.GOARCH == "amd64" {
-		lib, err := purego.Dlopen("/usr/lib/libobjc.A.dylib", purego.RTLD_NOW|purego.RTLD_GLOBAL)
-		must(err)
-		addr, err = purego.Dlsym(lib, "objc_msgSend_stret")
-		must(err)
-	}
-	purego.RegisterFunc(&screenRect, addr)
+	initScreenRect()
 	cand.flyout = mygo.NewFlyout(mygo.FlyoutOptions{
 		Tray:    tray,
 		Hidden:  true,
@@ -92,6 +87,19 @@ func newCandidateWindow(tray *mygo.Tray, s *settings.Settings) {
 		return 0
 	})
 	cand.args = [3]uintptr{mainQueue, 0, cand.callback}
+}
+
+// initScreenRect binds screenRect. NSRect returns use objc_msgSend_stret
+// on Intel, objc_msgSend on ARM.
+func initScreenRect() {
+	addr := msgSend
+	if runtime.GOARCH == "amd64" {
+		lib, err := purego.Dlopen("/usr/lib/libobjc.A.dylib", purego.RTLD_NOW|purego.RTLD_GLOBAL)
+		must(err)
+		addr, err = purego.Dlsym(lib, "objc_msgSend_stret")
+		must(err)
+	}
+	purego.RegisterFunc(&screenRect, addr)
 }
 
 // setLook applies changed appearance settings. Any goroutine.
@@ -111,6 +119,9 @@ func candView(c *ui.Context) {
 	c.Root().Background(ui.Transparent).Padding(shadowPad) // room for the shadow
 	cand.pending.apply(&cand.state)
 	if len(cand.state.Items) == 0 {
+		if debug && cand.shown {
+			logf("debug: candidates frame: empty while shown")
+		}
 		return
 	}
 	l := &cand.look
@@ -123,6 +134,10 @@ func candView(c *ui.Context) {
 	style.MaxWidth, style.MaxHeight = candidateCardBounds(work, candWindowW, candWindowH, shadowPad)
 	w, h := candview.Measure(c, &cand.state, &style)
 	cand.lastW, cand.lastH = float64(w), float64(h)
+	refreshOcclusion()
+	if debug {
+		logf("debug: candidates frame: %d items, %gx%g, shown %v, %s", len(cand.state.Items), w, h, cand.shown, windowState(cand.flyout))
+	}
 	if cand.shown {
 		positionCandidates(float64(w), float64(h))
 	}
@@ -184,6 +199,11 @@ func positionBesideBadge(window *mygo.Window, rect nsRect, width, height float64
 	}
 	x, y := candidatePosition(caret, s.work, width, height, cand.screens[0].frame.H, shadowPad)
 	window.SetPosition(x, y)
+	if debug && window == cand.flyout && (x != cand.loggedX || y != cand.loggedY) {
+		cand.loggedX, cand.loggedY = x, y
+		logf("debug: candidates at %d,%d (%gx%g) for caret {%g %g %g %g} on screen %d of %d, work %+v",
+			x, y, width, height, rect.X, rect.Y, rect.W, rect.H, candidateScreenAt(candidateRect(rect), cand.screens), len(cand.screens), s.work)
+	}
 }
 
 // showCandidates runs inside Drain, including on an ASK/barrier key path.
@@ -215,7 +235,10 @@ func queueCandidateUpdate() {
 // still once per composition, and now also outside the app's key callback.
 func updateCandidateWindow() {
 	cand.queued = false
-	if !cand.pending.visible || imkClient == 0 || focusedSecureInput() {
+	if secure := focusedSecureInput(); !cand.pending.visible || imkClient == 0 || secure {
+		if debug && (cand.shown || cand.pending.visible) {
+			logf("debug: candidates hidden: visible %v, client %v, secure %v", cand.pending.visible, imkClient != 0, secure)
+		}
 		cand.caret.reset()
 		cand.framePending = false
 		cand.pending.visible, cand.pending.dirty = false, false
@@ -241,6 +264,11 @@ func updateCandidateWindow() {
 		positionCaretWindow(cand.flyout, nsRect(cand.caret.caret), cand.lastW, cand.lastH)
 		cand.flyout.ShowInactive()
 		cand.shown = true
+		refreshOcclusion()
+		if debug {
+			x, y := cand.flyout.Position()
+			logf("debug: candidates shown at %d,%d, visible %v, %s", x, y, cand.flyout.IsVisible(), windowState(cand.flyout))
+		}
 	}
 }
 
@@ -251,7 +279,11 @@ func readCaret() {
 	var caret nsRect
 	send(imkClient, selAttributesAt, 0, uintptr(unsafe.Pointer(&caret)))
 	refreshCandidateScreens()
-	if cand.caret.read(candidateRect(caret), cand.screens) {
+	retry := cand.caret.read(candidateRect(caret), cand.screens)
+	if debug {
+		logf("debug: caret {%g %g %g %g}, usable %v", caret.X, caret.Y, caret.W, caret.H, cand.caret.valid)
+	}
+	if retry {
 		if debug {
 			logf("debug: unusable caret {%g %g %g %g}; asking again", caret.X, caret.Y, caret.W, caret.H)
 		}
@@ -263,3 +295,47 @@ func hideCandidates() {
 	var empty ipc.Result
 	showCandidates(&empty)
 }
+
+// refreshOcclusion asks macOS whether any of the candidate window shows.
+// A window shown over some apps (企业微信, ChatGPT) kept reporting itself
+// occluded, so MyGo, which draws nothing for a window out of sight, never
+// put the panel on screen; asking for the state on each show and frame,
+// as a debug log first did, made it appear. Main thread, in the UI frame
+// or the update callback, never on the key path.
+func refreshOcclusion() {
+	if w := flyoutHandle(); w != 0 {
+		queryOcclusion(w)
+	}
+}
+
+// flyoutHandle and queryOcclusion are refreshOcclusion's native calls;
+// tests replace them.
+var (
+	flyoutHandle = func() uintptr {
+		if cand.flyout == nil {
+			return 0
+		}
+		return cand.flyout.NativeHandle()
+	}
+	queryOcclusion = func(w uintptr) { send(w, selOcclusionState) }
+)
+
+// windowState describes, for debug logs, how macOS sees window: whether
+// any of it shows (occlusionState), its space, number and level.
+func windowState(window *mygo.Window) string {
+	w := window.NativeHandle()
+	if w == 0 {
+		return "no window"
+	}
+	const occlusionVisible = 1 << 1
+	return fmt.Sprintf("occlusion visible %v, active space %v, number %d, level %d",
+		send(w, selOcclusionState)&occlusionVisible != 0, send(w, selOnActiveSpace)&0xff != 0,
+		send(w, selWindowNumber), send(w, selLevel))
+}
+
+var (
+	selOcclusionState = objc.RegisterName("occlusionState")
+	selOnActiveSpace  = objc.RegisterName("isOnActiveSpace")
+	selWindowNumber   = objc.RegisterName("windowNumber")
+	selLevel          = objc.RegisterName("level")
+)
