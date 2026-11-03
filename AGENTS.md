@@ -18,6 +18,9 @@ usability. Documents:
 - [`docs/macos-input-menu-recovery.md`](docs/macos-input-menu-recovery.md):
   when macOS's input menu or an app's cache loses Shixin.
 - [`docs/spikes/`](docs/spikes): experiment reports (code in `spikes/`).
+- [`docs/retrospectives/`](docs/retrospectives): what went wrong in past
+  incidents and what changed because of it. Read them before debugging a
+  similar report.
 
 Update this file as code, commands and conventions are added.
 
