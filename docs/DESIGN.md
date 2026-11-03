@@ -204,7 +204,15 @@ are sent once per connection; results refer to them by ID.
   - Query the caret rect **once per composition**, and move the hidden
     candidate window to it (at the last measured size) before showing it.
     Showing first left it for a frame where the last composition was,
-    often in another app.
+    often in another app. An unusable answer (NaN or infinite values, the
+    zero rectangle, or a rect off every screen) keeps the last usable caret,
+    or a point on the main screen before there is one, and the caret is
+    queried again a frame (16 ms) later, at most six times per composition:
+    Qt apps such as 企业微信 lay out marked text on their next event-loop
+    turn and answer the zero rectangle until then, so the window, placed
+    there once per composition, was never seen. The mode bubble is not
+    shown at an unusable caret. Placement never converts NaN to window
+    coordinates.
   - These calls can run the main run loop, and a queued `Drain` with it,
     before they return. `Drain` ignores a nested call (asking the outer
     one to look again for results that arrived meanwhile): the nested one

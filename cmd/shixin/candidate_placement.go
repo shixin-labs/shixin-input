@@ -7,6 +7,42 @@ type candidateRect struct{ X, Y, W, H float64 }
 
 type candidateScreen struct{ frame, work candidateRect }
 
+// usableCaret reports whether an app's caret rectangle can place a window:
+// finite, not the zero rectangle apps answer when they have no caret yet,
+// and on or near a screen. Qt apps such as 企业微信 can answer before they
+// have laid out the marked text.
+func usableCaret(caret candidateRect, screens []candidateScreen) bool {
+	for _, v := range [...]float64{caret.X, caret.Y, caret.W, caret.H} {
+		if math.IsNaN(v) || math.IsInf(v, 0) {
+			return false
+		}
+	}
+	if caret == (candidateRect{}) {
+		return false
+	}
+	if len(screens) == 0 {
+		return true
+	}
+	const slack = 64 // a caret just past an edge, as in a gap between displays
+	for _, s := range screens {
+		r := s.frame
+		if caret.X >= r.X-slack && caret.X <= r.X+r.W+slack && caret.Y >= r.Y-slack && caret.Y <= r.Y+r.H+slack {
+			return true
+		}
+	}
+	return false
+}
+
+// fallbackCaret is where a window goes when no usable caret is known: the
+// middle of the lower part of the main screen's work area.
+func fallbackCaret(screens []candidateScreen) candidateRect {
+	if len(screens) == 0 {
+		return candidateRect{}
+	}
+	w := screens[0].work
+	return candidateRect{X: w.X + w.W/2, Y: w.Y + w.H/3}
+}
+
 // candidateCardBounds bounds the card by both the screen work area and the
 // pre-created flyout's content area. The transparent shadow margin is outside
 // the card, so only the flyout limit needs to reserve it.
@@ -39,6 +75,17 @@ func candidateScreenAt(caret candidateRect, screens []candidateScreen) int {
 // MyGo's global top-left coordinates are flipped about the primary screen.
 func candidatePosition(caret, work candidateRect, width, height, primaryHeight, margin float64) (int, int) {
 	const gap = 4
+	// NaN survives min and max, and converting it to an int puts the
+	// window off every screen: keep such a caret at the work area's corner.
+	if math.IsNaN(caret.X) {
+		caret.X = work.X
+	}
+	if math.IsNaN(caret.Y) {
+		caret.Y = work.Y + work.H
+	}
+	if math.IsNaN(caret.H) {
+		caret.H = 0
+	}
 	x := min(max(caret.X, work.X), max(work.X, work.X+work.W-width))
 	y := caret.Y - gap - height
 	if y < work.Y {

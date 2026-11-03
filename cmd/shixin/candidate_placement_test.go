@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"math"
+	"testing"
+)
 
 func TestCandidateCardBounds(t *testing.T) {
 	for _, tt := range []struct {
@@ -86,5 +89,58 @@ func TestModeBesideBadge(t *testing.T) {
 	caret.X = 980
 	if r := modeBesideBadge(caret, work, 26); r.X != 980-20-26 {
 		t.Fatalf("at the right edge: %+v", r)
+	}
+}
+
+func TestUsableCaret(t *testing.T) {
+	screens := []candidateScreen{
+		{frame: candidateRect{0, 0, 1512, 982}, work: candidateRect{0, 0, 1512, 950}},
+		{frame: candidateRect{1512, -400, 2560, 1440}, work: candidateRect{1512, -400, 2560, 1415}},
+	}
+	nan, inf := math.NaN(), math.Inf(1)
+	for _, tt := range []struct {
+		name  string
+		caret candidateRect
+		want  bool
+	}{
+		{"caret", candidateRect{300, 500, 0, 18}, true},
+		{"second display", candidateRect{2500, 200, 1, 20}, true},
+		{"origin with a line", candidateRect{0, 0, 0, 18}, true},
+		{"just past an edge", candidateRect{-20, 500, 0, 18}, true},
+		{"zero rect", candidateRect{}, false},
+		{"NaN", candidateRect{nan, 500, 0, 18}, false},
+		{"NaN height", candidateRect{300, 500, 0, nan}, false},
+		{"infinite", candidateRect{inf, 500, 0, 18}, false},
+		{"off every screen", candidateRect{-5000, 500, 0, 18}, false},
+		{"far below", candidateRect{300, -3000, 0, 18}, false},
+	} {
+		if got := usableCaret(tt.caret, screens); got != tt.want {
+			t.Errorf("%s: usable %v, want %v", tt.name, got, tt.want)
+		}
+	}
+	if !usableCaret(candidateRect{300, 500, 0, 18}, nil) || usableCaret(candidateRect{}, nil) {
+		t.Error("without screens, only the zero rect is unusable")
+	}
+	if c := fallbackCaret(screens); !usableCaret(c, screens) || c.X != 756 {
+		t.Errorf("fallback %+v is not on the main screen", c)
+	}
+}
+
+// A NaN caret is kept at the work area's corner: converting NaN to an int
+// is not defined, and on amd64 puts the window off every screen.
+func TestCandidatePositionNaN(t *testing.T) {
+	work := candidateRect{0, 40, 1000, 740}
+	nan := math.NaN()
+	for _, tt := range []struct {
+		caret candidateRect
+		x, y  int
+	}{
+		{candidateRect{nan, 400, 0, 20}, -12, 372},
+		{candidateRect{100, nan, 0, 20}, 88, -8},
+		{candidateRect{nan, nan, nan, nan}, -12, -8},
+	} {
+		if x, y := candidatePosition(tt.caret, work, 300, 60, 780, 12); x != tt.x || y != tt.y {
+			t.Errorf("caret %+v: position %d,%d, want %d,%d", tt.caret, x, y, tt.x, tt.y)
+		}
 	}
 }

@@ -271,6 +271,7 @@ and tools that touch Rime use scratch user dirs, never the live one.
 |---|---|
 | Secure-field decisions/client tests / native flag, cached and resolve costs | `go test ./internal/client -run Secure` · `go test ./cmd/shixin -run Secure -bench BenchmarkSecure -benchmem` |
 | Local preedit finalization and late-result races | `go test ./internal/client -run 'Test(FocusOut\|Finish\|KeyAfterLocalCommit)'` |
+| Simulated apps (企业微信's late layout and zero caret, WeChat 4/Chromium typing eaten keys, broken carets, nested `Drain` from synchronous app calls): typing, commits and candidate placement | `go test ./internal/appsim ./internal/client ./cmd/shixin -run 'Test(CaretAnswers\|KeyDown\|TypingInSimulatedApps\|NestedDrain\|CaretInSimulatedApps\|CaretRetries\|UsableCaret\|CandidatePositionNaN)'` |
 | macOS shortcut modifier routing/reset cost (no event posting) | `go test ./cmd/shixin -run TestShortcutModifier -bench BenchmarkModifierSpacingReset -benchmem` |
 | Candidate placement and panel measurement | `go test ./cmd/shixin -run TestCandidate` · `go test ./internal/ui/candview -run TestMeasure` |
 | Candidate handoff/cache/frame allocation and latency gates | `go test ./cmd/shixin -run TestCandidate -bench BenchmarkCandidateUpdate -benchmem` · `go test ./internal/ui/candview -run 'Test(State\|String\|Selection\|Candidate)' -bench BenchmarkCandidateFrame -benchmem` |

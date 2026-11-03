@@ -120,9 +120,12 @@ func disableAppNap() {
 // nothing, unlike mygo.RunOnMain.
 var (
 	dispatchAsyncF uintptr
+	dispatchAfterF uintptr
 	mainQueue      uintptr
-	drainCallback  uintptr
-	wakeArgs       [3]uintptr // the connection goroutine is the only caller
+	// dispatchTime is dispatch_time(when, delta in nanoseconds).
+	dispatchTime  func(when uint64, delta int64) uint64
+	drainCallback uintptr
+	wakeArgs      [3]uintptr // the connection goroutine is the only caller
 )
 
 func initDispatch() {
@@ -132,6 +135,9 @@ func initDispatch() {
 	must(err)
 	mainQueue, err = purego.Dlsym(lib, "_dispatch_main_q") // dispatch_get_main_queue()
 	must(err)
+	dispatchAfterF, err = purego.Dlsym(lib, "dispatch_after_f")
+	must(err)
+	purego.RegisterLibFunc(&dispatchTime, lib, "dispatch_time")
 	drainCallback = purego.NewCallback(func(ctx uintptr) uintptr {
 		core.SetSecure(focusedSecureInput())
 		core.Drain()

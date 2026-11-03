@@ -132,7 +132,17 @@ func updateModeBubble() {
 		var caret nsRect
 		send(imkClient, selAttributesAt, 0, uintptr(unsafe.Pointer(&caret)))
 		refreshCandidateScreens()
-		positionBesideBadge(modeBubble.window, caret, modeview.Size, modeview.Size, m.beside)
+		switch {
+		case usableCaret(candidateRect(caret), cand.screens):
+			positionBesideBadge(modeBubble.window, caret, modeview.Size, modeview.Size, m.beside)
+		case !modeBubble.shown:
+			// A bubble away from the caret would only distract.
+			if debug {
+				logf("debug: unusable caret {%g %g %g %g} for the mode", caret.X, caret.Y, caret.W, caret.H)
+			}
+			return
+		}
+		// A shown bubble stays where it is when the caret is unusable.
 		modeBubble.window.Invalidate()
 		modeBubble.window.ShowInactive()
 		modeBubble.shown = true

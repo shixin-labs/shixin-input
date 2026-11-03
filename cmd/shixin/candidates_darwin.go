@@ -31,8 +31,7 @@ const (
 var cand struct {
 	flyout       *mygo.Window
 	shown        bool
-	caret        nsRect
-	caretValid   bool
+	caret        caretTracker
 	state        candview.State
 	pending      candidateUpdate
 	look         look     // main thread
@@ -119,7 +118,7 @@ func candView(c *ui.Context) {
 	refreshCandidateScreens()
 	work := candidateRect{W: candWindowW, H: candWindowH}
 	if len(cand.screens) > 0 {
-		work = cand.screens[candidateScreenAt(candidateRect(cand.caret), cand.screens)].work
+		work = cand.screens[candidateScreenAt(cand.caret.caret, cand.screens)].work
 	}
 	style.MaxWidth, style.MaxHeight = candidateCardBounds(work, candWindowW, candWindowH, shadowPad)
 	w, h := candview.Measure(c, &cand.state, &style)
@@ -146,7 +145,7 @@ var (
 
 // candView has already refreshed the work areas for this frame.
 func positionCandidates(width, height float64) {
-	positionOnCandidateScreens(cand.flyout, cand.caret, width, height)
+	positionOnCandidateScreens(cand.flyout, nsRect(cand.caret.caret), width, height)
 }
 
 // positionCaretWindow shares the same screen selection and edge clamping for
@@ -194,7 +193,7 @@ func showCandidates(r *ipc.Result) {
 	if len(r.Candidates) == 0 {
 		// Preserve composition boundaries even when a hide and the next
 		// composition coalesce before their UI callback/frame can run.
-		cand.caretValid = false
+		cand.caret.reset()
 	}
 	cand.pending.capture(r)
 	queueCandidateUpdate()
@@ -217,7 +216,7 @@ func queueCandidateUpdate() {
 func updateCandidateWindow() {
 	cand.queued = false
 	if !cand.pending.visible || imkClient == 0 || focusedSecureInput() {
-		cand.caretValid = false
+		cand.caret.reset()
 		cand.framePending = false
 		cand.pending.visible, cand.pending.dirty = false, false
 		cand.state.Clear()
@@ -227,9 +226,8 @@ func updateCandidateWindow() {
 		}
 		return
 	}
-	if !cand.caretValid {
-		send(imkClient, selAttributesAt, 0, uintptr(unsafe.Pointer(&cand.caret)))
-		cand.caretValid = true
+	if !cand.caret.valid {
+		readCaret()
 	}
 	if !cand.framePending {
 		cand.framePending = true
@@ -240,9 +238,24 @@ func updateCandidateWindow() {
 		// the last composition was, often in another app, and the frame
 		// that positions it runs after it shows. The frame then fits the
 		// new candidates' size.
-		positionCaretWindow(cand.flyout, cand.caret, cand.lastW, cand.lastH)
+		positionCaretWindow(cand.flyout, nsRect(cand.caret.caret), cand.lastW, cand.lastH)
 		cand.flyout.ShowInactive()
 		cand.shown = true
+	}
+}
+
+// readCaret asks the app for this composition's caret (caretTracker); an
+// unusable answer asks again a frame later. Main thread, outside the
+// app's key callback.
+func readCaret() {
+	var caret nsRect
+	send(imkClient, selAttributesAt, 0, uintptr(unsafe.Pointer(&caret)))
+	refreshCandidateScreens()
+	if cand.caret.read(candidateRect(caret), cand.screens) {
+		if debug {
+			logf("debug: unusable caret {%g %g %g %g}; asking again", caret.X, caret.Y, caret.W, caret.H)
+		}
+		purego.SyscallN(dispatchAfterF, uintptr(dispatchTime(0, caretRetryDelay*1e6)), mainQueue, 0, cand.callback)
 	}
 }
 

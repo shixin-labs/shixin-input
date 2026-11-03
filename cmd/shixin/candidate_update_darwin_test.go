@@ -13,7 +13,7 @@ func TestCandidateHandoffDoesNotAllocate(t *testing.T) {
 	defer runtime.UnlockOSThread()
 	initSecureTest()
 	oldPending, oldWindow, oldArgs, oldQueued := cand.pending, cand.flyout, cand.args, cand.queued
-	oldCaretValid := cand.caretValid
+	oldCaret := cand.caret
 	callback := purego.NewCallback(func(uintptr) uintptr { return 0 })
 	cand.pending.init()
 	// A zero Window enables the queue branch without creating any GUI. The
@@ -22,7 +22,7 @@ func TestCandidateHandoffDoesNotAllocate(t *testing.T) {
 	cand.args = [3]uintptr{mainQueue, 0, callback}
 	defer func() {
 		cand.pending, cand.flyout, cand.args, cand.queued = oldPending, oldWindow, oldArgs, oldQueued
-		cand.caretValid = oldCaretValid
+		cand.caret = oldCaret
 	}()
 	results := candidateResults()
 	if n := testing.AllocsPerRun(100, func() {
@@ -37,10 +37,10 @@ func TestCandidateHandoffDoesNotAllocate(t *testing.T) {
 	// A commit/hide may be superseded by a new composition before the UI
 	// callback. The next show must still query the new caret, not reuse the
 	// previous composition's anchor.
-	cand.caretValid = true
+	cand.caret.valid = true
 	hideCandidates()
 	showCandidates(&results[0])
-	if cand.caretValid || !cand.pending.visible {
+	if cand.caret.valid || !cand.pending.visible {
 		t.Fatal("coalescing a hide lost the caret invalidation")
 	}
 }

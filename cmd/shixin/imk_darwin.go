@@ -40,7 +40,7 @@ func setClient(sender uintptr, force bool) {
 		}
 		return
 	}
-	cand.caretValid = false
+	cand.caret.reset()
 	focusModeIndicator(sender)
 	if imkClient != 0 {
 		core.FocusOut() // finish in the old text field before replacing its proxy
