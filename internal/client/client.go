@@ -96,30 +96,32 @@ type Client struct {
 	a   Applier
 
 	// Main thread only.
-	ctx          uint32
-	seq          uint32
-	app          string
-	cur          *policy.Policy // policy of the last applied state
-	spec         *policy.Policy // assumed policy while results are pending; nil: unknown
-	composing    bool
-	secure       bool
-	marked       []byte // last text actually sent to Applier.Preedit
-	clearSeq     uint32 // results before this fence belong to a finished composition
-	contextFence uint32 // target-context Clear reply is a fence, never a usable policy
-	dropZero     bool   // ignore old FocusIn results until the clear fence arrives
-	shiftDown    bool
-	ctrlDown     bool
-	connected    bool
-	status       Status
-	timer        *time.Timer
-	deadline     time.Time // the current key's budget; zero until it first waits
-	keys         [256]sentKey
-	syncSeq      uint32
-	syncHandled  bool
-	stats        Stats
-	sp           spacer
-	contexts     [16]appContext
-	contextTick  uint64
+	ctx                   uint32
+	seq                   uint32
+	app                   string
+	cur                   *policy.Policy // policy of the last applied state
+	spec                  *policy.Policy // assumed policy while results are pending; nil: unknown
+	composing             bool
+	secure                bool
+	marked                []byte // last text actually sent to Applier.Preedit
+	clearSeq              uint32 // results before this fence belong to a finished composition
+	focusWait             uint32 // sequenced focus acknowledgement still awaited
+	ownedFirst, ownedLast uint32 // printable keys retained during delayed focus
+	contextFence          uint32 // target-context Clear reply is a fence, never a usable policy
+	dropZero              bool   // ignore old FocusIn results until the clear fence arrives
+	shiftDown             bool
+	ctrlDown              bool
+	connected             bool
+	status                Status
+	timer                 *time.Timer
+	deadline              time.Time // the current key's budget; zero until it first waits
+	keys                  [256]sentKey
+	syncSeq               uint32
+	syncHandled           bool
+	stats                 Stats
+	sp                    spacer
+	contexts              [16]appContext
+	contextTick           uint64
 	// draining is set while Drain applies results, and redrain when a
 	// nested Drain was skipped meanwhile (see Drain).
 	draining, redrain bool
@@ -239,6 +241,14 @@ func (c *Client) HandleKey(keysym, mods uint32) bool {
 		c.sp.tick()
 	}
 	p := c.cur
+	if c.ownedFirst != 0 {
+		if c.retainFocusKey(keysym, mods) {
+			return true
+		}
+		c.CommitComposition()
+		c.stats.Passed++
+		return c.pass(keysym, mods)
+	}
 	if pending {
 		if c.spec == nil {
 			// The last eaten key may have ended the composition: wait for
@@ -247,6 +257,14 @@ func (c *Client) HandleKey(keysym, mods uint32) bool {
 			c.Drain()
 			if c.pending() {
 				c.stats.Timeouts++
+				if c.focusWait != 0 || c.ownedFirst != 0 {
+					if c.retainFocusKey(keysym, mods) {
+						return true
+					}
+					if c.ownedFirst != 0 {
+						c.CommitComposition()
+					}
+				}
 				c.stats.Passed++
 				c.sp.clear() // results still to come land after this key
 				return false // degraded: pass through
@@ -345,6 +363,30 @@ func (c *Client) HandleKey(keysym, mods uint32) bool {
 		c.sendKey(keysym, mods, ipc.KeyNotify, false)
 	}
 	return c.pass(keysym, mods)
+}
+
+// retainFocusKey owns a printable key independently of the unknown mode.
+// The engine either handles it or the existing printable repair commits it.
+// No non-printable key is speculatively eaten.
+func (c *Client) retainFocusKey(keysym, mods uint32) bool {
+	if keysym < 0x20 || keysym >= 0x7f || mods & ^uint32(policy.ShiftMask) != 0 {
+		return false
+	}
+	if len(c.marked) == cap(c.marked) || c.ownedFirst != 0 && c.seq-c.ownedFirst >= uint32(len(c.keys)-2) {
+		return false
+	}
+	if !c.sendKey(keysym, mods, 0, true) {
+		return false
+	}
+	if c.ownedFirst == 0 {
+		c.ownedFirst = c.seq
+	}
+	c.ownedLast = c.seq
+	c.spec = nil
+	c.stats.Eaten++
+	c.marked = append(c.marked, byte(keysym))
+	c.a.Preedit(c.marked, len(c.marked))
+	return true
 }
 
 // barrier is the ordering barrier for a key the app handles: text from
@@ -476,6 +518,8 @@ func (c *Client) sendSeq(m *outMsg, k sentKey) bool {
 // FocusIn tells the engine which app and kind of field has focus. The
 // local secure guard takes effect before the asynchronous reply. Main thread.
 func (c *Client) FocusIn(app string, secure bool) {
+	c.focusWait = 0
+	c.ownedFirst, c.ownedLast = 0, 0
 	if c.opt.PerAppContexts {
 		ctx := c.appContext(app)
 		if ctx != c.ctx {
@@ -524,6 +568,7 @@ func (c *Client) FocusIn(app string, secure bool) {
 	// to the app with a guessed policy. The composition is already empty.
 	if c.sendTracked(&outMsg{typ: ipc.TypeClear, key: ipc.Key{Ctx: c.ctx}}) {
 		c.spec = nil
+		c.focusWait = c.seq
 	}
 }
 
@@ -574,11 +619,13 @@ func (c *Client) FocusOut() {
 func (c *Client) CommitComposition() {
 	text := c.marked[:0]
 	for _, b := range c.marked {
-		if b != ' ' {
+		if b != ' ' || c.ownedFirst != 0 {
 			text = append(text, b)
 		}
 	}
 	c.marked = c.marked[:0]
+	c.focusWait = 0
+	c.ownedFirst, c.ownedLast = 0, 0
 	c.composing = false
 	c.clearSeq, c.dropZero = c.seq+1, true
 	c.sendTracked(&outMsg{typ: ipc.TypeClear, key: ipc.Key{Ctx: c.ctx}})
@@ -710,6 +757,15 @@ func (c *Client) drainOnce() {
 			c.sp.on = false
 			c.cur, c.spec = &policy.Passthrough, &policy.Passthrough
 		case evDisconnected:
+			if c.ownedFirst != 0 && !c.secure {
+				if last != nil {
+					c.showPreedit(&last.res)
+				}
+				c.commit(c.marked)
+				c.marked = c.marked[:0]
+			}
+			c.focusWait = 0
+			c.ownedFirst, c.ownedLast = 0, 0
 			c.connected, c.composing = false, false
 			c.sp.on = false
 			c.cur, c.spec = &policy.Passthrough, &policy.Passthrough
@@ -721,9 +777,8 @@ func (c *Client) drainOnce() {
 			last = nil
 		}
 	}
-	if last != nil && !c.secure && (len(last.res.Preedit) > 0 || len(c.marked) > 0) {
-		c.a.Preedit(last.res.Preedit, int(last.res.Cursor))
-		c.marked = append(c.marked[:0], last.res.Preedit...)
+	if last != nil && !c.secure && (len(last.res.Preedit) > 0 || len(c.marked) > 0 || c.ownedFirst != 0) {
+		c.showPreedit(&last.res)
 	}
 	if last != nil {
 		if k := c.sentKey(last.res.Seq); k != nil {
@@ -749,6 +804,23 @@ func (c *Client) drainOnce() {
 	}
 }
 
+func (c *Client) showPreedit(r *ipc.Result) {
+	c.marked = append(c.marked[:0], r.Preedit...)
+	cursor := int(r.Cursor)
+	if c.ownedFirst != 0 {
+		for seq := c.ownedFirst; ; seq++ {
+			if k := c.sentKey(seq); k != nil {
+				c.marked = append(c.marked, byte(k.keysym))
+			}
+			if seq == c.ownedLast {
+				break
+			}
+		}
+		cursor = len(c.marked)
+	}
+	c.a.Preedit(c.marked, cursor)
+}
+
 // sentKey returns the record of the key with sequence number seq, or nil.
 func (c *Client) sentKey(seq uint32) *sentKey {
 	if k := &c.keys[seq%uint32(len(c.keys))]; seq != 0 && k.seq == seq && !k.t.IsZero() {
@@ -758,6 +830,18 @@ func (c *Client) sentKey(seq uint32) *sentKey {
 }
 
 func (c *Client) applyResult(r *ipc.Result) {
+	if r.Seq != 0 {
+		if c.focusWait != 0 && int32(r.Seq-c.focusWait) >= 0 {
+			c.focusWait = 0
+		}
+		if c.ownedFirst != 0 && int32(r.Seq-c.ownedFirst) >= 0 {
+			if int32(r.Seq-c.ownedLast) >= 0 {
+				c.ownedFirst, c.ownedLast = 0, 0
+			} else {
+				c.ownedFirst = r.Seq + 1
+			}
+		}
+	}
 	c.sp.on = !c.secure && r.Flags&ipc.ResultAutoSpace != 0
 	if !c.secure && len(r.Commit) > 0 {
 		c.commit(r.Commit)

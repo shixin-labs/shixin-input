@@ -256,6 +256,16 @@ are sent once per connection; results refer to them by ID.
     A key reads its pending state before draining queued results; the
     reader queues a result before marking it arrived, so nothing counted
     as arrived is classified against the old state.
+    If that budget expires, unmodified or Shift-only printable ASCII keys
+    remain owned by the client: it marks them locally and queues them after
+    the focus messages. This is explicit printable ownership, not a guessed
+    `EAT` policy. The engine either handles each key or the client commits
+    its literal character through the existing repair path. Further printable
+    keys join the bounded queue without waiting; partial replies preserve the
+    unacknowledged suffix. A non-printable key or shortcut finalizes the shown
+    text and fences late replies before passing through. Focus loss likewise
+    finalizes locally; disconnection preserves the outstanding marked text.
+    Secure fields bypass this path. No IPC extension or longer wait is needed.
 - **Windows:** results arrive on a DLL I/O thread (overlapped pipe), are
   posted to the app's TSF thread through a hidden message window, and are
   applied with `RequestEditSession(TF_ES_ASYNCDONTCARE | TF_ES_READWRITE)`.
