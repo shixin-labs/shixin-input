@@ -61,11 +61,16 @@ func TestNestedDrain(t *testing.T) {
 		time.Sleep(2 * time.Millisecond) // results arrive during the call
 		h.c.Drain()
 	}
-	h.c.opt.Budget = 8 * time.Millisecond
+	// This tests reentrancy, not the timeout fallback. The fake engine and
+	// app sleeps can exceed the production budget on Windows or a busy runner.
+	h.c.opt.Budget = time.Second
 	for _, r := range strings.Repeat("ab ", 14) {
 		app.KeyDown(r, func() bool { return h.c.HandleKey(uint32(r), 0) })
 	}
 	h.settle()
+	if st := h.c.Stats(); st.Timeouts != 0 {
+		t.Fatalf("unexpected timeouts: %+v", st)
+	}
 	if got := app.Text(); got != strings.Repeat("X", 14) || nested == 0 {
 		t.Errorf("text %q after %d nested drains", got, nested)
 	}
