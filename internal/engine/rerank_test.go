@@ -5,6 +5,7 @@ import (
 	"runtime"
 	"slices"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -166,6 +167,108 @@ func TestRerankApplies(t *testing.T) {
 	}
 	if r := cl.key(' ', 0); string(r.Commit) != want[0] {
 		t.Fatalf("commit %q, want %q", r.Commit, want[0])
+	}
+}
+
+// AI may prefer a two-character prefix to a three-character phrase. The
+// candidate keeps its original span so selecting it leaves the suffix to
+// compose, including after another prefix has already been selected.
+func TestRerankShorterPrefix(t *testing.T) {
+	e := rerankEngine(t)
+	cl := dial(t, e)
+	var perm [rerank.MaxOptions]uint8
+	var opts [rerank.MaxOptions]rerank.Option
+	testScorer.use(t, func(sl *rerank.Slot) []uint8 {
+		for i := range int(sl.Count) {
+			opts[i] = rerank.Option{LogP: -10, Scored: true, Fixed: sl.Entries[i].Flags&rerank.EntryFixed != 0}
+			if string(sl.Text(i)) == "北京" {
+				opts[i].LogP = 0
+			}
+		}
+		return rerank.Order(perm[:], opts[:sl.Count], rerank.Params{Margin: 0.5, Page: 5})
+	}, false)
+	for _, tc := range []struct{ prefix, want string }{{"", "北京shi"}, {"nihao", "你好北京shi"}} {
+		r := cl.typ(tc.prefix + "beijingshi")
+		if tc.prefix != "" {
+			// Select an earlier prefix before reranking the next segment.
+			at := slices.Index(texts(r), "你好")
+			if at < 0 {
+				t.Fatalf("no prefix in %v", texts(r))
+			}
+			cl.key(uint32('1'+at), 0)
+		}
+		if got := firstText(&cl.res); got != "北京" {
+			t.Fatalf("prefix %q: first %q, want 北京; menu %v", tc.prefix, got, texts(&cl.res))
+		}
+		r = cl.key(' ', 0)
+		if len(r.Commit) != 0 || len(r.Preedit) == 0 || len(r.Candidates) == 0 {
+			t.Fatalf("prefix selection lost suffix: commit %q preedit %q menu %v", r.Commit, r.Preedit, texts(r))
+		}
+		if got := string(cl.key(policy.KeyReturn, 0).Commit); got != tc.want {
+			t.Fatalf("prefix %q: commit %q, want %q", tc.prefix, got, tc.want)
+		}
+	}
+	if !raceEnabled {
+		cycle := func() {
+			cl.typ("beijingshi")
+			cl.key(' ', 0) // select the shorter prefix
+			cl.key(policy.KeyEscape, 0)
+		}
+		cycle()
+		if n := testing.AllocsPerRun(30, cycle); n != 0 {
+			t.Fatalf("shorter-prefix key cycle: %g Go allocations", n)
+		}
+	}
+}
+
+func TestRerankShorterPrefixFallback(t *testing.T) {
+	e := rerankEngine(t)
+	cl := dial(t, e)
+	for _, mode := range []string{"off", "unavailable", "timeout", "invalid"} {
+		t.Run(mode, func(t *testing.T) {
+			if mode == "off" {
+				e.SetRerank(false)
+				defer e.SetRerank(true)
+			}
+			var perm [rerank.MaxOptions]uint8
+			var order func(*rerank.Slot) []uint8
+			if mode == "invalid" {
+				order = func(sl *rerank.Slot) []uint8 { return perm[:sl.Count] }
+			}
+			testScorer.use(t, order, mode == "timeout")
+			if got := texts(cl.typ("beijingshi")); !slices.Equal(got, []string{"北京市", "北京", "背景"}) {
+				t.Fatalf("fallback changed rime's order: %v", got)
+			}
+			cl.key(policy.KeyEscape, 0)
+		})
+	}
+}
+
+func TestRerankPinsOverrideShorterPrefix(t *testing.T) {
+	e := rerankEngine(t)
+	cl := dial(t, e)
+	var perm [rerank.MaxOptions]uint8
+	var promoted atomic.Bool
+	testScorer.use(t, func(sl *rerank.Slot) []uint8 {
+		for i := range int(sl.Count) {
+			perm[i] = uint8(i)
+		}
+		if string(sl.Text(0)) == "上海市" {
+			for i := 1; i < int(sl.Count); i++ {
+				if string(sl.Text(i)) == "上海" {
+					perm[0], perm[i] = perm[i], perm[0]
+					promoted.Store(true)
+					break
+				}
+			}
+		}
+		return perm[:sl.Count]
+	}, false)
+	if got := firstText(cl.typ("shanghaishi")); got != "上海市" || !promoted.Load() {
+		t.Fatalf("pin must override AI's shorter prefix: first %q, AI promoted %t", got, promoted.Load())
+	}
+	if got := string(cl.key(' ', 0).Commit); got != "上海市" {
+		t.Fatalf("pinned candidate commit %q", got)
 	}
 }
 

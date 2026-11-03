@@ -1645,8 +1645,9 @@ This maintenance pause is explicit in the Dictionary page.
 
 The filter order is rerank → long-word → English demotion → v-symbols →
 English case → reverse lookup/emoji/traditionalization/uniquifier → pins.
-Each filter scans at most 100 candidates of the first candidate's span;
-native date/number/Unicode/calculator readings pass unchanged. Four warmed
+The long-word, English demotion, v-symbol and English case filters scan
+at most 100 candidates of the first candidate's span; native
+date/number/Unicode/calculator readings pass unchanged. Four warmed
 translation slots per enabled filter hold fixed candidate arrays. Each
 selected segment's menu keeps its slot until the composition ends, so a long
 piecewise selection adds slots (allocating once, up to 64); only beyond that
@@ -1662,7 +1663,10 @@ follows an initial capital (title case) or two initial capitals (all caps),
 only for matching words/completions. These are bounded Shixin rules rather
 than every configurable variant of upstream Lua. Pins move existing words
 only, matching their displayed text after emoji/traditional conversion, with up to 10 per exact code and
-256 total; the layout is stored explicitly. They do not invent a reading.
+256 total; the layout is stored explicitly. The pin filter scans at most
+100 candidates with the same input start across spans, matching only
+full-code candidates, so pins still win when AI promotes a shorter prefix.
+They do not invent a reading.
 Tests cover pure C++ ordering/case rules, fuzzed arbitrary text, real-engine
 filter reuse (also under ASan/UBSan), long piecewise selections, paging past
 the 100-candidate window and Go allocations, compiler YAML, migration parsing,
@@ -1977,15 +1981,19 @@ Model choice:
   emoji, 繁体 and `uniquifier` apply after the reorder. A planned
   `shixin_pin_filter` comes last, after display conversions, so pins win.
   - **Export.** When the menu of the segment being translated is first
-    built, it buffers the first N candidates with the same span as #1
-    (start and end). It writes their text, flags and prior into the
+    built, it buffers the first N candidates starting at #1's input
+    position, including candidates that consume a shorter prefix of its
+    span. AI can therefore rank a two-character word ahead of a
+    three-character phrase. Each candidate retains its original span:
+    selecting a shorter word leaves the remaining pinyin for the next
+    selection. It writes their text, flags and prior into the
     session's slot. The prior is the dictionary entry's log weight
     (`Phrase::weight()`). `quality()` can't serve: librime computes it as
     `exp(weight)` plus the translator's initial quality plus a length
-    term. It also writes a hash of the whole input and #1's span,
-    and an export sequence number. An unchanged export (the same hash,
-    texts and flags) keeps its number, so a refresh doesn't invalidate the
-    order imported for it.
+    term. It also writes a hash of the whole input, #1's span and every
+    buffered candidate's input end, and an export sequence number. An
+    unchanged export (the same hash, texts, spans, weights and flags) keeps
+    its number, so a refresh doesn't invalidate the order imported for it.
   - **Apply.** If the slot holds an imported permutation for the current
     export sequence, it emits the first N candidates in that order.
     Everything after N follows unchanged. Otherwise it passes the

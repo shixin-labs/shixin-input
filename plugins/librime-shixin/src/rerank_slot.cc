@@ -72,13 +72,17 @@ void Export(Slot* slot, uint32_t hash, uint16_t flags, const Item* items, int n)
   if (n > kMaxEntries)
     n = kMaxEntries;
   // Compare while writing: an unchanged export keeps its sequence number.
-  bool same = slot->export_seq != 0 && slot->input_hash == hash && slot->export_flags == flags;
+  bool same = slot->export_seq != 0 && slot->export_flags == flags;
   uint32_t used = 0;
   int count = 0;
   for (; count < n; count++) {
     const Item& it = items[count];
     if (it.text.size() > kArenaSize - used)
       break;
+    // Equal displayed words can consume different pinyin spans. Such a
+    // change must invalidate an order, just as changed text does.
+    for (int i = 0; i < 8; i++)
+      hash = (hash ^ static_cast<uint8_t>(uint64_t{it.end} >> (8 * i))) * 16777619u;
     Entry e{};
     e.offset = static_cast<uint16_t>(used);
     e.length = static_cast<uint16_t>(it.text.size());
@@ -94,7 +98,7 @@ void Export(Slot* slot, uint32_t hash, uint16_t flags, const Item* items, int n)
     old = e;
     used += e.length;
   }
-  same = same && count == slot->count;
+  same = same && count == slot->count && slot->input_hash == hash;
   slot->count = static_cast<uint16_t>(count);
   slot->arena_used = used;
   slot->input_hash = hash;

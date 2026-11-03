@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -94,8 +95,16 @@ func TestRerankEndToEnd(t *testing.T) {
 	rimeFirst, first, page := 0, 0, 0
 	for i, c := range cases {
 		cl.focus("e2e"+string(rune('a'+i)), 0)
-		if r := cl.typ(c.context); len(r.Commit) == 0 && r.Flags&ipc.ResultComposing != 0 {
-			cl.key(' ', 0)
+		for _, code := range strings.Fields(c.context) {
+			cl.typ(code)
+			// AI may select a shorter prefix. Finish its remaining pinyin
+			// before typing the next context word or the code under test.
+			for n := 0; cl.res.Flags&ipc.ResultComposing != 0; n++ {
+				if n >= len(code) {
+					t.Fatalf("context word %q never finished composing", code)
+				}
+				cl.key(' ', 0)
+			}
 		}
 		// A person takes longer than the context's prefill to type on.
 		time.Sleep(100 * time.Millisecond)

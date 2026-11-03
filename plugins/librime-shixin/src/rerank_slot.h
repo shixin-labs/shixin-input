@@ -79,6 +79,7 @@ struct Item {
   std::string_view text;
   std::string_view type;
   double weight;
+  size_t end = 0;  // candidate's input end; part of the export identity
 };
 
 // Limit is how many candidates of a segment to export: more for 简拼,
@@ -99,9 +100,9 @@ uint32_t Hash(std::string_view input, size_t start, size_t end);
 uint8_t EntryFlags(std::string_view type, std::string_view text);
 
 // Export writes items into slot. If the slot already holds the same
-// export, it is kept with its sequence number, so an imported order still
-// applies; otherwise the sequence changes. Items whose text doesn't fit
-// the arena end the export.
+// export, including each candidate's input end, it is kept with its sequence
+// number, so an imported order still applies; otherwise the sequence changes.
+// Items whose text doesn't fit the arena end the export.
 void Export(Slot* slot, uint32_t hash, uint16_t flags, const Item* items, int n);
 
 // Permutation returns the slot's imported order if it is for the current

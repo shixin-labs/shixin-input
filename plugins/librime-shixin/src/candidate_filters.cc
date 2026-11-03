@@ -76,10 +76,14 @@ class FilterTranslation : public Translation {
         start = c->start();
         end = c->end();
       }
-      if (start > end || end > code.size())
+      if (start > end || end > code.size() ||
+          c->end() <= start || c->end() > code.size())
         break;
-      // Never reorder a shorter segment ahead of a complete phrase.
-      if (c->start() != start || c->end() != end)
+      // Word preferences keep the spans in the upstream order, including
+      // any shorter prefix that AI has already promoted. Pins must still
+      // find full-code candidates after a promoted shorter prefix.
+      if (c->start() != start ||
+          (kind != FilterKind::Pin && c->end() != end))
         break;
       // Native translator results are exact readings, never word-filter input.
       if (c->type() == "date" || c->type() == "number" ||
@@ -87,7 +91,7 @@ class FilterTranslation : public Translation {
         break;
       buffer_[n_] = c;
       items[n_] = {c->text(), c->type(), -1};
-      if (kind == FilterKind::Pin && end == code.size()) {
+      if (kind == FilterKind::Pin && c->end() == code.size()) {
         int rank = 0;
         for (const auto& p : pins) {
           if (p.code != code.substr(start))

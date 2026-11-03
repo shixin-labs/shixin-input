@@ -11,7 +11,9 @@ engine:
   processors: [shixin_rerank_processor, shixin_select_character, ascii_composer, recognizer, key_binder, speller, punctuator, selector, navigator, express_editor]
   segmentors: [ascii_segmentor, matcher, abc_segmentor, punct_segmentor, fallback_segmentor]
   translators: [punct_translator, script_translator]
-  filters: [shixin_rerank, uniquifier]
+  filters: [shixin_rerank, uniquifier, shixin_pin_filter]
+shixin_filters:
+  pins: ["shanghaishi\t上海市"]
 speller:
   alphabet: zyxwvutsrqponmlkjihgfedcba
   delimiter: " '"

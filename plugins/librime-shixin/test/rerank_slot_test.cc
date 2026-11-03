@@ -84,6 +84,25 @@ TEST(RerankSlot, ArenaOverflowEndsExport) {
   EXPECT_EQ(g.slot->count, kMaxEntries);
 }
 
+TEST(RerankSlot, ChangedSpanInvalidatesOrder) {
+  Fixture f;
+  f.Add("北京市");
+  f.Add("北京");
+  f.items[0].end = 10;
+  f.items[1].end = 7;
+  f.Export();
+  uint32_t seq = f.slot->export_seq;
+  f.Import({1, 0});
+  ASSERT_NE(Permutation(f.slot.get(), 2), nullptr);
+  f.Export();
+  EXPECT_EQ(f.slot->export_seq, seq);
+  ASSERT_NE(Permutation(f.slot.get(), 2), nullptr);
+  f.items[1].end = 10;  // same text, different consumed pinyin
+  f.Export();
+  EXPECT_NE(f.slot->export_seq, seq);
+  EXPECT_EQ(Permutation(f.slot.get(), 2), nullptr);
+}
+
 TEST(RerankSlot, AppliesOnlyMatchingPermutations) {
   Fixture f;
   f.Add("台湾");
