@@ -248,6 +248,9 @@ func TestRerankCommitWithPassedCharacterInvalidatesSuffix(t *testing.T) {
 		if string(r.Commit) != "产品" || r.Flags&ipc.ResultHandled != 0 {
 			t.Fatalf("expected commit plus declined A: commit %q flags %x", r.Commit, r.Flags)
 		}
+		if _, got, _ := testScorer.lastContext(); got != "产品A" {
+			t.Fatalf("commit plus passed character context %q", got)
+		}
 		cl.seq++
 		cl.send((&ipc.Key{Ctx: 1, Seq: cl.seq, Keysym: policy.KeyBackSpace, Flags: ipc.KeyNotify}).Append(cl.buf[:0]))
 		cl.result()

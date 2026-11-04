@@ -68,6 +68,7 @@ func TestContextsEditDoesNotAllocate(t *testing.T) {
 		c.Append(s, commit)
 		c.Backspace(s)
 		c.Backspace(s)
+		c.AppendPassed(s, 'Q')
 		c.Break(s)
 		c.Clear(s)
 	}); n != 0 {

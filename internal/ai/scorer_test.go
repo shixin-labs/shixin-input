@@ -96,6 +96,13 @@ func TestScoreFollowsContext(t *testing.T) {
 		{"今天的天气预报说下午有", []string{"阵雨", "真鱼", "镇域"}, "阵雨"},
 		{"", []string{"你好", "拟好", "泥嚎"}, "你好"},
 		{"产品", []string{"华", "化", "话", "花"}, "化"},
+		// Quarter-end wording must survive a Chinese prefix. These test
+		// complete equal-prior scorer contexts. Real-menu prior calibration
+		// is separately covered by the engine test (see KNOWN-ISSUES).
+		{"Q3 ", []string{"墨", "末", "莫", "摸", "膜", "磨", "魔", "默", "模"}, "末"},
+		{"大概 Q3 ", []string{"墨", "末", "莫", "摸", "膜", "磨", "魔", "默", "模"}, "末"},
+		{"进口的太贵，国内的", []string{"野性", "也行", "野心", "夜行", "叶形"}, "也行"},
+		{"不用进口的，国内的", []string{"野性", "也行", "野心", "夜行", "叶形"}, "也行"},
 	} {
 		if err := s.Prefill(1, 1, []byte(c.context)); err != nil {
 			t.Fatal(err)

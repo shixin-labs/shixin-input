@@ -1996,14 +1996,20 @@ Model choice:
     a word/line deletion, forward Delete, paste/undo or selection shortcuts
     discard the cached context rather than retain text that may be gone.
     Copy/save preserve it. Uncertain grapheme boundaries also discard it.
-  - Caret movement and app-inserted printable notifications append a soft
-    break and invalidate that suffix; entering ASCII mode does the same,
+  - In Chinese mode, passed or client-repaired printable ASCII characters
+    without shortcut modifiers are appended literally, including spaces,
+    digits and shifted characters. They invalidate the deletable suffix:
+    the app owns their insertion, so Backspace still discards uncertain
+    context. A character following a composition commit in the same result
+    is appended after that commit. Synthetic releases in printable
+    `PASS_NOTIFY` packets describe real key-downs; ordinary releases do
+    not append text. No additional IPC or wait is needed.
+  - Caret movement appends a soft break and invalidates that suffix;
+    entering ASCII mode does the same,
     since ordinary ASCII-mode typing is not reported to the engine.
     Focus changes also invalidate the suffix through the existing break.
     A declined ASK that passes an unknown key to the app discards the
     context too; no extra wait or app query is added.
-    Passed or client-repaired printable characters invalidate the suffix
-    even when Rime commits the preceding composition in that same result.
   - The context is a bounded typing history, not a document mirror.
     Unobserved mouse selections and app-side edits remain a limitation;
     reading surrounding app text is still deferred below.

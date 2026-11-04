@@ -317,8 +317,8 @@ func caretKey(keysym uint32) bool {
 	return false
 }
 
-// noteContext records what read took into the app's context: committed
-// text, or a soft break after a caret move passed to the app.
+// noteContext records committed text and passed Chinese-mode ASCII in the
+// app's context, or a soft break after a caret move passed to the app.
 func (e *Engine) noteContext(c *Conn, ctx uint32, s *rime.Session, r *request, handled bool) {
 	rr := &e.rr
 	_, st, sl := rr.slot(s)
@@ -334,10 +334,11 @@ func (e *Engine) noteContext(c *Conn, ctx uint32, s *rime.Session, r *request, h
 	case len(e.commit) > 0:
 		a := rr.apps.Slot(app)
 		rr.apps.Append(a, e.commit)
-		// A declined printable can commit the composition, then get
-		// inserted by the app (or repaired by the client) after that
-		// commit. Its untracked character invalidates the known suffix.
-		if e.st.IsASCIIMode || appKey {
+		// A declined printable can commit the composition before the
+		// app (or client repair) inserts the literal character.
+		if !e.st.IsASCIIMode && appKey && printable && r.mods&policy.CommandMask == 0 {
+			rr.apps.AppendPassed(a, byte(r.keysym))
+		} else if e.st.IsASCIIMode || appKey {
 			rr.apps.Break(a)
 		}
 		e.sendContextAfterEdit(a, st, sl)
@@ -363,7 +364,12 @@ func (e *Engine) noteContext(c *Conn, ctx uint32, s *rime.Session, r *request, h
 			}
 		case r.keysym == policy.KeyBackSpace || r.keysym == policy.KeyDelete:
 			rr.apps.Clear(a)
-		case caretKey(r.keysym) || r.keysym >= 0x20 && r.keysym < 0x7f:
+		case printable:
+			// KeyNotify's synthetic ReleaseMask still describes an app
+			// key-down. Shortcut modifiers were handled above; Shift is
+			// already reflected in the character keysym (Q, !, etc.).
+			rr.apps.AppendPassed(a, byte(r.keysym))
+		case caretKey(r.keysym):
 			rr.apps.Break(a)
 		default:
 			// A declined ASK can pass an unknown Unicode/system key.

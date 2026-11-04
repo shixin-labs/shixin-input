@@ -77,6 +77,16 @@ func (c *Contexts) Append(slot int, text []byte) {
 	r.rev++
 }
 
+// AppendPassed records an ASCII character passed to the app in Chinese
+// mode. Unlike an IME commit, its insertion is not owned by us: retain it
+// for scoring, but let a subsequent Backspace discard uncertain context.
+func (c *Contexts) AppendPassed(slot int, ch byte) {
+	r := &c.rings[slot]
+	r.push(rune(ch))
+	r.tail = 0
+	r.rev++
+}
+
 // Break ends the slot's current line with a newline, which the model reads
 // as a paragraph boundary: earlier text is kept, but what follows may not
 // continue it. It is used when focus moves to another field of the app and

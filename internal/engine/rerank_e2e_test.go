@@ -135,6 +135,64 @@ func TestRerankEndToEnd(t *testing.T) {
 		page += b2i(is >= 0 && is < 5)
 		cl.key(policy.KeyEscape, 0)
 	}
+	for _, prefix := range []string{"", "guonei de"} {
+		cl.focus("yexing-"+prefix, 0)
+		for _, code := range strings.Fields(prefix) {
+			cl.typ(code)
+			cl.key(' ', 0)
+		}
+		time.Sleep(100 * time.Millisecond)
+		r := cl.typ("yexing")
+		t.Logf("yexing context=%q: rime %v → shown %v", rec.lastContext(), rec.rimePage(), texts(r))
+		if prefix == "" && (rec.lastContext() != "" || firstText(r) != "也行") {
+			t.Errorf("empty-context yexing: context %q, menu %v", rec.lastContext(), texts(r))
+		}
+		cl.key(policy.KeyEscape, 0)
+	}
+	// Mixed-mode quarter-end wording: use real menus and dictionary
+	// weights, with the same passed-key notifications as the front.
+	for _, prefix := range []string{"", "大概"} {
+		cl.focus("quarter-end-"+prefix, 0)
+		if prefix != "" {
+			cl.typ("dagai")
+			if got := string(cl.key(' ', 0).Commit); got != prefix {
+				t.Fatalf("quarter-end prefix %q, want %q", got, prefix)
+			}
+			notifyPassedASCII(cl, ' ')
+		}
+		for _, ch := range []byte("Q3 ") {
+			notifyPassedASCII(cl, ch)
+		}
+		wantContext := "Q3 "
+		if prefix != "" {
+			wantContext = prefix + " " + wantContext
+		}
+		if got := rec.lastContext(); got != wantContext {
+			t.Fatalf("mixed context %q, want %q", got, wantContext)
+		}
+		time.Sleep(100 * time.Millisecond)
+		cl.typ("m")
+		applied := e.Stats().Rerank.Applied
+		r := cl.key('o', 0)
+		t.Logf("quarter-end %q: rime %v → shown %v", wantContext, rec.rimePage(), texts(r))
+		if e.Stats().Rerank.Applied == applied {
+			// A legal timeout must keep Rime's menu. Context capture was
+			// checked above; model-only ranking has its own scorer tests.
+			t.Log("quarter-end scoring did not apply before the deadline; using Rime order")
+			cl.key(policy.KeyEscape, 0)
+			continue
+		}
+		if prefix == "" && firstText(r) != "末" {
+			t.Errorf("Q3 mo: #1 %q, want 末", firstText(r))
+		}
+		// With 大概, the model's near tie with 模 still lets its stronger
+		// dictionary prior win (KNOWN-ISSUES). Capture must nevertheless
+		// preserve the quarter and avoid the unrelated 墨 promotion.
+		if firstText(r) == "墨" || slices.Index(texts(r), "末") < 0 {
+			t.Errorf("%q: unexpected mixed-text menu %v", wantContext, texts(r))
+		}
+		cl.key(policy.KeyEscape, 0)
+	}
 	st := e.Stats().Rerank
 	t.Logf("%d cases: #1 %d → %d, page 1 %d; applied %d, timeouts %d, superseded %d, dropped %d; last key → result %v; held results waited %v",
 		len(cases), rimeFirst, first, page, st.Applied, st.Timeouts, st.Superseded, st.Dropped, waits, &st.Wait)
@@ -146,8 +204,22 @@ func TestRerankEndToEnd(t *testing.T) {
 // recordingScorer keeps the first page of each export in rime's order.
 type recordingScorer struct {
 	*rerank.Remote
-	mu   sync.Mutex
-	page []string
+	mu      sync.Mutex
+	page    []string
+	context string
+}
+
+func (r *recordingScorer) Context(app int, rev uint32, text []byte) {
+	r.mu.Lock()
+	r.context = string(text)
+	r.mu.Unlock()
+	r.Remote.Context(app, rev, text)
+}
+
+func (r *recordingScorer) lastContext() string {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.context
 }
 
 func (r *recordingScorer) Score(req *rerank.Request) {

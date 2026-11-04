@@ -178,6 +178,41 @@ Delete an entry when it's fixed, and mention it in the commit.
   `internal/client/testdata/spacing.txt`, using surrounding text where
   available. The Go and Windows TSF clients implement auto spacing.
 
+## 智能排序
+
+### Quarter-end wording still loses a near tie to dictionary priors
+- **Reported:** in Chinese mode, `Q3 mo` ranks 末 first but `大概 Q3 mo`
+  ranks 墨 first; the intended word is 末 in both.
+- **Fixed capture:** passed ASCII in Chinese mode now reaches the scorer
+  literally, including spaces and digits. Engine tests cover asynchronous
+  notifications, composition commits followed by declined characters,
+  deletion safety and zero allocations. The real rime-ice/model integration
+  test verifies both complete contexts: 末 leads after `Q3 `, and 墨 no
+  longer leads after `大概 Q3 `.
+- **Remaining:** in a fresh dictionary, `大概 Q3 ` gives model log scores
+  of about -7.674 for 末 and -7.696 for 模. The latter's stronger dictionary
+  prior makes 模 first, with 末 still on page one. Equal-prior fixtures
+  alone miss this failure; keep the real-menu fixture for calibration.
+- **Next:** evaluate model/prior calibration on a broader mixed-text corpus.
+  Do not tune the global prior weight or add a quarter-specific override
+  from this single example. Removing the trailing space did not help.
+
+### Short colloquial context can favor a noun over 也行
+- **Reported:** `国内的 yexing` puts 野性 before the intended 也行.
+- **Reproduced:** a fresh rime-ice/model integration test starts with
+  `[也行 野性 夜行 叶形 叶姓]`; the AI promotes 野性 after `国内的`.
+  With genuinely empty context, the same test keeps 也行 first. The source
+  dictionary weights also favor 也行 (48,905 versus 野性 at 25,305).
+- **Model evidence:** with equal priors, `国内的` gives log scores about
+  -12.636 for 野性 and -14.055 for 也行. Longer context such as
+  `进口的太贵，国内的` reverses the preference. These longer-context cases
+  are in `TestScoreFollowsContext`; the short fragment remains a quality
+  failure to include when evaluating calibration or a replacement model.
+- **Typing only `yexing`:** the user's report of 野性 first without a
+  visible prefix is not reproduced in a fresh dictionary/empty context.
+  Retained per-app history and learned ranking must be distinguished from
+  the dictionary default; the engine does not read the visible document.
+
 ## Tests
 
 ### Replay latency gates under parallel test runs
