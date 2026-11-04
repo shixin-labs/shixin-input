@@ -152,6 +152,9 @@ func TestRerankEndToEnd(t *testing.T) {
 	// Mixed-mode quarter-end wording: use real menus and dictionary
 	// weights, with the same passed-key notifications as the front.
 	for _, prefix := range []string{"", "大概"} {
+		if !passedASCIIContext {
+			break
+		}
 		cl.focus("quarter-end-"+prefix, 0)
 		if prefix != "" {
 			cl.typ("dagai")

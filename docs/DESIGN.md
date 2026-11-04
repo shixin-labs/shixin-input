@@ -1996,14 +1996,16 @@ Model choice:
     a word/line deletion, forward Delete, paste/undo or selection shortcuts
     discard the cached context rather than retain text that may be gone.
     Copy/save preserve it. Uncertain grapheme boundaries also discard it.
-  - In Chinese mode, passed or client-repaired printable ASCII characters
-    without shortcut modifiers are appended literally, including spaces,
+  - On macOS in Chinese mode, passed or client-repaired printable ASCII
+    characters without shortcut modifiers are appended literally, including spaces,
     digits and shifted characters. They invalidate the deletable suffix:
     the app owns their insertion, so Backspace still discards uncertain
     context. A character following a composition commit in the same result
     is appended after that commit. Synthetic releases in printable
     `PASS_NOTIFY` packets describe real key-downs; ordinary releases do
-    not append text. No additional IPC or wait is needed.
+    not append text. No additional IPC or wait is needed. Windows retains
+    the conservative break because TSF keysyms use a US-layout mapping
+    rather than verified inserted characters.
   - Caret movement appends a soft break and invalidates that suffix;
     entering ASCII mode does the same,
     since ordinary ASCII-mode typing is not reported to the engine.

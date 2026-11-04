@@ -180,6 +180,13 @@ Delete an entry when it's fixed, and mention it in the commit.
 
 ## 智能排序
 
+### Windows passed text is not yet captured literally
+- TSF keysyms use a US-layout mapping and are not verified against the active
+  keyboard layout. Passed printable keys therefore retain the conservative
+  context break on Windows; literal mixed-text capture is enabled on macOS.
+- Validate the actual inserted character before enabling this on Windows,
+  including non-US layouts and old TSF DLLs still loaded after upgrades.
+
 ### Quarter-end wording still loses a near tie to dictionary priors
 - **Reported:** in Chinese mode, `Q3 mo` ranks 末 first but `大概 Q3 mo`
   ranks 墨 first; the intended word is 末 in both.

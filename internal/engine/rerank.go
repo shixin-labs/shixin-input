@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"runtime"
 	"strconv"
 	"time"
 
@@ -317,6 +318,9 @@ func caretKey(keysym uint32) bool {
 	return false
 }
 
+// Windows TSF keysyms are US-layout approximations, not verified text.
+const passedASCIIContext = runtime.GOOS != "windows"
+
 // noteContext records committed text and passed Chinese-mode ASCII in the
 // app's context, or a soft break after a caret move passed to the app.
 func (e *Engine) noteContext(c *Conn, ctx uint32, s *rime.Session, r *request, handled bool) {
@@ -336,7 +340,7 @@ func (e *Engine) noteContext(c *Conn, ctx uint32, s *rime.Session, r *request, h
 		rr.apps.Append(a, e.commit)
 		// A declined printable can commit the composition before the
 		// app (or client repair) inserts the literal character.
-		if !e.st.IsASCIIMode && appKey && printable && r.mods&policy.CommandMask == 0 {
+		if passedASCIIContext && !e.st.IsASCIIMode && appKey && printable && r.mods&policy.CommandMask == 0 {
 			rr.apps.AppendPassed(a, byte(r.keysym))
 		} else if e.st.IsASCIIMode || appKey {
 			rr.apps.Break(a)
@@ -364,12 +368,12 @@ func (e *Engine) noteContext(c *Conn, ctx uint32, s *rime.Session, r *request, h
 			}
 		case r.keysym == policy.KeyBackSpace || r.keysym == policy.KeyDelete:
 			rr.apps.Clear(a)
-		case printable:
+		case printable && passedASCIIContext:
 			// KeyNotify's synthetic ReleaseMask still describes an app
 			// key-down. Shortcut modifiers were handled above; Shift is
 			// already reflected in the character keysym (Q, !, etc.).
 			rr.apps.AppendPassed(a, byte(r.keysym))
-		case caretKey(r.keysym):
+		case caretKey(r.keysym) || printable:
 			rr.apps.Break(a)
 		default:
 			// A declined ASK can pass an unknown Unicode/system key.

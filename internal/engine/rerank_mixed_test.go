@@ -35,7 +35,11 @@ func TestRerankMixedASCIIContext(t *testing.T) {
 		want := prefix
 		for _, ch := range []byte(" Q3 !") {
 			notifyPassedASCII(cl, ch)
-			want += string(ch)
+			if passedASCIIContext {
+				want += string(ch)
+			} else if prefix != "" {
+				want = prefix + "\n"
+			}
 			if _, got, _ := testScorer.lastContext(); got != want {
 				t.Fatalf("passed %q: context %q, want %q", ch, got, want)
 			}
