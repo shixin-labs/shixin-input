@@ -77,6 +77,9 @@ func (a *app) rerankGroup(c *ui.Context) {
 		row(c, T("s.i.rerank"), T("s.i.rerank.desc"), func() {
 			segmented(c, &s.Rerank, []string{settings.RerankOff, settings.RerankCautious, settings.RerankStandard}, T("s.off"), T("s.i.rerank.cautious"), T("s.i.rerank.standard")).Label(T("s.i.rerank"))
 		})
+		if s.Rerank != settings.RerankOff {
+			switchRow(c, T("s.i.rerank.short"), T("s.i.rerank.short.desc"), &s.RerankShortWords)
+		}
 		size := fmt.Sprintf("%s · %d MB", models.ERNIE.Name, models.ERNIE.Size/1e6)
 		row(c, T("s.i.rerank.model"), size, func() {
 			switch {

@@ -173,20 +173,37 @@ func TestRerankApplies(t *testing.T) {
 // AI may prefer a two-character prefix to a three-character phrase. The
 // candidate keeps its original span so selecting it leaves the suffix to
 // compose, including after another prefix has already been selected.
+// rerankShortWords turns on ordering shorter prefixes until the test ends.
+func rerankShortWords(t *testing.T, e *Engine) {
+	e.SetRerank(true, true)
+	t.Cleanup(func() { e.SetRerank(true, false) })
+}
+
 func TestRerankShorterPrefix(t *testing.T) {
 	e := rerankEngine(t)
 	cl := dial(t, e)
 	var perm [rerank.MaxOptions]uint8
 	var opts [rerank.MaxOptions]rerank.Option
+	var short atomic.Int32 // exported entries flagged EntryShort
 	testScorer.use(t, func(sl *rerank.Slot) []uint8 {
 		for i := range int(sl.Count) {
 			opts[i] = rerank.Option{LogP: -10, Scored: true, Fixed: sl.Entries[i].Flags&rerank.EntryFixed != 0}
+			if sl.Entries[i].Flags&rerank.EntryShort != 0 {
+				short.Add(1)
+			}
 			if string(sl.Text(i)) == "北京" {
 				opts[i].LogP = 0
 			}
 		}
 		return rerank.Order(perm[:], opts[:sl.Count], rerank.Params{Margin: 0.5, Page: 5})
 	}, false)
+	// Off by default: only full-span candidates are exported, so the
+	// full phrase stays first however much AI prefers the shorter word.
+	if got := firstText(cl.typ("beijingshi")); got != "北京市" || short.Load() != 0 {
+		t.Fatalf("short words off: first %q, %d short entries exported", got, short.Load())
+	}
+	cl.key(policy.KeyEscape, 0)
+	rerankShortWords(t, e)
 	for _, tc := range []struct{ prefix, want string }{{"", "北京shi"}, {"nihao", "你好北京shi"}} {
 		r := cl.typ(tc.prefix + "beijingshi")
 		if tc.prefix != "" {
@@ -208,6 +225,9 @@ func TestRerankShorterPrefix(t *testing.T) {
 			t.Fatalf("prefix %q: commit %q, want %q", tc.prefix, got, tc.want)
 		}
 	}
+	if short.Load() == 0 {
+		t.Fatal("no exported entry was flagged EntryShort")
+	}
 	if !raceEnabled {
 		cycle := func() {
 			cl.typ("beijingshi")
@@ -227,8 +247,8 @@ func TestRerankShorterPrefixFallback(t *testing.T) {
 	for _, mode := range []string{"off", "unavailable", "timeout", "invalid"} {
 		t.Run(mode, func(t *testing.T) {
 			if mode == "off" {
-				e.SetRerank(false)
-				defer e.SetRerank(true)
+				e.SetRerank(false, false)
+				defer e.SetRerank(true, false)
 			}
 			var perm [rerank.MaxOptions]uint8
 			var order func(*rerank.Slot) []uint8
@@ -247,6 +267,7 @@ func TestRerankShorterPrefixFallback(t *testing.T) {
 func TestRerankPinsOverrideShorterPrefix(t *testing.T) {
 	e := rerankEngine(t)
 	cl := dial(t, e)
+	rerankShortWords(t, e)
 	var perm [rerank.MaxOptions]uint8
 	var promoted atomic.Bool
 	testScorer.use(t, func(sl *rerank.Slot) []uint8 {
@@ -281,15 +302,15 @@ func TestRerankSwitch(t *testing.T) {
 	cl.focus("switch", 0)
 	cl.typ("ceshi")
 	cl.key(' ', 0)
-	e.SetRerank(false)
-	defer e.SetRerank(true)
+	e.SetRerank(false, false)
+	defer e.SetRerank(true, false)
 	n := testScorer.requestCount()
 	cl.typ("ceshi")
 	cl.key(' ', 0)
 	if got := testScorer.requestCount(); got != n {
 		t.Errorf("%d requests while off", got-n)
 	}
-	e.SetRerank(true)
+	e.SetRerank(true, false)
 	cl.focus("switch", 0)
 	cl.typ("ceshi")
 	if testScorer.requestCount() == n {

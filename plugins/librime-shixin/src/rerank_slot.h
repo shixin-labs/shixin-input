@@ -25,6 +25,11 @@ constexpr int kArenaSize = 4096;
 // Entry flags.
 constexpr uint8_t kEntryFixed = 1 << 0;  // never moves: English, translators, custom phrases
 constexpr uint8_t kEntryUser = 1 << 1;   // a learned user_phrase
+constexpr uint8_t kEntryShort = 1 << 2;  // covers a shorter prefix of #1's span
+
+// Enabled bits.
+constexpr uint8_t kEnabled = 1 << 0;            // reorder this session's menus
+constexpr uint8_t kEnabledShortWords = 1 << 1;  // also export shorter prefixes
 
 // Export flags.
 constexpr uint16_t kExportAbbrev = 1 << 0;  // the input is initials only (简拼)
@@ -48,7 +53,7 @@ struct Slot {
   Entry entries[kMaxEntries];
   char arena[kArenaSize];
   // Written by the engine.
-  uint8_t enabled;  // 0: the filter passes candidates through
+  uint8_t enabled;  // kEnabled bits; 0: the filter passes candidates through
   uint8_t reserved[3];
   uint32_t import_seq;  // the export_seq perm is for; 0: none
   uint16_t import_count;
@@ -92,6 +97,7 @@ struct Item {
   std::string_view type;
   double weight;
   size_t end = 0;  // candidate's input end; part of the export identity
+  bool short_word = false;  // ends before #1's span: flagged kEntryShort
 };
 
 // Limit is how many candidates of a segment to export: more for 简拼,

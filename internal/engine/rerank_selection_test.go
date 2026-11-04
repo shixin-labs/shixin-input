@@ -37,9 +37,13 @@ func TestRerankSelections(t *testing.T) {
 		{"cancel", "ceshi", func() { cl.key(policy.KeyEscape, 0) }, 0, 0, 0},
 		{"raw-input", "ceshi", func() { cl.key(policy.KeyReturn, 0) }, 0, 0, 0},
 		{"punctuation", "ceshi", func() { cl.key('.', 0) }, 1, 1, 1},
+		// Only shorter prefixes share a menu with the pinned 上海市.
 		{"pinned", "shanghaishi", func() { cl.key(' ', 0) }, 1, 1, 1},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			if tc.name == "pinned" {
+				rerankShortWords(t, e)
+			}
 			testScorer.use(t, identity, false)
 			before := e.Stats().Rerank
 			cl.typ(tc.code)
@@ -79,6 +83,7 @@ func TestRerankSelectionsPartialAndInvalidation(t *testing.T) {
 		}
 		return perm[:sl.Count]
 	}
+	rerankShortWords(t, e)
 	testScorer.use(t, order, false)
 	before := e.Stats().Rerank
 	if firstText(cl.typ("beijingshi")) != "北京" {
@@ -107,8 +112,8 @@ func TestRerankSelectionsPartialAndInvalidation(t *testing.T) {
 			case "secure":
 				cl.focus("selections-focus", ipc.FocusSecure)
 			case "off":
-				e.SetRerank(false)
-				defer e.SetRerank(true)
+				e.SetRerank(false, false)
+				defer e.SetRerank(true, false)
 			}
 			cl.key(' ', 0)
 			if after := e.Stats().Rerank.Selections; after != before {
@@ -128,8 +133,8 @@ func TestRerankSelectionsExcludeUnratedMenus(t *testing.T) {
 	for _, mode := range []string{"off", "unavailable", "timeout", "invalid"} {
 		t.Run(mode, func(t *testing.T) {
 			if mode == "off" {
-				e.SetRerank(false)
-				defer e.SetRerank(true)
+				e.SetRerank(false, false)
+				defer e.SetRerank(true, false)
 			}
 			var order func(*rerank.Slot) []uint8
 			if mode == "invalid" {

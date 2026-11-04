@@ -190,7 +190,7 @@ func TestEngineChanged(t *testing.T) {
 	b = a
 	b.Apps = []AppRule{{ID: "com.apple.Terminal", Mode: "english"}}
 	b.RememberAppMode, b.AutoSpace, b.NoAutoSpace = true, true, nil
-	b.Rerank = "standard"
+	b.Rerank, b.RerankShortWords = "standard", true
 	if EngineChanged(a, b) {
 		t.Error("per-app rules, auto spacing or 智能排序 reload the engine")
 	}

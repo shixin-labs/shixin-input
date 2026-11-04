@@ -255,6 +255,30 @@ func TestOrder(t *testing.T) {
 	}
 }
 
+// TestOrderShortWords: a shorter prefix loses its lead by a penalty per
+// character it leaves uncovered.
+func TestOrderShortWords(t *testing.T) {
+	opts := []Option{
+		{LogP: -9, Scored: true},           // 北京市
+		{LogP: -5, Scored: true, Short: 1}, // 北京
+		{LogP: -8, Scored: true},           // 背景是
+	}
+	var perm [MaxOptions]uint8
+	for _, tc := range []struct {
+		short float64
+		want  []uint8
+	}{
+		{0, []uint8{1, 0, 2}},
+		{3, []uint8{1, 0, 2}}, // still leads by 1
+		{5, []uint8{2, 0, 1}}, // the full phrase 背景是 wins
+	} {
+		got := Order(perm[:], opts, Params{Margin: 0.5, Page: 5, Short: tc.short})
+		if !slices.Equal(got, tc.want) {
+			t.Errorf("penalty %g: order %v, want %v", tc.short, got, tc.want)
+		}
+	}
+}
+
 func TestOrderIsPermutation(t *testing.T) {
 	rng := rand.New(rand.NewPCG(3, 4))
 	perm := make([]uint8, MaxOptions)

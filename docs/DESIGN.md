@@ -2020,12 +2020,13 @@ Model choice:
   emoji, 繁体 and `uniquifier` apply after the reorder. A planned
   `shixin_pin_filter` comes last, after display conversions, so pins win.
   - **Export.** When the menu of the segment being translated is first
-    built, it buffers the first N candidates starting at #1's input
-    position, including candidates that consume a shorter prefix of its
-    span. AI can therefore rank a two-character word ahead of a
-    three-character phrase. Each candidate retains its original span:
-    selecting a shorter word leaves the remaining pinyin for the next
-    selection. It writes their text, flags and prior into the
+    built, it buffers the first N candidates with #1's span. With
+    短词可排在长词前 on (off by default; the engine sets a bit in the slot's
+    `enabled`), it also buffers candidates that consume a shorter prefix
+    of the span, flagged `short`, so AI can rank a two-character word
+    ahead of a three-character phrase. Each candidate retains its original
+    span: selecting a shorter word leaves the remaining pinyin for the
+    next selection. It writes their text, flags and prior into the
     session's slot. The prior is the dictionary entry's log weight
     (`Phrase::weight()`). `quality()` can't serve: librime computes it as
     `exp(weight)` plus the translator's initial quality plus a length
@@ -2190,8 +2191,11 @@ Model choice:
     context's prefill included. One break: after 我们明天一起去, `tw` put
     天文 (as in 天文馆) ahead of 台湾.
 - **Policy (Go, unit-tested, `rerank.Order`).** The fused score is
-  `log P + β·(prior − prior₀)`, where the prior is the dictionary log
-  weight and ₀ is rime's #1. The spike's `β·log((w + 1) / (w₀ + 1))` is
+  `log P + β·(prior − prior₀) − s·k`, where the prior is the dictionary log
+  weight and ₀ is rime's #1. k is how many characters a `short` option
+  has fewer than rime's leading full-span phrase (0 for full-span
+  options): a shorter word scores higher just by being shorter, and the
+  full phrase is usually what was meant. The spike's `β·log((w + 1) / (w₀ + 1))` is
   the case prior = log(w + 1). A learned `user_phrase`'s weight comes from
   the user dictionary, on another scale. It gets the prior of rime's
   leading dictionary word instead, and drops at most one place. Fixed
@@ -2206,9 +2210,10 @@ Model choice:
   how many page-1 slots change: 1.18 against 2.07.
 - **Strength settings** (`ai.Strengths`):
   - 保守: a strict margin, for few wrong #1 changes. Provisionally β 0.5,
-    margin 3.
+    margin 3, short-word penalty s 4.
   - 标准: the best held-out accuracy. Provisionally β 0.3, margin 0.5;
-    the spike's held-out folds picked (0.5, 1) and (0.2, 0).
+    the spike's held-out folds picked (0.5, 1) and (0.2, 0). s is 3, a
+    guess not yet fitted on menus with shorter words.
   - The values are refitted on real menus (phase 4) and shipped with the
     model.
 
@@ -2281,6 +2286,9 @@ under the user, so none ever does. Instead:
 
 - **智能排序 page** (its own sidebar entry, after 输入), with 关闭 / 保守 / 标准 (default
   关闭).
+  - **While on, 短词可排在长词前** (default off, applied live): whether AI
+    may rank a word covering only the start of the pinyin ahead of the
+    whole phrase.
   - **Model:** its size (385 MB), and 下载 with progress and cancel, or
     删除 once downloaded.
   - **While on, status:** 运行中 / 正在启动 / 需要先下载模型 / GPU 太慢，

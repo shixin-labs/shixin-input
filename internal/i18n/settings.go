@@ -89,6 +89,8 @@ var settingsCatalog = map[string][2]string{
 	"s.i.traditional.desc":     {"输出繁体中文", "Output traditional Chinese"},
 	"s.i.rerank":               {"智能排序", "Smart order"},
 	"s.i.rerank.desc":          {"按你刚写下的内容调整候选顺序。模型在本机 GPU 上运行，不联网", "Orders candidates by what you just wrote. The model runs on this computer's GPU, offline"},
+	"s.i.rerank.short":         {"短词可排在长词前", "Shorter words before phrases"},
+	"s.i.rerank.short.desc":    {"上下文明显需要时，把拼音前半部分的词排在整个词组前，其余拼音留着接着选。默认关闭：多数时候整个词组更合适", "When the context clearly calls for it, rank a word for the start of the pinyin ahead of the whole phrase, leaving the rest to choose next. Off by default: the whole phrase is usually better"},
 	"s.i.rerank.note":          {"候选最多晚出现约 16 毫秒；来不及时按原来的顺序显示。写下的内容只留在内存里，关闭后清空，安全输入框中不记录。模型 ERNIE 4.5（百度，Apache-2.0），从 Hugging Face 下载；推理 llama.cpp（MIT）。", "Candidates appear at most about 16 ms later; when the model is too slow, they keep their usual order. What you write stays in memory only, is cleared when this is off, and isn't recorded in password fields. Model: ERNIE 4.5 (Baidu, Apache-2.0), downloaded from Hugging Face; inference: llama.cpp (MIT)."},
 	"s.page.start":             {"开始使用", "Get started"},
 	"s.start.title":            {"开始使用拾新", "Get started with Shixin"},

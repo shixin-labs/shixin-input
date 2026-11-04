@@ -120,7 +120,7 @@ func (w *worker) start() error {
 	// is active, so a standby never takes it over.
 	live, _ := settings.Load(c.settings)
 	w.remote = rerank.NewRemote(rerank.SocketPath(filepath.Dir(c.public)), strength(live.Rerank), w.logf)
-	opt.Scorer, opt.Rerank = w.remote, strength(live.Rerank) != 0
+	opt.Scorer, opt.Rerank, opt.RerankShortWords = w.remote, strength(live.Rerank) != 0, live.RerankShortWords
 	w.e, err = engine.Start(opt)
 	return err
 }
@@ -158,7 +158,7 @@ func (w *worker) promote() error {
 		if n := strength(s.Rerank); n != 0 {
 			remote.SetStrength(n)
 		}
-		e.SetRerank(strength(s.Rerank) != 0)
+		e.SetRerank(strength(s.Rerank) != 0, s.RerankShortWords)
 	})
 	go keepWarm(w.logf, filepath.Join(c.generation, "build"), c.prebuilt)
 	go remote.Run(w.stop, e.Rerank)

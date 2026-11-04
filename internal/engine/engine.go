@@ -54,12 +54,14 @@ type Options struct {
 	// Apps are the per-app rules (DESIGN §7.1, §8); see SetApps.
 	Apps AppModes
 	// Scorer makes 智能排序 (DESIGN §7.2) available when librime-shixin is
-	// loaded; its answers go to Rerank. Rerank is whether it starts on
-	// (SetRerank changes it). RerankTimeout is how long a key's result
+	// loaded; its answers go to Rerank. Rerank is whether it starts on,
+	// and RerankShortWords whether shorter prefixes are ordered too
+	// (SetRerank changes both). RerankTimeout is how long a key's result
 	// waits for an order (default DefaultRerankTimeout).
-	Scorer        rerank.Scorer
-	Rerank        bool
-	RerankTimeout time.Duration
+	Scorer           rerank.Scorer
+	Rerank           bool
+	RerankShortWords bool
+	RerankTimeout    time.Duration
 	// Logf receives diagnostics. It must not block. Never log typed text.
 	Logf func(format string, args ...any)
 }
@@ -471,11 +473,12 @@ func (e *Engine) stats1(reset bool) Stats {
 	}
 }
 
-// SetRerank turns 智能排序 on or off. Off, the filter passes candidates
+// SetRerank turns 智能排序 on or off, and its ordering of words that
+// cover a shorter prefix of the pinyin. Off, the filter passes candidates
 // through and every app's context is forgotten.
-func (e *Engine) SetRerank(on bool) {
+func (e *Engine) SetRerank(on, shortWords bool) {
 	select {
-	case e.reqs <- request{kind: reqRerank, on: on}:
+	case e.reqs <- request{kind: reqRerank, flags: rerankBits(on, shortWords)}:
 	case <-e.stopped:
 	}
 }
@@ -539,7 +542,7 @@ func (e *Engine) handleControl(r *request) {
 			e.stats.KeyTime = perf.Hist{}
 		}
 	case reqRerank:
-		e.setRerank(r.on)
+		e.setRerank(r.flags)
 	case reqApps:
 		e.apps = *r.apps
 		if !e.apps.Remember {

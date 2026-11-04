@@ -145,6 +145,21 @@ TEST(RerankSlot, CountsRatedSelectionsOnceAtDisplayedPosition) {
   EXPECT_EQ(f.slot->selections, 4u);
 }
 
+TEST(RerankSlot, FlagsShortWords) {
+  Fixture f;
+  f.Add("北京市");
+  f.Add("北京");
+  f.Add("北", "user_phrase");
+  f.Add("bei", "phrase");
+  for (size_t i = 1; i < f.items.size(); i++)
+    f.items[i].short_word = true;
+  f.Export();
+  EXPECT_EQ(f.slot->entries[0].flags, 0);
+  EXPECT_EQ(f.slot->entries[1].flags, kEntryShort);
+  EXPECT_EQ(f.slot->entries[2].flags, kEntryUser | kEntryShort);
+  EXPECT_EQ(f.slot->entries[3].flags, kEntryFixed);  // fixed entries never move
+}
+
 TEST(RerankSlot, AppliesOnlyMatchingPermutations) {
   Fixture f;
   f.Add("台湾");

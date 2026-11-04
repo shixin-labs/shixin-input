@@ -100,9 +100,10 @@ type rerankState struct {
 	stats    RerankStats
 	attached bool
 	on       bool
-	misses   int  // held results timed out in a row
-	probe    int  // requests while slow
-	slow     bool // too slow: hold only probes
+	enable   uint8 // the slots' Enabled bits while on
+	misses   int   // held results timed out in a row
+	probe    int   // requests while slow
+	slow     bool  // too slow: hold only probes
 }
 
 // initRerank maps the slots and registers them with librime-shixin. Without
@@ -140,18 +141,34 @@ func (e *Engine) initRerank() {
 	r.held = make([]int32, 0, slots.Len())
 	r.text = make([]byte, 0, 4*rerank.RingRunes)
 	r.attached = true
+	r.enable = rerankBits(true, e.opt.RerankShortWords)
 	r.on = e.opt.Rerank
 }
 
-// setRerank turns reranking on or off for every session. Off, held
-// results go out as they are, imported orders are dropped, and every
-// app's context is forgotten (DESIGN §7.2, privacy).
-func (e *Engine) setRerank(on bool) {
+// rerankBits returns a slot's Enabled bits for the settings; 0 is off.
+func rerankBits(on, shortWords bool) uint8 {
+	switch {
+	case !on:
+		return 0
+	case shortWords:
+		return rerank.Enabled | rerank.EnabledShortWords
+	}
+	return rerank.Enabled
+}
+
+// setRerank applies a slot's Enabled bits (rerankBits) to every session.
+// Off, held results go out as they are, imported orders are dropped, and
+// every app's context is forgotten (DESIGN §7.2, privacy).
+func (e *Engine) setRerank(bits uint8) {
 	r := &e.rr
-	if !r.attached || on == r.on {
+	on := bits != 0
+	if !r.attached || on == r.on && (!on || bits == r.enable) {
 		return
 	}
 	r.on = on
+	if on {
+		r.enable = bits
+	}
 	for i := range r.state {
 		st := &r.state[i]
 		st.asked = 0
@@ -163,7 +180,7 @@ func (e *Engine) setRerank(on bool) {
 		if st.conn != nil {
 			sl.Enabled = 0
 			if on && !st.secure {
-				sl.Enabled = 1
+				sl.Enabled = r.enable
 			}
 		}
 	}
@@ -242,7 +259,7 @@ func (e *Engine) bindSession(c *Conn, ctx uint32, s *rime.Session) {
 	}
 	r.state[i].conn, r.state[i].ctx = c, ctx
 	if r.on {
-		r.slots.At(int(i)).Enabled = 1
+		r.slots.At(int(i)).Enabled = r.enable
 	}
 }
 
@@ -271,7 +288,7 @@ func (e *Engine) focusRerank(c *Conn, s *rime.Session, app string, secure bool) 
 		sl.Enabled = 0
 		return
 	}
-	sl.Enabled = 1
+	sl.Enabled = r.enable
 	a := r.apps.Slot(app)
 	r.apps.Break(a)
 	e.sendContext(a)

@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"unicode/utf8"
 
 	"shixin/internal/llama"
 	"shixin/internal/rerank"
@@ -37,10 +38,12 @@ const (
 // Strengths are the shipped policy settings by strength code (DESIGN
 // §7.2, rerank.StrengthCautious 保守 and StrengthStandard 标准).
 // Provisional: fitted on the spike's 简拼 items (β, margin) and to be
-// refitted on real menus (phase 4).
+// refitted on real menus (phase 4). The short-word penalty is a guess
+// that keeps full phrases first unless the context clearly favors a
+// shorter word; menus only hold shorter words when the setting is on.
 var Strengths = map[uint8]rerank.Params{
-	rerank.StrengthCautious: {Beta: 0.5, Margin: 3, Page: 5},
-	rerank.StrengthStandard: {Beta: 0.3, Margin: 0.5, Page: 5},
+	rerank.StrengthCautious: {Beta: 0.5, Margin: 3, Page: 5, Short: 4},
+	rerank.StrengthStandard: {Beta: 0.3, Margin: 0.5, Page: 5, Short: 3},
 }
 
 // Candidate is one exported candidate.
@@ -244,6 +247,14 @@ func (s *Scorer) score(app int, cands []Candidate, m int) (int, error) {
 			break
 		}
 	}
+	// Shorter prefixes are measured against rime's leading full phrase.
+	full := 0
+	for i := range n {
+		if cands[i].Flags&(rerank.EntryShort|rerank.EntryFixed) == 0 {
+			full = utf8.RuneCount(cands[i].Text)
+			break
+		}
+	}
 	// 1. Bound every option by log P(first token), free from the prefill.
 	for i := range n {
 		c := &cands[i]
@@ -256,6 +267,9 @@ func (s *Scorer) score(app int, cands []Candidate, m int) (int, error) {
 			Prior: float64(prior),
 			User:  c.Flags&rerank.EntryUser != 0,
 			Fixed: c.Flags&rerank.EntryFixed != 0 || len(s.toks[i]) == 0,
+		}
+		if c.Flags&rerank.EntryShort != 0 {
+			s.opts[i].Short = max(0, full-utf8.RuneCount(c.Text))
 		}
 		s.bound[i] = math.Inf(-1)
 		if !s.opts[i].Fixed {

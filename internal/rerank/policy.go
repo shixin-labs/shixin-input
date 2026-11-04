@@ -18,6 +18,9 @@ type Option struct {
 	User bool
 	// Fixed options never move: English, translators, custom phrases.
 	Fixed bool
+	// Short is how many characters fewer than the full phrase an option
+	// covering a shorter prefix of the pinyin has (EntryShort); 0 otherwise.
+	Short int
 }
 
 // Params are a strength setting (保守, 标准), fitted on the evaluation set
@@ -34,6 +37,10 @@ type Params struct {
 	Guard float64
 	// Page is the page size: the slots the model fills.
 	Page int
+	// Short is the fused-score penalty per character an option leaves
+	// uncovered (Option.Short). A shorter word scores higher just by
+	// being shorter; usually the full phrase is what was meant.
+	Short float64
 }
 
 // Order writes the new order of opts into perm, as indexes into opts, and
@@ -88,7 +95,7 @@ func stable(perm []uint8, opts []Option, p Params) {
 	for i := range n {
 		fused[i] = math.Inf(-1)
 		if opts[i].Scored {
-			fused[i] = opts[i].LogP + p.Beta*(opts[i].Prior-opts[0].Prior)
+			fused[i] = opts[i].LogP + p.Beta*(opts[i].Prior-opts[0].Prior) - p.Short*float64(opts[i].Short)
 		}
 	}
 	// Ranked by fused score, ties in rime order (insertion sort: n ≤ 64).

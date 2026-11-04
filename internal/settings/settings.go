@@ -93,6 +93,10 @@ type Settings struct {
 	// "standard" (标准). It needs shixin-ai and its model; it doesn't
 	// reach the Rime configuration.
 	Rerank string `json:"rerank"`
+	// RerankShortWords lets 智能排序 put a word covering only the start of
+	// the pinyin ahead of the full phrase, at a per-character penalty.
+	// Off, it orders only candidates of the full span.
+	RerankShortWords bool `json:"rerank_short_words"`
 	// Optional native candidate filters. Disabled defaults preserve Rime's order.
 	LongWordPriority bool `json:"long_word_priority"`
 	DemoteEnglish    bool `json:"demote_english"`

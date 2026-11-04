@@ -18,6 +18,13 @@ const ArenaSize = 4096
 const (
 	EntryFixed uint8 = 1 << 0 // never moves: English, translators, custom phrases
 	EntryUser  uint8 = 1 << 1 // a learned user_phrase
+	EntryShort uint8 = 1 << 2 // covers a shorter prefix of #1's span
+)
+
+// Enabled bits.
+const (
+	Enabled           uint8 = 1 << 0 // reorder this session's menus
+	EnabledShortWords uint8 = 1 << 1 // also export shorter prefixes
 )
 
 // ExportAbbrev marks an export whose input is initials only (简拼).
@@ -48,7 +55,7 @@ type Slot struct {
 	Entries     [MaxOptions]Entry
 	Arena       [ArenaSize]byte
 	// Written by the engine.
-	Enabled     uint8 // 0: the filter passes candidates through
+	Enabled     uint8 // Enabled bits; 0: the filter passes candidates through
 	_           [3]uint8
 	ImportSeq   uint32 // the ExportSeq Perm is for; 0: none
 	ImportCount uint16

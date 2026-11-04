@@ -271,8 +271,8 @@ func TestRerankInvalidationKeepsVisibleMenuStable(t *testing.T) {
 	cl := dial(t, e)
 	testScorer.use(t, reverse, false)
 	want := firstText(cl.typ("ceshi"))
-	e.SetRerank(false)
-	e.SetRerank(true)
+	e.SetRerank(false, false)
+	e.SetRerank(true, false)
 	before := testScorer.requestCount()
 	if got := firstText(cl.key('a', policy.ReleaseMask)); got != want {
 		t.Fatalf("invalidating context reordered visible menu: %q to %q", want, got)

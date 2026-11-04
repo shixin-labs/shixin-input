@@ -87,6 +87,8 @@ void Export(Slot* slot, uint32_t hash, uint16_t flags, const Item* items, int n)
     e.offset = static_cast<uint16_t>(used);
     e.length = static_cast<uint16_t>(it.text.size());
     e.flags = EntryFlags(it.type, it.text);
+    if (it.short_word && !(e.flags & kEntryFixed))
+      e.flags |= kEntryShort;
     e.weight = static_cast<float>(it.weight);
     Entry& old = slot->entries[count];
     same = same && count < slot->count && old.length == e.length && old.flags == e.flags &&

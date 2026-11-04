@@ -58,7 +58,8 @@ long SlotIndex(Context* ctx) {
 }
 
 // RerankTranslation buffers the first candidates of the inner translation
-// that start at #1's position, exports them, and yields them in the imported
+// that share #1's span (or, with short words on, start at #1's position),
+// exports them, and yields them in the imported
 // order, then the rest unchanged. The buffer is filled on first use, when
 // librime builds the menu.
 class RerankTranslation : public Translation {
@@ -117,14 +118,16 @@ void RerankTranslation::Fill() {
   bool abbrev = rerank::IsAbbreviation(std::string_view(input).substr(start, end - start));
   int limit = abbrev ? rerank::kLimitAbbrev : rerank::kLimit;
   Item items[kMaxEntries];
+  // With short words on, AI may prefer a shorter prefix to the full phrase.
+  // Each candidate keeps its span, so Rime still selects only that prefix.
+  bool short_words = slot->enabled & rerank::kEnabledShortWords;
   while (n_ < limit && !inner_->exhausted()) {
     an<Candidate> c = inner_->Peek();
-    // AI may prefer a shorter prefix to the full phrase. Keep each actual
-    // candidate, including its span, so Rime still selects only that prefix.
-    if (!c || c->start() != start || c->end() <= start || c->end() > end)
+    if (!c || c->start() != start || c->end() <= start || c->end() > end ||
+        (!short_words && c->end() != end))
       break;
     buf_[n_] = c;
-    items[n_] = Item{c->text(), c->type(), Weight(c), c->end()};
+    items[n_] = Item{c->text(), c->type(), Weight(c), c->end(), c->end() < end};
     n_++;
     inner_->Next();
   }
