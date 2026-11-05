@@ -1054,6 +1054,11 @@ appear after restarting the app.
      id. Uninstalling forgets them all.
   4. Open the settings app's 开始使用 guide (`-welcome`). Until 拾新 is
      added, bring System Settings to the front.
+  5. If the opened copy runs from a disk image (`hdiutil info` lists its
+     volume; a translocated copy's nullfs mount is followed to it), start
+     `Shixin -eject` from the installed copy, detached: it detaches the
+     image once the opened copy has exited (retrying for up to 15 s, never
+     forcing). Folders and external disks are left alone.
 
   Preparing System Settings fixes two stale caches, both seen on a Mac
   with macOS 26.7.1 (2026-10-28), which otherwise needed a logout:

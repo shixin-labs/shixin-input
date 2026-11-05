@@ -94,3 +94,28 @@ identifier:                 im.shixin.inputmethod.ShixinOther
 		t.Errorf("shixinRecords = %q, want %q", got, want)
 	}
 }
+
+// TestImageMounts reads disk image mount points from `hdiutil info`.
+func TestImageMounts(t *testing.T) {
+	info := "framework       : 683.160.3.701.2\n" +
+		"================================================\n" +
+		"image-path      : /Users/u/Downloads/Shixin.dmg\n" +
+		"/dev/disk6\tGUID_partition_scheme\t\n" +
+		"/dev/disk6s1\t7C3457EF-0000-11AA-AA11-00306543ECAC\t\n" +
+		"/dev/disk7\tEF57347C-0000-11AA-AA11-00306543ECAC\t\n" +
+		"/dev/disk7s1\t41504653-0000-11AA-AA11-00306543ECAC\t/Volumes/拾新 Shixin\n" +
+		"================================================\n" +
+		"image-path      : /tmp/other.dmg\n" +
+		"/dev/disk8s1\tApple_HFS\t/Volumes/Other\tdisk\n"
+	if got, want := imageMounts(info), []string{"/Volumes/拾新 Shixin"}; !slices.Equal(got, want) {
+		t.Errorf("imageMounts = %q, want %q", got, want)
+	}
+}
+
+// TestImageVolumeOutsideImage keeps the installer from ejecting a volume
+// that isn't a disk image.
+func TestImageVolumeOutsideImage(t *testing.T) {
+	if got := imageVolume(t.TempDir()); got != "" {
+		t.Errorf("imageVolume(temp dir) = %q, want none", got)
+	}
+}

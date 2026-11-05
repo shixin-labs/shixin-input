@@ -7,6 +7,7 @@
 //	Shixin -install           register the bundle with Text Input Sources
 //	Shixin -refresh           quit System Settings and refresh its list of input sources
 //	Shixin -forget            drop LaunchServices' records of other copies, then -repair (the installer runs it)
+//	Shixin -eject MOUNT       detach the installer's disk image at MOUNT once it is unused (the installer runs it)
 //	Shixin -repair            once 拾新 is added, clear stale input source caches that lack it
 //	Shixin -cache-status      print pending app names as JSON (read-only)
 //	Shixin -watch-caches      refresh live caches and clean idle app caches (internal helper)
@@ -72,6 +73,7 @@ func main() {
 	status := flag.Bool("status", false, "print the state of our input sources")
 	remove := flag.Bool("uninstall", false, "turn our input sources off, stop Shixin and remove the installed bundle")
 	forget := flag.Bool("forget", false, "after a few seconds, drop LaunchServices' records of every copy of Shixin but the installed one")
+	eject := flag.String("eject", "", "detach the disk image mounted at this path once the installer running from it has exited")
 	watchCache := flag.Bool("watch-caches", false, "refresh stale input-source caches and clean closed apps' cache files")
 	cacheStatus := flag.Bool("cache-status", false, "print JSON names of apps awaiting input-source cache repair")
 	repair := flag.Bool("repair", false, "once Shixin is added, clear the input menu's and other apps' caches that lack it")
@@ -129,6 +131,11 @@ func main() {
 		time.Sleep(forgetDelay)
 		forgetCopies()
 		repairCaches()
+		logger.Close()
+		return
+	case *eject != "":
+		openLog()
+		ejectImage(*eject)
 		logger.Close()
 		return
 	case *repair:

@@ -6,10 +6,13 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"syscall"
 	"time"
+
+	"golang.org/x/sys/unix"
 
 	"shixin/internal/engine"
 	"shixin/internal/settings"
@@ -17,7 +20,8 @@ import (
 
 // Installing by double-click (DESIGN §5.5). Opened from anywhere but
 // ~/Library/Input Methods (Downloads, a disk image), Shixin.app installs
-// itself and opens the settings app's 开始使用 guide; macOS itself only
+// itself, opens the settings app's 开始使用 guide and ejects the disk image
+// it was opened from; macOS itself only
 // ever launches the installed copy. macOS 26 doesn't let an app add its
 // own input source, so the guide walks the user through the last step.
 
@@ -98,7 +102,73 @@ func installSelf() error {
 		time.Sleep(time.Second) // after the guide, so System Settings is on top
 		run("/usr/bin/open", show...)
 	}
+	if mount := imageVolume(src); mount != "" {
+		startInstalled("-eject", mount)
+	}
 	return nil
+}
+
+// imageVolume is the mount point of the disk image holding app, "" if app
+// isn't on one (a folder, an external disk). A copy opened from a
+// downloaded image may run translocated, from a nullfs mount of the
+// image's folder: the mount's source is followed.
+func imageVolume(app string) string {
+	var st unix.Statfs_t
+	if unix.Statfs(app, &st) != nil {
+		return ""
+	}
+	if unix.ByteSliceToString(st.Fstypename[:]) == "nullfs" {
+		if unix.Statfs(unix.ByteSliceToString(st.Mntfromname[:]), &st) != nil {
+			return ""
+		}
+	}
+	mount := unix.ByteSliceToString(st.Mntonname[:])
+	if !imageMounted(mount) {
+		return ""
+	}
+	return mount
+}
+
+// imageMounted reports whether a disk image is mounted at mount.
+func imageMounted(mount string) bool {
+	out, err := exec.Command("/usr/bin/hdiutil", "info").Output()
+	return err == nil && slices.Contains(imageMounts(string(out)), mount)
+}
+
+// imageMounts lists the mount points in `hdiutil info` output: an image's
+// devices are listed as "/dev/diskN<tab>hint<tab>mount point".
+func imageMounts(info string) []string {
+	var mounts []string
+	for _, line := range strings.Split(info, "\n") {
+		f := strings.Split(line, "\t")
+		if len(f) == 3 && strings.HasPrefix(f[0], "/dev/disk") && f[2] != "" {
+			mounts = append(mounts, f[2])
+		}
+	}
+	return mounts
+}
+
+// ejectTimeout bounds how long -eject waits for the installer, which runs
+// from the image, to exit.
+const ejectTimeout = 15 * time.Second
+
+// ejectImage detaches the disk image mounted at mount once nothing uses
+// it: the installer that ran from it exits right after starting this.
+// It never forces: an image something else still uses stays mounted.
+func ejectImage(mount string) {
+	deadline := time.Now().Add(ejectTimeout)
+	for imageMounted(mount) {
+		err := run("/usr/bin/hdiutil", "detach", mount)
+		if err == nil {
+			logf("ejected the installer's disk image")
+			return
+		}
+		if time.Now().After(deadline) {
+			logf("eject: %v", err)
+			return
+		}
+		time.Sleep(250 * time.Millisecond)
+	}
 }
 
 const (
@@ -146,8 +216,12 @@ const forgetDelay = 5 * time.Second
 
 // forgetLater starts the installed front with -forget, detached, to drop
 // LaunchServices' records of every other copy once this one has exited.
-func forgetLater() {
-	cmd := exec.Command(filepath.Join(installedApp(), "Contents", "MacOS", "Shixin"), "-forget")
+func forgetLater() { startInstalled("-forget") }
+
+// startInstalled starts the installed front with args, detached, so it
+// outlives the installer.
+func startInstalled(args ...string) {
+	cmd := exec.Command(filepath.Join(installedApp(), "Contents", "MacOS", "Shixin"), args...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 	if err := cmd.Start(); err == nil {
 		cmd.Process.Release()
