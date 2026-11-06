@@ -109,7 +109,10 @@ try {
     if (-not $depsCurrent) { Set-Content -Path $depsStampFile -Value $depsStamp -Encoding utf8NoBOM }
 
     $build = Join-Path $work 'build/rime'
-    $options = $common + @('-DBUILD_STATIC=ON', '-DBUILD_SHARED_LIBS=ON',
+    # This script configures explicitly; parallel MSBuild projects must not
+    # race to regenerate the same CMake stamp files.
+    $options = $common + @('-DCMAKE_SUPPRESS_REGENERATION=ON',
+        '-DBUILD_STATIC=ON', '-DBUILD_SHARED_LIBS=ON',
         '-DBUILD_MERGED_PLUGINS=ON', '-DENABLE_EXTERNAL_PLUGINS=OFF',
         # The recovery tests exercise internal C++ classes without RIME_DLL
         # annotations. Export their methods in this development DLL too.
