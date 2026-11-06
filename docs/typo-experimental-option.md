@@ -26,6 +26,9 @@ The shared search caps are 32,768 work units, 2,048 nodes, 2,048 chunks and a
 900 µs cooperative deadline. Incomplete spelling batches are discarded; completed
 batches can still contribute. Exhaustion affects that update, not the preference.
 Ten entries is not a bound on all internal dictionary chunk expansion.
+Correction retrieval uses the system dictionary only: user-dictionary traversal
+is unbounded and is excluded from recovery. Ordinary user-dictionary lookup
+and explicit-selection learning remain enabled.
 
 No new neural model is required. A frozen, dictionary-derived spelling-prior
 TSV and weighted keyboard channel drive retrieval. Existing ERNIE reranks the
