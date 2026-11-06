@@ -1,0 +1,44 @@
+=== RUN   TestTypoProductMenu
+    typo_menu_test.go:113: nihso page 1: 你受
+    typo_menu_test.go:113: nihso page 1: 你
+    typo_menu_test.go:113: nihso page 1: 尼
+    typo_menu_test.go:113: nihso page 1: 泥
+    typo_menu_test.go:113: nihso page 1: 逆
+    typo_menu_test.go:124: nihso page 2: 你好 纠错 →
+    typo_menu_test.go:124: nihso page 2: 👋 纠错 →
+    typo_menu_test.go:124: nihso page 2: 你和我 纠错 →
+    typo_menu_test.go:124: nihso page 2: 你是 纠错 →
+    typo_menu_test.go:124: nihso page 2: 你和哦 纠错 →
+    typo_menu_test.go:113: nihso page 1: 你受
+    typo_menu_test.go:113: nihso page 1: 你
+    typo_menu_test.go:113: nihso page 1: 尼
+    typo_menu_test.go:113: nihso page 1: 泥
+    typo_menu_test.go:113: nihso page 1: 逆
+    typo_menu_test.go:124: nihso page 2: 你好 纠错 →
+    typo_menu_test.go:124: nihso page 2: 👋 纠错 →
+    typo_menu_test.go:124: nihso page 2: 你和我 纠错 →
+    typo_menu_test.go:124: nihso page 2: 你是 纠错 →
+    typo_menu_test.go:124: nihso page 2: 你和哦 纠错 →
+    typo_menu_test.go:113: niaho page 1: 你啊后
+    typo_menu_test.go:113: niaho page 1: 你啊
+    typo_menu_test.go:113: niaho page 1: 你
+    typo_menu_test.go:113: niaho page 1: 尼
+    typo_menu_test.go:113: niaho page 1: 泥
+    typo_menu_test.go:124: niaho page 2: 你好 纠错 →
+    typo_menu_test.go:124: niaho page 2: 👋 纠错 →
+    typo_menu_test.go:124: niaho page 2: 年哦 纠错 →
+    typo_menu_test.go:124: niaho page 2: 拟好 纠错 →
+    typo_menu_test.go:124: niaho page 2: 年 纠错 →
+    typo_menu_test.go:113: niaho page 1: 你啊后
+    typo_menu_test.go:113: niaho page 1: 你啊
+    typo_menu_test.go:113: niaho page 1: 你
+    typo_menu_test.go:113: niaho page 1: 尼
+    typo_menu_test.go:113: niaho page 1: 泥
+    typo_menu_test.go:124: niaho page 2: 你好 纠错 →
+    typo_menu_test.go:124: niaho page 2: 👋 纠错 →
+    typo_menu_test.go:124: niaho page 2: 年哦 纠错 →
+    typo_menu_test.go:124: niaho page 2: 你受 纠错 →
+    typo_menu_test.go:124: niaho page 2: 拟好 纠错 →
+    typo_menu_test.go:169: 2700 keys: p50=874.917µs p99=3.535125ms p99.9=5.65675ms max=6.403542ms; warm Go allocations=0
+--- PASS: TestTypoProductMenu (3.10s)
+PASS

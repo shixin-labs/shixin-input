@@ -24,7 +24,10 @@ usability. Documents:
   12.9 MiB incremental sampled RSS; no shipping settings/client integration yet.
 - [`docs/typo-tolerant-pinyin.md`](docs/typo-tolerant-pinyin.md): proposed
   full-pinyin typo recovery, joint correction/ranking model evaluation and
-  safety gates. Proposed; implementations remain isolated experiments.
+  safety gates. The broader model proposal remains experimental.
+- [`docs/typo-experimental-option.md`](docs/typo-experimental-option.md):
+  off-by-default full-pinyin typo setting, labelled normal-menu corrections after
+  page one, private builder resources, product tests and remaining limits.
 - [`docs/spikes/typo-native-bridge.md`](docs/spikes/typo-native-bridge.md):
   current scratch native/purego correction interface and outstanding product gates.
 - [`docs/spikes/typo-learning-persistence.md`](docs/spikes/typo-learning-persistence.md):

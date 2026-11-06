@@ -127,6 +127,12 @@ func Build(o Options) error {
 			return err
 		}
 	}
+	if o.Settings.TypoCorrection && (o.All || o.Settings.Scheme == "rime_ice") {
+		report("typo-resources")
+		if err := prepareTypoResources(lib, dir, o.Prebuilt); err != nil {
+			return err
+		}
+	}
 	for _, id := range ids {
 		if err := addWarmSchema(dir, input, id); err != nil {
 			return err
@@ -336,6 +342,15 @@ func Validate(dir string) error {
 		}
 		if err := checkComponents(m, true); err != nil {
 			return err
+		}
+		translator, _ := m["translator"].(map[string]any)
+		if enabled, _ := translator["shixin_typo_protected"].(bool); enabled {
+			if translator["shixin_typo_hypothesis_model"] != "shixin_typo.forms.tsv" || translator["shixin_typo_initial_cache_file"] != "shixin_typo.initial3" || translator["shixin_typo_mirror_cache_file"] != "shixin_typo.mirror" {
+				return errors.New("generation: unsupported typo resource path")
+			}
+			if err := validateTypoResources(dir); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

@@ -1,0 +1,46 @@
+ok  	shixin/cmd/shixin	(cached)
+?   	shixin/cmd/shixin-ai	[no test files]
+?   	shixin/cmd/shixin-builder	[no test files]
+ok  	shixin/cmd/shixin-engine	0.905s
+ok  	shixin/cmd/shixin-settings	(cached)
+?   	shixin/cmd/shixin-setup	[no test files]
+ok  	shixin/internal/ai	0.559s
+ok  	shixin/internal/appsim	0.437s
+ok  	shixin/internal/client	2.067s
+ok  	shixin/internal/dictionary	1.255s
+?   	shixin/internal/dynlib	[no test files]
+ok  	shixin/internal/engine	6.838s
+ok  	shixin/internal/generation	0.442s
+ok  	shixin/internal/i18n	0.427s
+ok  	shixin/internal/ipc	(cached)
+ok  	shixin/internal/keymap	0.436s
+ok  	shixin/internal/lifecycle	0.457s
+ok  	shixin/internal/llama	0.436s
+ok  	shixin/internal/logx	0.473s
+ok  	shixin/internal/models	0.679s
+ok  	shixin/internal/netclient	0.465s
+ok  	shixin/internal/perf	0.991s
+ok  	shixin/internal/policy	0.457s
+?   	shixin/internal/process	[no test files]
+ok  	shixin/internal/rerank	1.066s
+ok  	shixin/internal/rime	0.512s
+ok  	shixin/internal/settings	(cached)
+?   	shixin/internal/ui/brand	[no test files]
+ok  	shixin/internal/ui/candview	(cached)
+ok  	shixin/internal/ui/fonts	0.542s
+ok  	shixin/internal/ui/modeview	0.505s
+ok  	shixin/internal/ui/skin	0.451s
+ok  	shixin/internal/update	0.821s
+ok  	shixin/internal/winsetup	0.419s
+?   	shixin/packaging/macos/icons	[no test files]
+?   	shixin/spikes/m0-handoff	[no test files]
+?   	shixin/spikes/m0-rime	[no test files]
+?   	shixin/spikes/m2-mouse-monitor	[no test files]
+ok  	shixin/spikes/typo-hypotheses	0.424s
+ok  	shixin/spikes/typo-recovery	0.502s
+ok  	shixin/spikes/typo-recovery/bridge	0.460s
+ok  	shixin/spikes/typo-recovery/prepare-mirror	0.596s
+ok  	shixin/tools/menu-capture	0.474s
+ok  	shixin/tools/typo-data	0.470s
+ok  	shixin/tools/vm-input	0.477s
+ok  	shixin/tools/windows-package	0.526s

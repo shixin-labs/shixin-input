@@ -1,6 +1,7 @@
 # Typo-tolerant pinyin: first-version decision for review
 
-Status: product recommendation; opt-in native implementation tested, not shipped.
+Status: [experimental settings option](typo-experimental-option.md) implemented
+locally, off by default, not released.
 This document consolidates the experiments. The broader goal remains paused;
 the separately requested [ten-per-spelling experiment](spikes/typo-hypothesis-caps.md)
 and [authorized native implementation](spikes/typo-hypothesis-native.md) are now
@@ -15,10 +16,11 @@ passes; the user accepted the measured 12.9 MiB incremental sampled RSS.
 ## Recommended approach
 
 Use bounded native dictionary recovery for within-syllable swaps and adjacent-key
-substitutions. Keep ordinary candidates, paging, numeric shortcuts and raw-input
-commit behavior unchanged. Offer recovered phrases in a separate, explicitly
-selectable correction area; never silently rewrite input or rearrange a displayed
-menu. Discard incomplete correction work on exhaustion and use ordinary input
+substitutions. Keep the ordinary first page and raw-input commit behavior unchanged. Per the
+user’s final choice, insert labelled corrections after that page with normal
+paging, numeric shortcuts and clicks. Later ordinary candidates move back;
+short ordinary menus suppress corrections. Never silently rewrite input or
+rearrange a displayed menu. Discard incomplete correction work on exhaustion and use ordinary input
 for that update. Do not permanently disable the feature after one exhausted search.
 
 Start with full pinyin. Preserve clean initials and mixed input as intentional

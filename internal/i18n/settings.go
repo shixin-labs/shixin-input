@@ -48,6 +48,8 @@ var settingsCatalog = map[string][2]string{
 	"s.g.chart.note":        {"先按声母键，再按韵母键；ü 按本图标注的键输入。以上为基本键位，不包含模糊音扩展。", "Press the initial key, then the final key. Use the key marked ü for that final. This chart shows the base layout, before fuzzy-pinyin additions."},
 	"s.g.full_pinyin":       {"同时支持全拼", "Also accept full pinyin"},
 	"s.g.full_pinyin.desc":  {"忘记双拼键位时可直接输入全拼；可能增加候选或改变排序", "Type full pinyin without switching schemes; candidates and their order may change"},
+	"s.g.typo":              {"容错拼音（实验性）", "Typo-tolerant pinyin (experimental)"},
+	"s.g.typo.desc":         {"为字母顺序和邻键错误提供带标记的候选，排在首页之后；支持全拼、简拼和混合输入", "Show labelled corrections after the first candidate page; supports swapped letters and nearby-key mistakes in full, abbreviated and mixed pinyin"},
 
 	"s.g.punctuation":         {"默认标点", "Default punctuation"},
 	"s.g.punctuation.desc":    {"新会话使用的标点样式，切换快捷键见“快捷键”", "Starting style for new sessions; configure the toggle in Shortcuts"},

@@ -9,7 +9,9 @@ The [ten-per-spelling experiment](spikes/typo-hypothesis-caps.md) led to an
 [opt-in native implementation](spikes/typo-hypothesis-native.md), now tested for
 sampled latency, memory, clean-menu preservation and learning. The user accepted
 its measured 12.9 MiB incremental sampled RSS; individual coverage losses remain
-documented. It is not enabled in shipping settings or clients.
+documented. The [experimental settings option](typo-experimental-option.md) now
+places labelled corrections after page one using normal selection; it defaults
+off. The broader model design below remains proposed.
 
 Parent: [DESIGN §3](DESIGN.md#3-no-stall-architecture) and
 [§7.2 智能排序](DESIGN.md#72-context-aware-reranking-智能排序).

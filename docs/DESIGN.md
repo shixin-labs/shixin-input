@@ -2453,11 +2453,13 @@ under the user, so none ever does. Instead:
    word-level tokenizer.
 5. **Windows and Linux** (Vulkan/CUDA) with M3/M4.
 
-### 7.3 Typo-tolerant pinyin (proposed)
+### 7.3 Typo-tolerant pinyin (experimental opt-in)
 
-The [first-version decision brief](typo-v1-decision.md) consolidates the current
-recommendation and proposed acceptance gates. No implementation milestone is
-approved by this document; the following links retain the experiment history.
+The [experimental option](typo-experimental-option.md) is off by default and
+adds labelled corrections after the ordinary first page through normal paging
+and selection. It preserves short ordinary menus without inserting corrections.
+The builder creates validated private resources; no new neural model or client
+protocol is required. The following links retain the experiment history.
 
 The [per-spelling cap experiment](spikes/typo-hypothesis-caps.md) tests the user's
 proposal of ten candidates per correction with more corrected spellings. Sixteen
@@ -2471,7 +2473,8 @@ recorded for review. Shipping defaults and the AI export budget remain unchanged
 spelling recovery for transpositions, adjacent-key substitutions and missing
 or repeated letters, initially for full pinyin. It preserves raw input and
 native candidate selection/learning, with conservative exact-input precedence.
-It is a design, not an implemented feature or a change to current defaults.
+The broader model design remains proposed; the bounded opt-in subset is
+implemented as described above, with defaults unchanged.
 The [first offline recovery experiment](spikes/typo-recovery.md) found useful
 swap/neighbor recovery but clean first-page regressions from inserting corrections
 after #1; the proposed policy now protects the entire exact first page.

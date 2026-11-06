@@ -40,6 +40,9 @@ type Settings struct {
 	// FullPinyinFallback also accepts full spellings in double-pinyin
 	// schemas. It is off by default and doesn't change the full-pinyin schema.
 	FullPinyinFallback bool `json:"full_pinyin_fallback"`
+	// TypoCorrection enables experimental labelled suggestions in full pinyin,
+	// including its abbreviated and mixed spellings. Off by default.
+	TypoCorrection bool `json:"typo_correction"`
 	// PageSize is the number of candidates per page, 3–10.
 	PageSize int `json:"page_size"`
 	// Layout is the candidate window's layout, "horizontal" or "vertical".

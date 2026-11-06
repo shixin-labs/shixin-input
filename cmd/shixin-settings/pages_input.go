@@ -44,6 +44,9 @@ func (a *app) general(c *ui.Context) {
 			})
 			switchRow(c, T("s.g.full_pinyin"), T("s.g.full_pinyin.desc"), &s.FullPinyinFallback)
 		}
+		if s.Scheme == "rime_ice" {
+			switchRow(c, T("s.g.typo"), T("s.g.typo.desc"), &s.TypoCorrection)
+		}
 		row(c, T("settings.page_size"), "", func() {
 			labels := make([]string, 0, 8)
 			ids := make([]string, 0, 8)
