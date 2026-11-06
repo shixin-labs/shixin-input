@@ -1,0 +1,805 @@
+{
+  "displaced_in_mixed_window": [
+    {
+      "correction_lane_rank": 0,
+      "form": "mixed_even",
+      "kind": "clean",
+      "mixed_rank": 0,
+      "ordinary_rank": 11,
+      "raw": "gdianz",
+      "target": "鼓点子"
+    },
+    {
+      "correction_lane_rank": 0,
+      "form": "mixed_odd",
+      "kind": "clean",
+      "mixed_rank": 0,
+      "ordinary_rank": 13,
+      "raw": "fengs",
+      "target": "奉上"
+    },
+    {
+      "correction_lane_rank": 0,
+      "form": "mixed_even",
+      "kind": "clean",
+      "mixed_rank": 0,
+      "ordinary_rank": 11,
+      "raw": "fshang",
+      "target": "风尚"
+    },
+    {
+      "correction_lane_rank": 0,
+      "form": "mixed_even",
+      "kind": "swap",
+      "mixed_rank": 0,
+      "ordinary_rank": 11,
+      "raw": "fshnag",
+      "target": "风尚"
+    },
+    {
+      "correction_lane_rank": 0,
+      "form": "initials",
+      "kind": "clean",
+      "mixed_rank": 0,
+      "ordinary_rank": 13,
+      "raw": "jzms",
+      "target": "竞争模式"
+    },
+    {
+      "correction_lane_rank": 0,
+      "form": "digraph_initials",
+      "kind": "clean",
+      "mixed_rank": 0,
+      "ordinary_rank": 8,
+      "raw": "jzhmsh",
+      "target": "竞争模式"
+    },
+    {
+      "correction_lane_rank": 0,
+      "form": "mixed_even",
+      "kind": "swap",
+      "mixed_rank": 0,
+      "ordinary_rank": 6,
+      "raw": "ddegn",
+      "target": "吊灯"
+    },
+    {
+      "correction_lane_rank": 0,
+      "form": "initials",
+      "kind": "clean",
+      "mixed_rank": 0,
+      "ordinary_rank": 11,
+      "raw": "flz",
+      "target": "番荔枝"
+    },
+    {
+      "correction_lane_rank": 0,
+      "form": "digraph_initials",
+      "kind": "clean",
+      "mixed_rank": 0,
+      "ordinary_rank": 8,
+      "raw": "flzh",
+      "target": "番荔枝"
+    },
+    {
+      "correction_lane_rank": 0,
+      "form": "initials",
+      "kind": "clean",
+      "mixed_rank": 0,
+      "ordinary_rank": 12,
+      "raw": "mse",
+      "target": "曼苏尔"
+    },
+    {
+      "correction_lane_rank": 0,
+      "form": "mixed_even",
+      "kind": "clean",
+      "mixed_rank": 0,
+      "ordinary_rank": 7,
+      "raw": "qers",
+      "target": "秦二世"
+    },
+    {
+      "correction_lane_rank": 0,
+      "form": "mixed_even",
+      "kind": "clean",
+      "mixed_rank": 0,
+      "ordinary_rank": 12,
+      "raw": "qyuan",
+      "target": "请愿"
+    },
+    {
+      "correction_lane_rank": 0,
+      "form": "mixed_even",
+      "kind": "clean",
+      "mixed_rank": 0,
+      "ordinary_rank": 11,
+      "raw": "qyuan",
+      "target": "请援"
+    },
+    {
+      "correction_lane_rank": 0,
+      "form": "mixed_even",
+      "kind": "swap",
+      "mixed_rank": 0,
+      "ordinary_rank": 11,
+      "raw": "qyaun",
+      "target": "请援"
+    }
+  ],
+  "metrics": {
+    "clean": {
+      "ordinary_top5": 153,
+      "ordinary5_plus_correction_slots": {
+        "1": 155,
+        "2": 155,
+        "4": 155,
+        "8": 155
+      },
+      "examples": 277,
+      "ordinary_top13": 182,
+      "mixed_top13": 173,
+      "mixed_losses_from_ordinary13": 11,
+      "additional_targets_in_correction_slots": {
+        "1": 2,
+        "2": 2,
+        "4": 2,
+        "8": 2
+      },
+      "ordinary13_plus_correction_slots": {
+        "1": 184,
+        "2": 184,
+        "4": 184,
+        "8": 184
+      }
+    },
+    "dev/digraph_initials/clean": {
+      "ordinary_top5": 5,
+      "ordinary5_plus_correction_slots": {
+        "1": 5,
+        "2": 5,
+        "4": 5,
+        "8": 5
+      },
+      "examples": 11,
+      "ordinary_top13": 7,
+      "mixed_top13": 5,
+      "mixed_losses_from_ordinary13": 2,
+      "additional_targets_in_correction_slots": {},
+      "ordinary13_plus_correction_slots": {
+        "1": 7,
+        "2": 7,
+        "4": 7,
+        "8": 7
+      }
+    },
+    "dev/digraph_initials/neighbor": {
+      "ordinary_top5": 0,
+      "ordinary5_plus_correction_slots": {
+        "8": 1
+      },
+      "examples": 11,
+      "ordinary_top13": 0,
+      "mixed_top13": 1,
+      "mixed_losses_from_ordinary13": 0,
+      "additional_targets_in_correction_slots": {
+        "8": 1
+      },
+      "ordinary13_plus_correction_slots": {
+        "8": 1
+      }
+    },
+    "dev/digraph_initials/swap": {
+      "ordinary_top5": 0,
+      "ordinary5_plus_correction_slots": {},
+      "examples": 11,
+      "ordinary_top13": 0,
+      "mixed_top13": 0,
+      "mixed_losses_from_ordinary13": 0,
+      "additional_targets_in_correction_slots": {},
+      "ordinary13_plus_correction_slots": {}
+    },
+    "dev/full/clean": {
+      "ordinary_top5": 27,
+      "ordinary5_plus_correction_slots": {
+        "1": 28,
+        "2": 28,
+        "4": 28,
+        "8": 28
+      },
+      "examples": 29,
+      "ordinary_top13": 27,
+      "mixed_top13": 28,
+      "mixed_losses_from_ordinary13": 0,
+      "additional_targets_in_correction_slots": {
+        "1": 1,
+        "2": 1,
+        "4": 1,
+        "8": 1
+      },
+      "ordinary13_plus_correction_slots": {
+        "1": 28,
+        "2": 28,
+        "4": 28,
+        "8": 28
+      }
+    },
+    "dev/full/neighbor": {
+      "ordinary_top5": 0,
+      "ordinary5_plus_correction_slots": {
+        "1": 11,
+        "2": 13,
+        "4": 13,
+        "8": 13
+      },
+      "examples": 29,
+      "ordinary_top13": 0,
+      "mixed_top13": 13,
+      "mixed_losses_from_ordinary13": 0,
+      "additional_targets_in_correction_slots": {
+        "1": 11,
+        "2": 13,
+        "4": 13,
+        "8": 13
+      },
+      "ordinary13_plus_correction_slots": {
+        "1": 11,
+        "2": 13,
+        "4": 13,
+        "8": 13
+      }
+    },
+    "dev/full/swap": {
+      "ordinary_top5": 8,
+      "ordinary5_plus_correction_slots": {
+        "1": 12,
+        "2": 12,
+        "4": 12,
+        "8": 12
+      },
+      "examples": 29,
+      "ordinary_top13": 8,
+      "mixed_top13": 12,
+      "mixed_losses_from_ordinary13": 0,
+      "additional_targets_in_correction_slots": {
+        "1": 4,
+        "2": 4,
+        "4": 4,
+        "8": 4
+      },
+      "ordinary13_plus_correction_slots": {
+        "1": 12,
+        "2": 12,
+        "4": 12,
+        "8": 12
+      }
+    },
+    "dev/initials/clean": {
+      "ordinary_top5": 10,
+      "ordinary5_plus_correction_slots": {
+        "1": 10,
+        "2": 10,
+        "4": 10,
+        "8": 10
+      },
+      "examples": 27,
+      "ordinary_top13": 14,
+      "mixed_top13": 11,
+      "mixed_losses_from_ordinary13": 3,
+      "additional_targets_in_correction_slots": {},
+      "ordinary13_plus_correction_slots": {
+        "1": 14,
+        "2": 14,
+        "4": 14,
+        "8": 14
+      }
+    },
+    "dev/initials/neighbor": {
+      "ordinary_top5": 0,
+      "ordinary5_plus_correction_slots": {
+        "1": 1,
+        "2": 1,
+        "4": 1,
+        "8": 1
+      },
+      "examples": 29,
+      "ordinary_top13": 0,
+      "mixed_top13": 1,
+      "mixed_losses_from_ordinary13": 0,
+      "additional_targets_in_correction_slots": {
+        "1": 1,
+        "2": 1,
+        "4": 1,
+        "8": 1
+      },
+      "ordinary13_plus_correction_slots": {
+        "1": 1,
+        "2": 1,
+        "4": 1,
+        "8": 1
+      }
+    },
+    "dev/initials/swap": {
+      "ordinary_top5": 0,
+      "ordinary5_plus_correction_slots": {},
+      "examples": 26,
+      "ordinary_top13": 0,
+      "mixed_top13": 0,
+      "mixed_losses_from_ordinary13": 0,
+      "additional_targets_in_correction_slots": {},
+      "ordinary13_plus_correction_slots": {}
+    },
+    "dev/mixed_even/clean": {
+      "ordinary_top5": 18,
+      "ordinary5_plus_correction_slots": {
+        "1": 18,
+        "2": 18,
+        "4": 18,
+        "8": 18
+      },
+      "examples": 29,
+      "ordinary_top13": 26,
+      "mixed_top13": 24,
+      "mixed_losses_from_ordinary13": 2,
+      "additional_targets_in_correction_slots": {},
+      "ordinary13_plus_correction_slots": {
+        "1": 26,
+        "2": 26,
+        "4": 26,
+        "8": 26
+      }
+    },
+    "dev/mixed_even/neighbor": {
+      "ordinary_top5": 0,
+      "ordinary5_plus_correction_slots": {
+        "1": 1,
+        "2": 1,
+        "4": 1,
+        "8": 1
+      },
+      "examples": 29,
+      "ordinary_top13": 0,
+      "mixed_top13": 1,
+      "mixed_losses_from_ordinary13": 0,
+      "additional_targets_in_correction_slots": {
+        "1": 1,
+        "2": 1,
+        "4": 1,
+        "8": 1
+      },
+      "ordinary13_plus_correction_slots": {
+        "1": 1,
+        "2": 1,
+        "4": 1,
+        "8": 1
+      }
+    },
+    "dev/mixed_even/swap": {
+      "ordinary_top5": 5,
+      "ordinary5_plus_correction_slots": {
+        "1": 5,
+        "2": 5,
+        "4": 5,
+        "8": 5
+      },
+      "examples": 29,
+      "ordinary_top13": 9,
+      "mixed_top13": 7,
+      "mixed_losses_from_ordinary13": 2,
+      "additional_targets_in_correction_slots": {},
+      "ordinary13_plus_correction_slots": {
+        "1": 9,
+        "2": 9,
+        "4": 9,
+        "8": 9
+      }
+    },
+    "dev/mixed_odd/clean": {
+      "ordinary_top5": 21,
+      "ordinary5_plus_correction_slots": {
+        "1": 21,
+        "2": 21,
+        "4": 21,
+        "8": 21
+      },
+      "examples": 29,
+      "ordinary_top13": 24,
+      "mixed_top13": 23,
+      "mixed_losses_from_ordinary13": 1,
+      "additional_targets_in_correction_slots": {},
+      "ordinary13_plus_correction_slots": {
+        "1": 24,
+        "2": 24,
+        "4": 24,
+        "8": 24
+      }
+    },
+    "dev/mixed_odd/neighbor": {
+      "ordinary_top5": 0,
+      "ordinary5_plus_correction_slots": {
+        "1": 7,
+        "2": 8,
+        "4": 8,
+        "8": 8
+      },
+      "examples": 28,
+      "ordinary_top13": 0,
+      "mixed_top13": 8,
+      "mixed_losses_from_ordinary13": 0,
+      "additional_targets_in_correction_slots": {
+        "1": 7,
+        "2": 8,
+        "4": 8,
+        "8": 8
+      },
+      "ordinary13_plus_correction_slots": {
+        "1": 7,
+        "2": 8,
+        "4": 8,
+        "8": 8
+      }
+    },
+    "dev/mixed_odd/swap": {
+      "ordinary_top5": 7,
+      "ordinary5_plus_correction_slots": {
+        "1": 9,
+        "2": 10,
+        "4": 11,
+        "8": 12
+      },
+      "examples": 29,
+      "ordinary_top13": 8,
+      "mixed_top13": 13,
+      "mixed_losses_from_ordinary13": 0,
+      "additional_targets_in_correction_slots": {
+        "1": 2,
+        "2": 3,
+        "4": 4,
+        "8": 5
+      },
+      "ordinary13_plus_correction_slots": {
+        "1": 10,
+        "2": 11,
+        "4": 12,
+        "8": 13
+      }
+    },
+    "test/digraph_initials/clean": {
+      "ordinary_top5": 7,
+      "ordinary5_plus_correction_slots": {
+        "1": 7,
+        "2": 7,
+        "4": 7,
+        "8": 7
+      },
+      "examples": 13,
+      "ordinary_top13": 7,
+      "mixed_top13": 7,
+      "mixed_losses_from_ordinary13": 0,
+      "additional_targets_in_correction_slots": {},
+      "ordinary13_plus_correction_slots": {
+        "1": 7,
+        "2": 7,
+        "4": 7,
+        "8": 7
+      }
+    },
+    "test/digraph_initials/neighbor": {
+      "ordinary_top5": 0,
+      "ordinary5_plus_correction_slots": {},
+      "examples": 13,
+      "ordinary_top13": 0,
+      "mixed_top13": 0,
+      "mixed_losses_from_ordinary13": 0,
+      "additional_targets_in_correction_slots": {},
+      "ordinary13_plus_correction_slots": {}
+    },
+    "test/digraph_initials/swap": {
+      "ordinary_top5": 0,
+      "ordinary5_plus_correction_slots": {},
+      "examples": 13,
+      "ordinary_top13": 0,
+      "mixed_top13": 0,
+      "mixed_losses_from_ordinary13": 0,
+      "additional_targets_in_correction_slots": {},
+      "ordinary13_plus_correction_slots": {}
+    },
+    "test/full/clean": {
+      "ordinary_top5": 26,
+      "ordinary5_plus_correction_slots": {
+        "1": 27,
+        "2": 27,
+        "4": 27,
+        "8": 27
+      },
+      "examples": 35,
+      "ordinary_top13": 26,
+      "mixed_top13": 27,
+      "mixed_losses_from_ordinary13": 0,
+      "additional_targets_in_correction_slots": {
+        "1": 1,
+        "2": 1,
+        "4": 1,
+        "8": 1
+      },
+      "ordinary13_plus_correction_slots": {
+        "1": 27,
+        "2": 27,
+        "4": 27,
+        "8": 27
+      }
+    },
+    "test/full/neighbor": {
+      "ordinary_top5": 0,
+      "ordinary5_plus_correction_slots": {
+        "1": 11,
+        "2": 12,
+        "4": 14,
+        "8": 14
+      },
+      "examples": 35,
+      "ordinary_top13": 0,
+      "mixed_top13": 14,
+      "mixed_losses_from_ordinary13": 0,
+      "additional_targets_in_correction_slots": {
+        "1": 11,
+        "2": 12,
+        "4": 14,
+        "8": 14
+      },
+      "ordinary13_plus_correction_slots": {
+        "1": 11,
+        "2": 12,
+        "4": 14,
+        "8": 14
+      }
+    },
+    "test/full/swap": {
+      "ordinary_top5": 7,
+      "ordinary5_plus_correction_slots": {
+        "1": 9,
+        "2": 11,
+        "4": 12,
+        "8": 12
+      },
+      "examples": 35,
+      "ordinary_top13": 7,
+      "mixed_top13": 12,
+      "mixed_losses_from_ordinary13": 0,
+      "additional_targets_in_correction_slots": {
+        "1": 2,
+        "2": 4,
+        "4": 5,
+        "8": 5
+      },
+      "ordinary13_plus_correction_slots": {
+        "1": 9,
+        "2": 11,
+        "4": 12,
+        "8": 12
+      }
+    },
+    "test/initials/clean": {
+      "ordinary_top5": 8,
+      "ordinary5_plus_correction_slots": {
+        "1": 8,
+        "2": 8,
+        "4": 8,
+        "8": 8
+      },
+      "examples": 34,
+      "ordinary_top13": 10,
+      "mixed_top13": 10,
+      "mixed_losses_from_ordinary13": 0,
+      "additional_targets_in_correction_slots": {},
+      "ordinary13_plus_correction_slots": {
+        "1": 10,
+        "2": 10,
+        "4": 10,
+        "8": 10
+      }
+    },
+    "test/initials/neighbor": {
+      "ordinary_top5": 0,
+      "ordinary5_plus_correction_slots": {
+        "1": 1,
+        "2": 1,
+        "4": 1,
+        "8": 1
+      },
+      "examples": 35,
+      "ordinary_top13": 0,
+      "mixed_top13": 1,
+      "mixed_losses_from_ordinary13": 0,
+      "additional_targets_in_correction_slots": {
+        "1": 1,
+        "2": 1,
+        "4": 1,
+        "8": 1
+      },
+      "ordinary13_plus_correction_slots": {
+        "1": 1,
+        "2": 1,
+        "4": 1,
+        "8": 1
+      }
+    },
+    "test/initials/swap": {
+      "ordinary_top5": 0,
+      "ordinary5_plus_correction_slots": {},
+      "examples": 33,
+      "ordinary_top13": 0,
+      "mixed_top13": 0,
+      "mixed_losses_from_ordinary13": 0,
+      "additional_targets_in_correction_slots": {},
+      "ordinary13_plus_correction_slots": {}
+    },
+    "test/mixed_even/clean": {
+      "ordinary_top5": 16,
+      "ordinary5_plus_correction_slots": {
+        "1": 16,
+        "2": 16,
+        "4": 16,
+        "8": 16
+      },
+      "examples": 35,
+      "ordinary_top13": 21,
+      "mixed_top13": 18,
+      "mixed_losses_from_ordinary13": 3,
+      "additional_targets_in_correction_slots": {},
+      "ordinary13_plus_correction_slots": {
+        "1": 21,
+        "2": 21,
+        "4": 21,
+        "8": 21
+      }
+    },
+    "test/mixed_even/neighbor": {
+      "ordinary_top5": 0,
+      "ordinary5_plus_correction_slots": {
+        "1": 1,
+        "2": 1,
+        "4": 1,
+        "8": 1
+      },
+      "examples": 34,
+      "ordinary_top13": 0,
+      "mixed_top13": 1,
+      "mixed_losses_from_ordinary13": 0,
+      "additional_targets_in_correction_slots": {
+        "1": 1,
+        "2": 1,
+        "4": 1,
+        "8": 1
+      },
+      "ordinary13_plus_correction_slots": {
+        "1": 1,
+        "2": 1,
+        "4": 1,
+        "8": 1
+      }
+    },
+    "test/mixed_even/swap": {
+      "ordinary_top5": 5,
+      "ordinary5_plus_correction_slots": {
+        "1": 5,
+        "2": 5,
+        "4": 5,
+        "8": 5
+      },
+      "examples": 35,
+      "ordinary_top13": 6,
+      "mixed_top13": 5,
+      "mixed_losses_from_ordinary13": 1,
+      "additional_targets_in_correction_slots": {},
+      "ordinary13_plus_correction_slots": {
+        "1": 6,
+        "2": 6,
+        "4": 6,
+        "8": 6
+      }
+    },
+    "test/mixed_odd/clean": {
+      "ordinary_top5": 15,
+      "ordinary5_plus_correction_slots": {
+        "1": 15,
+        "2": 15,
+        "4": 15,
+        "8": 15
+      },
+      "examples": 35,
+      "ordinary_top13": 20,
+      "mixed_top13": 20,
+      "mixed_losses_from_ordinary13": 0,
+      "additional_targets_in_correction_slots": {},
+      "ordinary13_plus_correction_slots": {
+        "1": 20,
+        "2": 20,
+        "4": 20,
+        "8": 20
+      }
+    },
+    "test/mixed_odd/neighbor": {
+      "ordinary_top5": 0,
+      "ordinary5_plus_correction_slots": {
+        "1": 2,
+        "2": 2,
+        "4": 4,
+        "8": 5
+      },
+      "examples": 35,
+      "ordinary_top13": 0,
+      "mixed_top13": 5,
+      "mixed_losses_from_ordinary13": 0,
+      "additional_targets_in_correction_slots": {
+        "1": 2,
+        "2": 2,
+        "4": 4,
+        "8": 5
+      },
+      "ordinary13_plus_correction_slots": {
+        "1": 2,
+        "2": 2,
+        "4": 4,
+        "8": 5
+      }
+    },
+    "test/mixed_odd/swap": {
+      "ordinary_top5": 3,
+      "ordinary5_plus_correction_slots": {
+        "1": 3,
+        "2": 3,
+        "4": 3,
+        "8": 3
+      },
+      "examples": 35,
+      "ordinary_top13": 5,
+      "mixed_top13": 5,
+      "mixed_losses_from_ordinary13": 0,
+      "additional_targets_in_correction_slots": {},
+      "ordinary13_plus_correction_slots": {
+        "1": 5,
+        "2": 5,
+        "4": 5,
+        "8": 5
+      }
+    },
+    "typo": {
+      "ordinary_top5": 35,
+      "ordinary5_plus_correction_slots": {
+        "1": 78,
+        "2": 85,
+        "4": 91,
+        "8": 94
+      },
+      "examples": 553,
+      "ordinary_top13": 43,
+      "mixed_top13": 99,
+      "mixed_losses_from_ordinary13": 3,
+      "additional_targets_in_correction_slots": {
+        "1": 43,
+        "2": 50,
+        "4": 56,
+        "8": 59
+      },
+      "ordinary13_plus_correction_slots": {
+        "1": 86,
+        "2": 93,
+        "4": 99,
+        "8": 102
+      }
+    }
+  },
+  "notes": [
+    "Offline layout counterfactual, not native implementation or UI usability evidence.",
+    "Ordinary candidates retain their baseline positions by construction. A separate correction lane exposes extra positions, so union availability is NOT top-13 recall or a fair fixed-slot ranking comparison.",
+    "One/two/four/eight correction slots are counted independently of thirteen ordinary positions; no new model scoring or retrieval is performed.",
+    "Labels come from reused synthetic data. Only verified full-input commits count as targets; partial candidates still consume correction slots.",
+    "Capture comments identify correction provenance for this analysis only. Production requires typed metadata, current revision/selection IDs and independent paging."
+  ],
+  "sha256": {
+    "build/typo-recovery/constrained-v1/selected.jsonl": "901c7464732a143f517d58ce12d755aed28e350aaa6748b62fc41fc43c0b5566",
+    "build/typo-recovery/native-graph/mirror-evaluation-v1/ordinary.jsonl": "e1b6e4adcc02f46cb50ba6192ef354121515d1e609f61a66e82c9679a0943d59",
+    "build/typo-recovery/native-graph/mirror-evaluation-v1/protected.jsonl": "531a1c7fba838fedf145927aa557668ec992ff375fd03a5f43ad281a63595209"
+  }
+}

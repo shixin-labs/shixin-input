@@ -1,0 +1,18 @@
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from SpikeCanonical
+[ RUN      ] SpikeCanonical.OwnerLifetimeAndMissingArtifact
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I20261104 10:12:31.069907 0x1f219a1c0 table.cc:331] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.table.bin
+I20261104 10:12:31.075226 0x1f219a1c0 table.cc:331] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/compact-top8-v1.table.bin
+I20261104 10:12:31.153066 0x1f219a1c0 table.cc:331] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.table.bin
+I20261104 10:12:31.153824 0x1f219a1c0 table.cc:331] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/compact-top8-v1.table.bin.missing
+E20261104 10:12:31.154116 0x1f219a1c0 mapped_file.cc:78] attempt to open non-existent file '/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/compact-top8-v1.table.bin.missing'.
+E20261104 10:12:31.154161 0x1f219a1c0 table.cc:337] Error opening table file '/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/compact-top8-v1.table.bin.missing'.
+[       OK ] SpikeCanonical.OwnerLifetimeAndMissingArtifact (85 ms)
+[----------] 1 test from SpikeCanonical (85 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (85 ms total)
+[  PASSED  ] 1 test.

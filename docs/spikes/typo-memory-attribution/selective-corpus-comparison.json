@@ -1,0 +1,627 @@
+{
+  "0": {
+    "counts": {
+      "all": {
+        "n": 830,
+        "broad": 311,
+        "selective": 321,
+        "gain": 16,
+        "loss": 6,
+        "ordinary": 199
+      },
+      "clean": {
+        "n": 277,
+        "broad": 154,
+        "selective": 155,
+        "gain": 1,
+        "loss": 0,
+        "ordinary": 153
+      },
+      "full/clean": {
+        "n": 64,
+        "broad": 54,
+        "selective": 55,
+        "gain": 1,
+        "loss": 0,
+        "ordinary": 53
+      },
+      "swap": {
+        "n": 275,
+        "broad": 68,
+        "selective": 74,
+        "gain": 6,
+        "loss": 0,
+        "ordinary": 38
+      },
+      "full/swap": {
+        "n": 64,
+        "broad": 36,
+        "selective": 37,
+        "gain": 1,
+        "loss": 0,
+        "ordinary": 16
+      },
+      "neighbor": {
+        "n": 278,
+        "broad": 89,
+        "selective": 92,
+        "gain": 9,
+        "loss": 6,
+        "ordinary": 8
+      },
+      "full/neighbor": {
+        "n": 64,
+        "broad": 46,
+        "selective": 48,
+        "gain": 2,
+        "loss": 0,
+        "ordinary": 3
+      },
+      "initials/neighbor": {
+        "n": 64,
+        "broad": 3,
+        "selective": 1,
+        "gain": 0,
+        "loss": 2,
+        "ordinary": 0
+      },
+      "mixed_even/clean": {
+        "n": 64,
+        "broad": 34,
+        "selective": 34,
+        "gain": 0,
+        "loss": 0,
+        "ordinary": 34
+      },
+      "mixed_even/swap": {
+        "n": 64,
+        "broad": 13,
+        "selective": 13,
+        "gain": 0,
+        "loss": 0,
+        "ordinary": 11
+      },
+      "mixed_even/neighbor": {
+        "n": 63,
+        "broad": 10,
+        "selective": 11,
+        "gain": 2,
+        "loss": 1,
+        "ordinary": 2
+      },
+      "mixed_odd/clean": {
+        "n": 64,
+        "broad": 36,
+        "selective": 36,
+        "gain": 0,
+        "loss": 0,
+        "ordinary": 36
+      },
+      "mixed_odd/swap": {
+        "n": 64,
+        "broad": 18,
+        "selective": 23,
+        "gain": 5,
+        "loss": 0,
+        "ordinary": 10
+      },
+      "mixed_odd/neighbor": {
+        "n": 63,
+        "broad": 27,
+        "selective": 30,
+        "gain": 5,
+        "loss": 2,
+        "ordinary": 1
+      },
+      "initials/clean": {
+        "n": 61,
+        "broad": 18,
+        "selective": 18,
+        "gain": 0,
+        "loss": 0,
+        "ordinary": 18
+      },
+      "initials/swap": {
+        "n": 59,
+        "broad": 0,
+        "selective": 0,
+        "gain": 0,
+        "loss": 0,
+        "ordinary": 0
+      },
+      "digraph_initials/clean": {
+        "n": 24,
+        "broad": 12,
+        "selective": 12,
+        "gain": 0,
+        "loss": 0,
+        "ordinary": 12
+      },
+      "digraph_initials/swap": {
+        "n": 24,
+        "broad": 1,
+        "selective": 1,
+        "gain": 0,
+        "loss": 0,
+        "ordinary": 1
+      },
+      "digraph_initials/neighbor": {
+        "n": 24,
+        "broad": 3,
+        "selective": 2,
+        "gain": 0,
+        "loss": 1,
+        "ordinary": 2
+      }
+    },
+    "changes": [
+      {
+        "raw": "cuhnjwu",
+        "target": "纯净物",
+        "kind": "swap",
+        "form": "mixed_odd",
+        "gain": true
+      },
+      {
+        "raw": "chunmwu",
+        "target": "纯净物",
+        "kind": "neighbor",
+        "form": "mixed_odd",
+        "gain": true
+      },
+      {
+        "raw": "bajij",
+        "target": "把酒",
+        "kind": "neighbor",
+        "form": "full",
+        "gain": true
+      },
+      {
+        "raw": "aboxsi",
+        "target": "保险丝",
+        "kind": "swap",
+        "form": "mixed_odd",
+        "gain": true
+      },
+      {
+        "raw": "dahuor",
+        "target": "大伙儿",
+        "kind": "clean",
+        "form": "full",
+        "gain": true
+      },
+      {
+        "raw": "tsuai",
+        "target": "摊晒",
+        "kind": "neighbor",
+        "form": "mixed_even",
+        "gain": true
+      },
+      {
+        "raw": "gtianoxia",
+        "target": "瓜田李下",
+        "kind": "neighbor",
+        "form": "mixed_even",
+        "gain": false
+      },
+      {
+        "raw": "rlwz",
+        "target": "儒林外史",
+        "kind": "neighbor",
+        "form": "initials",
+        "gain": false
+      },
+      {
+        "raw": "jungzmos",
+        "target": "竞争模式",
+        "kind": "neighbor",
+        "form": "mixed_odd",
+        "gain": true
+      },
+      {
+        "raw": "baoiliy",
+        "target": "保加利亚",
+        "kind": "neighbor",
+        "form": "mixed_odd",
+        "gain": false
+      },
+      {
+        "raw": "anny",
+        "target": "男友",
+        "kind": "swap",
+        "form": "mixed_odd",
+        "gain": true
+      },
+      {
+        "raw": "mansre",
+        "target": "曼苏尔",
+        "kind": "swap",
+        "form": "mixed_odd",
+        "gain": true
+      },
+      {
+        "raw": "manssr",
+        "target": "曼苏尔",
+        "kind": "neighbor",
+        "form": "mixed_odd",
+        "gain": true
+      },
+      {
+        "raw": "shijiebiannuzn",
+        "target": "世界变暖",
+        "kind": "neighbor",
+        "form": "full",
+        "gain": true
+      },
+      {
+        "raw": "shijibann",
+        "target": "世界变暖",
+        "kind": "swap",
+        "form": "mixed_odd",
+        "gain": true
+      },
+      {
+        "raw": "rvhw",
+        "target": "阮崇武",
+        "kind": "neighbor",
+        "form": "digraph_initials",
+        "gain": false
+      },
+      {
+        "raw": "dasqials",
+        "target": "大石桥市",
+        "kind": "neighbor",
+        "form": "mixed_odd",
+        "gain": true
+      },
+      {
+        "raw": "jjiqojzao",
+        "target": "戒骄戒躁",
+        "kind": "neighbor",
+        "form": "mixed_even",
+        "gain": true
+      },
+      {
+        "raw": "oldyy",
+        "target": "克罗地亚语",
+        "kind": "neighbor",
+        "form": "initials",
+        "gain": false
+      },
+      {
+        "raw": "adlou",
+        "target": "大楼",
+        "kind": "swap",
+        "form": "full",
+        "gain": true
+      },
+      {
+        "raw": "shadver",
+        "target": "傻大个儿",
+        "kind": "neighbor",
+        "form": "mixed_odd",
+        "gain": false
+      },
+      {
+        "raw": "baocxuwc",
+        "target": "报仇雪耻",
+        "kind": "neighbor",
+        "form": "mixed_odd",
+        "gain": true
+      }
+    ],
+    "ordinary_changed": [
+      "sj",
+      "ts"
+    ]
+  },
+  "1": {
+    "counts": {
+      "all": {
+        "n": 830,
+        "broad": 312,
+        "selective": 321,
+        "gain": 15,
+        "loss": 6,
+        "ordinary": 199
+      },
+      "clean": {
+        "n": 277,
+        "broad": 154,
+        "selective": 155,
+        "gain": 1,
+        "loss": 0,
+        "ordinary": 153
+      },
+      "full/clean": {
+        "n": 64,
+        "broad": 54,
+        "selective": 55,
+        "gain": 1,
+        "loss": 0,
+        "ordinary": 53
+      },
+      "swap": {
+        "n": 275,
+        "broad": 69,
+        "selective": 74,
+        "gain": 5,
+        "loss": 0,
+        "ordinary": 38
+      },
+      "full/swap": {
+        "n": 64,
+        "broad": 36,
+        "selective": 37,
+        "gain": 1,
+        "loss": 0,
+        "ordinary": 16
+      },
+      "neighbor": {
+        "n": 278,
+        "broad": 89,
+        "selective": 92,
+        "gain": 9,
+        "loss": 6,
+        "ordinary": 8
+      },
+      "full/neighbor": {
+        "n": 64,
+        "broad": 46,
+        "selective": 48,
+        "gain": 2,
+        "loss": 0,
+        "ordinary": 3
+      },
+      "initials/neighbor": {
+        "n": 64,
+        "broad": 3,
+        "selective": 1,
+        "gain": 0,
+        "loss": 2,
+        "ordinary": 0
+      },
+      "mixed_even/clean": {
+        "n": 64,
+        "broad": 34,
+        "selective": 34,
+        "gain": 0,
+        "loss": 0,
+        "ordinary": 34
+      },
+      "mixed_even/swap": {
+        "n": 64,
+        "broad": 13,
+        "selective": 13,
+        "gain": 0,
+        "loss": 0,
+        "ordinary": 11
+      },
+      "mixed_even/neighbor": {
+        "n": 63,
+        "broad": 10,
+        "selective": 11,
+        "gain": 2,
+        "loss": 1,
+        "ordinary": 2
+      },
+      "mixed_odd/clean": {
+        "n": 64,
+        "broad": 36,
+        "selective": 36,
+        "gain": 0,
+        "loss": 0,
+        "ordinary": 36
+      },
+      "mixed_odd/swap": {
+        "n": 64,
+        "broad": 19,
+        "selective": 23,
+        "gain": 4,
+        "loss": 0,
+        "ordinary": 10
+      },
+      "mixed_odd/neighbor": {
+        "n": 63,
+        "broad": 27,
+        "selective": 30,
+        "gain": 5,
+        "loss": 2,
+        "ordinary": 1
+      },
+      "initials/clean": {
+        "n": 61,
+        "broad": 18,
+        "selective": 18,
+        "gain": 0,
+        "loss": 0,
+        "ordinary": 18
+      },
+      "initials/swap": {
+        "n": 59,
+        "broad": 0,
+        "selective": 0,
+        "gain": 0,
+        "loss": 0,
+        "ordinary": 0
+      },
+      "digraph_initials/clean": {
+        "n": 24,
+        "broad": 12,
+        "selective": 12,
+        "gain": 0,
+        "loss": 0,
+        "ordinary": 12
+      },
+      "digraph_initials/swap": {
+        "n": 24,
+        "broad": 1,
+        "selective": 1,
+        "gain": 0,
+        "loss": 0,
+        "ordinary": 1
+      },
+      "digraph_initials/neighbor": {
+        "n": 24,
+        "broad": 3,
+        "selective": 2,
+        "gain": 0,
+        "loss": 1,
+        "ordinary": 2
+      }
+    },
+    "changes": [
+      {
+        "raw": "cuhnjwu",
+        "target": "纯净物",
+        "kind": "swap",
+        "form": "mixed_odd",
+        "gain": true
+      },
+      {
+        "raw": "chunmwu",
+        "target": "纯净物",
+        "kind": "neighbor",
+        "form": "mixed_odd",
+        "gain": true
+      },
+      {
+        "raw": "bajij",
+        "target": "把酒",
+        "kind": "neighbor",
+        "form": "full",
+        "gain": true
+      },
+      {
+        "raw": "dahuor",
+        "target": "大伙儿",
+        "kind": "clean",
+        "form": "full",
+        "gain": true
+      },
+      {
+        "raw": "tsuai",
+        "target": "摊晒",
+        "kind": "neighbor",
+        "form": "mixed_even",
+        "gain": true
+      },
+      {
+        "raw": "gtianoxia",
+        "target": "瓜田李下",
+        "kind": "neighbor",
+        "form": "mixed_even",
+        "gain": false
+      },
+      {
+        "raw": "rlwz",
+        "target": "儒林外史",
+        "kind": "neighbor",
+        "form": "initials",
+        "gain": false
+      },
+      {
+        "raw": "jungzmos",
+        "target": "竞争模式",
+        "kind": "neighbor",
+        "form": "mixed_odd",
+        "gain": true
+      },
+      {
+        "raw": "baoiliy",
+        "target": "保加利亚",
+        "kind": "neighbor",
+        "form": "mixed_odd",
+        "gain": false
+      },
+      {
+        "raw": "anny",
+        "target": "男友",
+        "kind": "swap",
+        "form": "mixed_odd",
+        "gain": true
+      },
+      {
+        "raw": "mansre",
+        "target": "曼苏尔",
+        "kind": "swap",
+        "form": "mixed_odd",
+        "gain": true
+      },
+      {
+        "raw": "manssr",
+        "target": "曼苏尔",
+        "kind": "neighbor",
+        "form": "mixed_odd",
+        "gain": true
+      },
+      {
+        "raw": "shijiebiannuzn",
+        "target": "世界变暖",
+        "kind": "neighbor",
+        "form": "full",
+        "gain": true
+      },
+      {
+        "raw": "shijibann",
+        "target": "世界变暖",
+        "kind": "swap",
+        "form": "mixed_odd",
+        "gain": true
+      },
+      {
+        "raw": "rvhw",
+        "target": "阮崇武",
+        "kind": "neighbor",
+        "form": "digraph_initials",
+        "gain": false
+      },
+      {
+        "raw": "dasqials",
+        "target": "大石桥市",
+        "kind": "neighbor",
+        "form": "mixed_odd",
+        "gain": true
+      },
+      {
+        "raw": "jjiqojzao",
+        "target": "戒骄戒躁",
+        "kind": "neighbor",
+        "form": "mixed_even",
+        "gain": true
+      },
+      {
+        "raw": "oldyy",
+        "target": "克罗地亚语",
+        "kind": "neighbor",
+        "form": "initials",
+        "gain": false
+      },
+      {
+        "raw": "adlou",
+        "target": "大楼",
+        "kind": "swap",
+        "form": "full",
+        "gain": true
+      },
+      {
+        "raw": "shadver",
+        "target": "傻大个儿",
+        "kind": "neighbor",
+        "form": "mixed_odd",
+        "gain": false
+      },
+      {
+        "raw": "baocxuwc",
+        "target": "报仇雪耻",
+        "kind": "neighbor",
+        "form": "mixed_odd",
+        "gain": true
+      }
+    ],
+    "ordinary_changed": [
+      "sj",
+      "ts"
+    ]
+  }
+}

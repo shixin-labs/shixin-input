@@ -1,0 +1,55 @@
+=== RUN   TestTypoNativeBridgeSpike
+    typo_bridge_spike_test.go:130: warm native snapshot read/decode p50=2.292µs p99=2.917µs max=5.084µs
+    typo_bridge_spike_test.go:168: purego native snapshot read/decode and stale selection: zero Go allocations with reused buffers
+--- PASS: TestTypoNativeBridgeSpike (0.14s)
+=== RUN   TestTypoCorrectionCorpusSpike
+    typo_corpus_spike_test.go:125: captured 731 public codes, two traces each; ordinary first five plus full-span separate corrections
+--- PASS: TestTypoCorrectionCorpusSpike (2.65s)
+=== RUN   TestTypoLearningPersistenceSpike
+=== RUN   TestTypoLearningPersistenceSpike/neighbor
+    typo_learning_spike_test.go:85: write: === RUN   TestTypoLearningPersistenceSpike
+        --- PASS: TestTypoLearningPersistenceSpike (0.14s)
+        PASS
+    typo_learning_spike_test.go:85: export: === RUN   TestTypoLearningPersistenceSpike
+        --- PASS: TestTypoLearningPersistenceSpike (0.02s)
+        PASS
+    typo_learning_spike_test.go:105: persisted canonical entry: 你好	ni hao	8
+=== RUN   TestTypoLearningPersistenceSpike/native_alias
+    typo_learning_spike_test.go:85: write: === RUN   TestTypoLearningPersistenceSpike
+        --- PASS: TestTypoLearningPersistenceSpike (0.11s)
+        PASS
+    typo_learning_spike_test.go:85: export: === RUN   TestTypoLearningPersistenceSpike
+        --- PASS: TestTypoLearningPersistenceSpike (0.02s)
+        PASS
+    typo_learning_spike_test.go:105: persisted canonical entry: 你好	ni hao	8
+=== RUN   TestTypoLearningPersistenceSpike/swap
+    typo_learning_spike_test.go:85: write: === RUN   TestTypoLearningPersistenceSpike
+        --- PASS: TestTypoLearningPersistenceSpike (0.11s)
+        PASS
+    typo_learning_spike_test.go:85: export: === RUN   TestTypoLearningPersistenceSpike
+        --- PASS: TestTypoLearningPersistenceSpike (0.02s)
+        PASS
+    typo_learning_spike_test.go:105: persisted canonical entry: 你好	ni hao	8
+=== RUN   TestTypoLearningPersistenceSpike/emoji
+    typo_learning_spike_test.go:85: write: === RUN   TestTypoLearningPersistenceSpike
+        --- PASS: TestTypoLearningPersistenceSpike (0.11s)
+        PASS
+    typo_learning_spike_test.go:85: export: === RUN   TestTypoLearningPersistenceSpike
+        --- PASS: TestTypoLearningPersistenceSpike (0.02s)
+        PASS
+    typo_learning_spike_test.go:105: persisted canonical entry: 你好	ni hao	8
+=== RUN   TestTypoLearningPersistenceSpike/unselected
+    typo_learning_spike_test.go:85: write: === RUN   TestTypoLearningPersistenceSpike
+        --- PASS: TestTypoLearningPersistenceSpike (0.11s)
+        PASS
+    typo_learning_spike_test.go:85: export: === RUN   TestTypoLearningPersistenceSpike
+        --- PASS: TestTypoLearningPersistenceSpike (0.02s)
+        PASS
+--- PASS: TestTypoLearningPersistenceSpike (0.74s)
+    --- PASS: TestTypoLearningPersistenceSpike/neighbor (0.17s)
+    --- PASS: TestTypoLearningPersistenceSpike/native_alias (0.14s)
+    --- PASS: TestTypoLearningPersistenceSpike/swap (0.14s)
+    --- PASS: TestTypoLearningPersistenceSpike/emoji (0.14s)
+    --- PASS: TestTypoLearningPersistenceSpike/unselected (0.14s)
+PASS
+ok  	shixin/internal/rime	6.209s

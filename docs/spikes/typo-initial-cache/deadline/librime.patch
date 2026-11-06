@@ -1,0 +1,998 @@
+diff --git a/src/rime/dict/corrector.h b/src/rime/dict/corrector.h
+--- a/src/rime/dict/corrector.h
++++ b/src/rime/dict/corrector.h
+@@ -56,6 +56,13 @@
+ class Corrector : public Class<Corrector, const Ticket&> {
+  public:
+   virtual ~Corrector() = default;
++  virtual void SpikeSpecific(bool) {}
++  virtual bool SpikeSpecificOnly() const { return false; }
++  virtual void SpikeAbbreviated(bool) {}
++  virtual bool SpikeAbbreviatedOnly() const { return false; }
++  virtual bool SpikeBounded() const { return false; }
++  virtual void SpikeAnchor(size_t) {}
++  virtual bool SpikeAllows(size_t) const { return true; }
+   RIME_DLL virtual void ToleranceSearch(const Prism& prism,
+                                         const string& key,
+                                         corrector::Corrections* results,
+diff --git a/src/rime/dict/corrector.cc b/src/rime/dict/corrector.cc
+--- a/src/rime/dict/corrector.cc
++++ b/src/rime/dict/corrector.cc
+@@ -298,6 +298,8 @@
+     : resolver_(Service::instance().CreateDeployedResourceResolver(
+           {"corrector", "", ".correction.bin"})) {}
+ 
++#include "bounded_corrector.inc"
++
+ Corrector* CorrectorComponent::Create(const Ticket& ticket) noexcept {
+   // Don't use edit distance based correction for now.
+ #if 0
+@@ -317,5 +319,8 @@
+     return new NearSearchCorrector();
+   }
+ #endif
++  bool spike = false;
++  if (ticket.schema && ticket.schema->config()->GetBool(ticket.name_space + "/shixin_spike_bounded", &spike) && spike)
++    return new ShixinSpikeCorrector();
+   return new NearSearchCorrector();
+ }
+diff --git a/src/rime/algo/syllabifier.h b/src/rime/algo/syllabifier.h
+--- a/src/rime/algo/syllabifier.h
++++ b/src/rime/algo/syllabifier.h
+@@ -9,6 +9,7 @@
+ #define RIME_SYLLABIFIER_H_
+ 
+ #include <stdint.h>
++#include <chrono>
+ #include <rime_api.h>
+ #include <rime/common.h>
+ #include "spelling.h"
+@@ -37,6 +38,49 @@
+ using SpellingIndices = map<size_t, SpellingIndex>;
+ 
+ struct SyllableGraph {
++  bool spike_bounded = false;
++  bool spike_budget_carried = false;
++  bool spike_specific_only = false;
++  bool spike_three_initials = false;
++  size_t spike_probe_cap = 32768;
++  std::array<char,3> spike_raw_initials{};
++  bool spike_graph_complete = false;
++  mutable size_t spike_work_left = 32768;
++  mutable size_t spike_nodes_left = 2048, spike_chunks_left = 2048;
++  std::chrono::steady_clock::time_point spike_deadline;
++  mutable bool spike_exhausted = false;
++  void CarrySpikeBudgetFrom(const SyllableGraph& source) {
++    spike_budget_carried = true;
++    spike_work_left = source.spike_work_left;
++    spike_nodes_left = source.spike_nodes_left;
++    spike_chunks_left = source.spike_chunks_left;
++    spike_deadline = source.spike_deadline;
++    spike_exhausted = source.spike_exhausted;
++  }
++  bool CheckSpikeDeadline() const {
++    if (!spike_bounded) return true;
++    if (spike_exhausted || std::chrono::steady_clock::now() >= spike_deadline) {
++      spike_exhausted = true;
++      return false;
++    }
++    return true;
++  }
++  bool SpendSpikeWork() const {
++    if (!spike_bounded) return true;
++    if (!spike_work_left || ((spike_work_left & 63) == 0 && std::chrono::steady_clock::now() >= spike_deadline)) { spike_exhausted = true; return false; }
++    --spike_work_left;
++    return true;
++  }
++  bool SpendSpikeNode() const {
++    if (!spike_bounded) return true;
++    if (!spike_nodes_left) { spike_exhausted=true; return false; }
++    --spike_nodes_left; return SpendSpikeWork();
++  }
++  bool SpendSpikeChunk() const {
++    if (!spike_bounded) return true;
++    if (!spike_chunks_left) { spike_exhausted=true; return false; }
++    --spike_chunks_left; return SpendSpikeWork();
++  }
+   size_t input_length = 0;
+   size_t interpreted_length = 0;
+   VertexMap vertices;
+diff --git a/src/rime/algo/syllabifier.cc b/src/rime/algo/syllabifier.cc
+--- a/src/rime/algo/syllabifier.cc
++++ b/src/rime/algo/syllabifier.cc
+@@ -12,6 +12,7 @@
+ #include <rime/dict/corrector.h>
+ #include <rime/dict/prism.h>
+ #include "syllabifier.h"
++#include "spelling_boundaries.h"
+ 
+ namespace rime {
+ using namespace corrector;
+@@ -33,11 +34,41 @@
+   if (input.empty())
+     return 0;
+ 
++  graph->spike_graph_complete = false;
++  graph->spike_bounded = corrector_ && corrector_->SpikeBounded();
++  graph->spike_specific_only = graph->spike_bounded && corrector_->SpikeSpecificOnly();
++  graph->spike_three_initials = graph->spike_bounded && corrector_->SpikeAbbreviatedOnly() && input.size()==3;
++  if (graph->spike_three_initials) std::copy(input.begin(),input.end(),graph->spike_raw_initials.begin());
++  if (graph->spike_bounded && !graph->spike_budget_carried) {
++#ifdef SHIXIN_SPIKE_SANITIZER_TEST
++#if !__has_feature(address_sanitizer)
++#error SHIXIN_SPIKE_SANITIZER_TEST requires AddressSanitizer
++#endif
++    // Functional sanitizer tests only. Operation caps are unchanged; Release
++    // latency tests must use the real 900-microsecond deadline below.
++    graph->spike_deadline = std::chrono::steady_clock::now() + std::chrono::minutes(1);
++#else
++    graph->spike_deadline = std::chrono::steady_clock::now() + std::chrono::microseconds(900);
++#endif
++  }
++  shixin_spike::Boundaries spike_boundaries;
++  if (graph->spike_bounded) {
++    spike_boundaries = shixin_spike::ExactBoundaries(input,delimiters_,[&](size_t pos,auto emit) {
++      if (!graph->SpendSpikeWork()) return;
++      std::array<Prism::Match,32> matches;
++      size_t count=prism.trie().commonPrefixSearch(input.c_str()+pos,matches.data(),matches.size(),input.size()-pos);
++      for(size_t i=0;i<std::min(count,matches.size());i++) {
++        if (!graph->SpendSpikeWork()) return;
++        emit(matches[i].length);
++      }
++    });
++  }
+   size_t farthest = 0;
+   VertexQueue queue;
+   queue.push(Vertex{0, kNormalSpelling});  // start
+ 
+   while (!queue.empty()) {
++    if (!graph->SpendSpikeWork()) return 0;
+     Vertex vertex(queue.top());
+     queue.pop();
+     size_t current_pos = vertex.first;
+@@ -72,12 +103,14 @@
+         exact_match_syllables.insert(m.value);
+       }
+       Corrections corrections;
+-      corrector_->ToleranceSearch(prism, current_input, &corrections, 5);
++      if (!graph->spike_bounded || (corrector_->SpikeAllows(begin_pos) && begin_pos<=32 && (spike_boundaries.forward & (uint64_t(1)<<begin_pos))))
++        corrector_->ToleranceSearch(prism, current_input, &corrections, 5);
+       for (const auto& m : corrections) {
++        if (graph->spike_bounded && !spike_boundaries.Allows(begin_pos,begin_pos+m.second.length)) continue;
+         for (auto accessor = prism.QuerySpelling(m.first);
+              !accessor.exhausted(); accessor.Next()) {
+           auto props = accessor.properties();
+-          if (props.type == kNormalSpelling && !props.is_correction) {
++          if (((props.type == kNormalSpelling && !graph->spike_three_initials) || (graph->spike_bounded && !graph->spike_specific_only && props.type == kAbbreviation)) && !props.is_correction) {
+             matches.push_back({m.first, m.second.length});
+             break;
+           }
+@@ -105,6 +138,7 @@
+         // otherwise, it resembles exactly the syllable itself.
+         SpellingAccessor accessor(prism.QuerySpelling(m.value));
+         while (!accessor.exhausted()) {
++          if (!graph->SpendSpikeWork()) return 0;
+           SyllableId syllable_id = accessor.syllable_id();
+           EdgeProperties props(accessor.properties());
+           if (strict_spelling_ && matches_input &&
+@@ -116,6 +150,11 @@
+             // spelling-to-syllable map
+             if (corrector_ && exact_match_syllables.find(m.value) ==
+                                   exact_match_syllables.end()) {
++              if ((graph->spike_specific_only && props.type != kNormalSpelling) ||
++                  (graph->spike_three_initials && props.type != kAbbreviation)) {
++                accessor.Next();
++                continue;
++              }
+               props.is_correction = true;
+               props.credibility = kCorrectionCredibility;
+             }
+@@ -250,6 +289,7 @@
+   DLOG(INFO) << "syllabified length: " << graph->interpreted_length;
+ 
+   Transpose(graph);
++  graph->spike_graph_complete = !graph->spike_exhausted;
+ 
+   return farthest;
+ }
+diff --git a/src/rime/dict/table.h b/src/rime/dict/table.h
+--- a/src/rime/dict/table.h
++++ b/src/rime/dict/table.h
+@@ -8,6 +8,7 @@
+ #ifndef RIME_TABLE_H_
+ #define RIME_TABLE_H_
+ 
++#include <array>
+ #include <cstring>
+ #include <rime/common.h>
+ #include <rime/dict/mapped_file.h>
+@@ -122,6 +123,8 @@
+   RIME_DLL bool exhausted() const;
+   RIME_DLL size_t remaining() const;
+   RIME_DLL const table::Entry* entry() const;
++  TableAccessor(const Code& code, const table::Entry* entry, double credibility, double quality_len)
++      : index_code_(code), entries_(entry), size_(1), credibility_(credibility), quality_len_(quality_len) {}
+   RIME_DLL const table::Code* extra_code() const;
+   const Code& index_code() const { return index_code_; }
+   Code code() const;
+@@ -163,21 +166,24 @@
+   void Reset();
+ 
+   size_t level() const { return level_; }
++  const table::TrunkIndex* SpikeChildren() const {
++    return level_ == 1 ? lv2_index_ : level_ == 2 ? lv3_index_ : nullptr;
++  }
+ 
+   double credibility_sum() const {
+-    return credibility_.empty() ? 0 : credibility_.back();
++    return level_ ? credibility_[level_ - 1] : 0;
+   }
+   double quality_len_sum() const {
+-    return quality_len_.empty() ? 0 : quality_len_.back();
+-  }
+-  size_t last_pos() const { return last_pos_.empty() ? 0 : last_pos_.back(); }
++    return level_ ? quality_len_[level_ - 1] : 0;
++  }
++  size_t last_pos() const { return level_ ? last_pos_[level_ - 1] : 0; }
+ 
+  protected:
+   size_t level_ = 0;
+   Code index_code_;
+-  vector<double> credibility_;
+-  vector<double> quality_len_;
+-  vector<size_t> last_pos_;
++  std::array<double, Code::kIndexCodeMaxLength> credibility_{};
++  std::array<double, Code::kIndexCodeMaxLength> quality_len_{};
++  std::array<size_t, Code::kIndexCodeMaxLength> last_pos_{};
+ 
+  private:
+   bool Walk(SyllableId syllable_id);
+@@ -188,12 +194,15 @@
+   table::TailIndex* lv4_index_ = nullptr;
+ };
+ 
++struct SpikeInitialCache;
++
+ class Table : public MappedFile {
+  public:
+   RIME_DLL Table(const path& file_path);
+   virtual ~Table();
+ 
+   RIME_DLL bool Load();
++  RIME_DLL bool PrepareSpikeInitialCache(const string& sidecar_path = {});
+   RIME_DLL bool Save();
+   RIME_DLL bool Build(const Syllabary& syllabary,
+                       const Vocabulary& vocabulary,
+@@ -206,7 +215,9 @@
+   RIME_DLL TableAccessor QueryPhrases(const Code& code);
+   RIME_DLL bool Query(const SyllableGraph& syll_graph,
+                       size_t start_pos,
+-                      TableQueryResult* result);
++                      TableQueryResult* result,
++                      bool (*visitor)(void*, size_t, TableAccessor&) = nullptr,
++                      void* visitor_context = nullptr);
+   RIME_DLL string GetEntryText(const table::Entry& entry);
+ 
+   uint32_t dict_file_checksum() const;
+@@ -238,6 +249,7 @@
+   table::Syllabary* syllabary_ = nullptr;
+   table::Index* index_ = nullptr;
+ 
++  the<SpikeInitialCache> spike_initial_cache_;
+   the<StringTable> string_table_;
+   the<StringTableBuilder> string_table_builder_;
+ };
+diff --git a/src/rime/dict/table.cc b/src/rime/dict/table.cc
+--- a/src/rime/dict/table.cc
++++ b/src/rime/dict/table.cc
+@@ -12,6 +12,9 @@
+ #include <rime/common.h>
+ #include <rime/algo/syllabifier.h>
+ #include <rime/dict/table.h>
++#include "subtree_bounds.h"
++#include "subtree_bounds_io.h"
++#include "initial_cache.h"
+ 
+ namespace rime {
+ 
+@@ -106,11 +109,11 @@
+   if (!Walk(syllable_id)) {
+     return false;
+   }
++  credibility_[level_] = credibility_sum() + credibility;
++  quality_len_[level_] = quality_len_sum() + quality_len;
++  last_pos_[level_] = last_pos;
+   ++level_;
+   index_code_.push_back(syllable_id);
+-  credibility_.push_back(credibility_sum() + credibility);
+-  quality_len_.push_back(quality_len_sum() + quality_len);
+-  last_pos_.push_back(last_pos);
+   return true;
+ }
+ 
+@@ -120,9 +123,6 @@
+   --level_;
+   if (index_code_.size() > level_) {
+     index_code_.pop_back();
+-    credibility_.pop_back();
+-    quality_len_.pop_back();
+-    last_pos_.pop_back();
+   }
+   return true;
+ }
+@@ -130,9 +130,6 @@
+ void TableQuery::Reset() {
+   level_ = 0;
+   index_code_.clear();
+-  credibility_.clear();
+-  quality_len_.clear();
+-  last_pos_.clear();
+ }
+ 
+ inline static bool node_less(const table::TrunkIndexNode& a,
+@@ -262,11 +259,32 @@
+   return true;
+ }
+ 
++struct SpikeInitialCache {
++  shixin_spike::InitialCache cache;
++  std::vector<char> initials;
++  shixin_spike::InitialCacheSearch search;
++};
++bool Table::PrepareSpikeInitialCache(const string& sidecar_path) {
++  if(spike_initial_cache_) return true;
++  if(!IsOpen() || !index_) return false;
++  auto prepared=std::make_unique<SpikeInitialCache>();
++  path source=sidecar_path.empty()?path(file_path().u8string()+".initial3"):path(sidecar_path);
++  const shixin_spike::BoundIdentity identity{dict_file_checksum(),index_->size,metadata_->num_entries,file_size()};
++  prepared->initials.resize(index_->size);
++  for(size_t a=0;a<index_->size;++a) {
++    auto spelling=GetSyllableById(a);
++    prepared->initials[a]=spelling.empty()?0:spelling[0];
++  }
++  if(!shixin_spike::LoadInitialCache(source,identity,prepared->initials,&prepared->cache)) return false;
++  spike_initial_cache_=std::move(prepared);return true;
++}
++
+ Table::Table(const path& file_path) : MappedFile(file_path) {}
+ 
+ Table::~Table() {}
+ 
+ bool Table::Load() {
++  spike_initial_cache_.reset();
+   LOG(INFO) << "loading table file: " << file_path();
+ 
+   if (IsOpen())
+@@ -570,17 +588,72 @@
+ 
+ bool Table::Query(const SyllableGraph& syll_graph,
+                   size_t start_pos,
+-                  TableQueryResult* result) {
++                  TableQueryResult* result,
++                  bool (*visitor)(void*, size_t, TableAccessor&),
++                  void* visitor_context) {
+   if (!result || !index_ || start_pos >= syll_graph.interpreted_length)
+     return false;
+   result->clear();
+-  std::queue<pair<size_t, TableQuery>> q;
++  if(syll_graph.spike_three_initials) {
++    // Bounds are prepared during schema initialization, never lazily on a key.
++    if(!spike_initial_cache_ || start_pos!=0 || !syll_graph.spike_graph_complete) { syll_graph.spike_exhausted=true;return false; }
++    const auto found=spike_initial_cache_->search.Search(
++        std::string_view(syll_graph.spike_raw_initials.data(),3),
++        spike_initial_cache_->cache,
++        std::min(syll_graph.spike_work_left,syll_graph.spike_probe_cap),syll_graph.spike_deadline);
++    syll_graph.spike_work_left-=std::min(syll_graph.spike_work_left,found.probes);
++    if(!found.complete) {
++      syll_graph.spike_exhausted=true;return false;
++    }
++    for(size_t i=0;i<found.count;++i) {
++      if(!syll_graph.CheckSpikeDeadline() || !syll_graph.SpendSpikeNode()) { result->clear(); return false; }
++      const auto& candidate=found.entries[i];
++      size_t corrections=0;double credibility=0,quality=0;bool valid=true;
++      for(size_t pos=0;pos<3;++pos) {
++        if(!syll_graph.SpendSpikeWork()) { result->clear(); return false; }
++        auto begin=syll_graph.edges.find(pos);
++        if(begin==syll_graph.edges.end()) {valid=false;break;}
++        auto end=begin->second.find(pos+1);
++        if(end==begin->second.end()) {valid=false;break;}
++        auto spelling=end->second.find(candidate.code[pos]);
++        if(spelling==end->second.end()) {valid=false;break;}
++        corrections+=spelling->second.is_correction;
++        credibility+=spelling->second.credibility;
++        quality+=spelling->second.type==kNormalSpelling ? 1 : 0;
++      }
++      if(!valid || corrections!=1) continue;
++      Code code;code.assign(candidate.code.begin(),candidate.code.end());
++      // Validate the cached offset against the native entry list before using
++      // it. Only the final eight codes touch native trie/entry pages.
++      auto native=QueryPhrases(code);
++      if(!syll_graph.CheckSpikeDeadline()) { result->clear(); return false; }
++      const auto* entry=Find<table::Entry>(candidate.offset);
++      bool member=false;
++      for(;!native.exhausted();native.Next()) {
++        if(!syll_graph.SpendSpikeWork()) { result->clear(); return false; }
++        if(native.entry()==entry) {member=true;break;}
++      }
++      if(!member || entry->weight!=candidate.weight) {syll_graph.spike_exhausted=true;result->clear();return false;}
++      TableAccessor accessor(code,entry,credibility,quality);
++      if(visitor) { if(!visitor(visitor_context,3,accessor)) { result->clear(); return false; } }
++      else (*result)[3].push_back(accessor);
++      if(!syll_graph.CheckSpikeDeadline()) { result->clear(); return false; }
++    }
++    if(!syll_graph.CheckSpikeDeadline()) { result->clear(); return false; }
++    return visitor || !result->empty();
++  }
++  std::deque<std::tuple<size_t, TableQuery, size_t>> q;
+   TableQuery initial_state(index_);
+-  q.push({start_pos, initial_state});
++  q.push_back({start_pos, initial_state, 0});
+   while (!q.empty()) {
+-    size_t current_pos = q.front().first;
+-    TableQuery query(q.front().second);
+-    q.pop();
++    if (!syll_graph.SpendSpikeNode()) { result->clear(); return false; }
++    // Corrected lookup completes a phrase branch before expanding every
++    // sibling prefix. Ordinary lookup retains its existing breadth-first order.
++    auto& pending = syll_graph.spike_bounded ? q.back() : q.front();
++    size_t current_pos = std::get<0>(pending);
++    TableQuery query(std::move(std::get<1>(pending)));
++    size_t corrections = std::get<2>(pending);
++    if (syll_graph.spike_bounded) q.pop_back(); else q.pop_front();
+     auto index = syll_graph.indices.find(current_pos);
+     if (index == syll_graph.indices.end()) {
+       continue;
+@@ -588,13 +661,32 @@
+     if (query.level() == Code::kIndexCodeMaxLength) {
+       TableAccessor accessor(query.Access(-1));
+       if (!accessor.exhausted()) {
+-        (*result)[current_pos].push_back(accessor);
++        if (visitor) { if (!visitor(visitor_context,current_pos,accessor)) return false; }
++        else (*result)[current_pos].push_back(accessor);
+       }
+       continue;
+     }
+-    for (const auto& spellings : index->second) {
++    // Intersect the smaller native dictionary child set with the graph.
++    // Initial abbreviations can otherwise probe every expanded syllable at
++    // every sparse dictionary node, mostly finding no matching child.
++    auto child_index = syll_graph.spike_bounded ? query.SpikeChildren() : nullptr;
++    bool sparse = child_index && child_index->size < index->second.size();
++    size_t child = 0;
++    auto spelling_it = index->second.begin();
++    while (sparse ? child < child_index->size : spelling_it != index->second.end()) {
++      auto current = spelling_it;
++      if (sparse) {
++        if (!syll_graph.SpendSpikeWork()) { result->clear(); return false; }
++        current = index->second.find(child_index->at[child++].key);
++        if (current == index->second.end()) continue;
++      } else {
++        ++spelling_it;
++      }
++      const auto& spellings = *current;
+       SyllableId syll_id = spellings.first;
+       for (auto props : spellings.second) {
++        if (!syll_graph.SpendSpikeWork()) { result->clear(); return false; }
++        if (syll_graph.spike_bounded && corrections && props->is_correction) continue;
+         size_t end_pos = props->end_pos;
+ 
+         double penalty = 0.0;
+@@ -615,18 +707,19 @@
+         TableAccessor accessor =
+             query.Access(syll_id, next_credibility, delta_quality_len);
+         if (!accessor.exhausted()) {
+-          (*result)[end_pos].push_back(accessor);
++          if (visitor) { if (!visitor(visitor_context,end_pos,accessor)) return false; }
++          else (*result)[end_pos].push_back(accessor);
+         }
+         if (end_pos < syll_graph.interpreted_length &&
+             query.Advance(syll_id, next_credibility, delta_quality_len,
+                           current_pos)) {
+-          q.push({end_pos, query});
++          q.push_back({end_pos, query, corrections + props->is_correction});
+           query.Backdate();
+         }
+       }
+     }
+   }
+-  return !result->empty();
++  return visitor || !result->empty();
+ }
+ 
+ string Table::GetEntryText(const table::Entry& entry) {
+diff --git a/src/rime/dict/dictionary.cc b/src/rime/dict/dictionary.cc
+--- a/src/rime/dict/dictionary.cc
++++ b/src/rime/dict/dictionary.cc
+@@ -95,6 +95,7 @@
+                            size_t current_pos,
+                            bool predict_word) {
+   const CodeMatch kFailed{false, 0, 0};
++  if (!syll_graph.SpendSpikeWork()) return kFailed;
+   if (!extra_code || depth >= extra_code->size)
+     return {true, depth, current_pos};
+   if (current_pos >= syll_graph.interpreted_length) {
+@@ -235,6 +236,38 @@
+   // should not close shared table and prism objects
+ }
+ 
++struct SpikeLookupContext {
++  Table* table;
++  DictEntryCollector* collector;
++  const SyllableGraph* graph;
++  bool predict_word;
++  double initial_credibility;
++};
++
++static bool collect_table_accessor(void* context, size_t end_pos, TableAccessor& a) {
++  auto& ctx = *static_cast<SpikeLookupContext*>(context);
++  const auto& graph = *ctx.graph;
++  if (!graph.SpendSpikeWork()) return false;
++  double cr = ctx.initial_credibility + a.credibility();
++  double q = a.quality_len();
++  if (a.extra_code()) {
++    do {
++      if (!graph.SpendSpikeWork()) return false;
++      dictionary::CodeMatch match = dictionary::match_extra_code(
++          a.extra_code(), 0, graph, end_pos, ctx.predict_word);
++      if (!match.success) continue;
++      if (!graph.SpendSpikeChunk()) return false;
++      size_t matching_code_size = a.index_code().size() + match.depth;
++      (*ctx.collector)[match.end_pos].AddChunk(
++          {ctx.table, a.code(), a.entry(), matching_code_size, cr, q});
++    } while (a.Next());
++  } else {
++    if (!graph.SpendSpikeChunk()) return false;
++    (*ctx.collector)[end_pos].AddChunk({ctx.table, a, cr, q});
++  }
++  return true;
++}
++
+ static void lookup_table(Table* table,
+                          DictEntryCollector* collector,
+                          const SyllableGraph& syllable_graph,
+@@ -242,30 +275,17 @@
+                          bool predict_word,
+                          double initial_credibility) {
+   TableQueryResult result;
+-  if (!table->Query(syllable_graph, start_pos, &result)) {
++  SpikeLookupContext ctx{table, collector, &syllable_graph, predict_word, initial_credibility};
++  if (syllable_graph.spike_bounded) {
++    // Only completed dictionary chunks are published. The spelling graph was
++    // already completed and validated before dictionary lookup began.
++    table->Query(syllable_graph, start_pos, &result, collect_table_accessor, &ctx);
+     return;
+   }
+-  // copy result
+-  for (auto& v : result) {
+-    size_t end_pos = v.first;
+-    for (TableAccessor& a : v.second) {
+-      double cr = initial_credibility + a.credibility();
+-      double q = a.quality_len();
+-      if (a.extra_code()) {
+-        do {
+-          dictionary::CodeMatch match = dictionary::match_extra_code(
+-              a.extra_code(), 0, syllable_graph, end_pos, predict_word);
+-          if (!match.success)
+-            continue;
+-          size_t matching_code_size = a.index_code().size() + match.depth;
+-          (*collector)[match.end_pos].AddChunk(
+-              {table, a.code(), a.entry(), matching_code_size, cr, q});
+-        } while (a.Next());
+-      } else {
+-        (*collector)[end_pos].AddChunk({table, a, cr, q});
+-      }
+-    }
+-  }
++  if (!table->Query(syllable_graph, start_pos, &result)) return;
++  for (auto& group : result)
++    for (auto& accessor : group.second)
++      if (!collect_table_accessor(&ctx, group.first, accessor)) return;
+ }
+ 
+ an<DictEntryCollector> Dictionary::Lookup(const SyllableGraph& syllable_graph,
+@@ -273,7 +293,7 @@
+                                           const hash_set<string>* blacklist,
+                                           bool predict_word,
+                                           double initial_credibility) {
+-  if (!loaded())
++  if (!loaded() || (syllable_graph.spike_bounded && !syllable_graph.spike_graph_complete))
+     return nullptr;
+   auto collector = New<DictEntryCollector>();
+   for (const auto& table : tables_) {
+@@ -281,18 +301,22 @@
+       continue;
+     lookup_table(table.get(), collector.get(), syllable_graph, start_pos,
+                  predict_word, initial_credibility);
+-  }
+-  if (collector->empty())
++    if (syllable_graph.spike_exhausted) break;
++  }
++  if (collector->empty() || (syllable_graph.spike_three_initials && syllable_graph.spike_exhausted))
+     return nullptr;
+   // for each group of equal code length, sort it and filter words
+   for (auto& v : *collector) {
++    if (syllable_graph.spike_three_initials && !syllable_graph.CheckSpikeDeadline()) return nullptr;
+     v.second.Sort();
++    if (syllable_graph.spike_three_initials && !syllable_graph.CheckSpikeDeadline()) return nullptr;
+     if (blacklist && !blacklist->empty()) {
+       v.second.AddFilter([blacklist](an<DictEntry> entry) {
+         return entry && !blacklist->count(entry->text);
+       });
+     }
+   }
++  if (syllable_graph.spike_three_initials && !syllable_graph.CheckSpikeDeadline()) return nullptr;
+   return collector;
+ }
+ 
+diff --git a/src/rime/gear/script_translator.h b/src/rime/gear/script_translator.h
+--- a/src/rime/gear/script_translator.h
++++ b/src/rime/gear/script_translator.h
+@@ -7,6 +7,7 @@
+ #ifndef RIME_SCRIPT_TRANSLATOR_H_
+ #define RIME_SCRIPT_TRANSLATOR_H_
+ 
++#include <array>
+ #include <rime/common.h>
+ #include <rime/translation.h>
+ #include <rime/translator.h>
+@@ -46,6 +47,8 @@
+   bool SaveCommitEntry(CommitEntry& commit_entry);
+ 
+   // options
++  bool spike_protect() const { return spike_protect_; }
++  size_t spike_probe_cap() const { return size_t(spike_probe_cap_); }
+   int max_homophones() const { return max_homophones_; }
+   int spelling_hints() const { return spelling_hints_; }
+   bool always_show_comments() const { return always_show_comments_; }
+@@ -60,6 +63,9 @@
+   int core_word_length_ = 0;
+   bool always_show_comments_ = false;
+   bool enable_correction_ = false;
++  bool spike_protect_ = false;
++  int spike_probe_cap_ = 32768;
++  std::array<string,7> spike_reserved_codes_{"rq","sj","xq","dt","ts","rqzh","rqen"};
+   bool enable_word_completion_ = false;
+   the<Corrector> corrector_;
+   the<Poet> poet_;
+diff --git a/src/rime/gear/script_translator.cc b/src/rime/gear/script_translator.cc
+--- a/src/rime/gear/script_translator.cc
++++ b/src/rime/gear/script_translator.cc
+@@ -7,6 +7,7 @@
+ // 2011-07-10 GONG Chen <chen.sst@gmail.com>
+ //
+ #include <algorithm>
++#include <array>
+ #include <stack>
+ #include <cmath>
+ #include <boost/algorithm/string/join.hpp>
+@@ -49,7 +50,8 @@
+ 
+ static bool syllabify_dfs(SyllabifyTask* task,
+                           size_t depth,
+-                          size_t current_pos) {
++                          size_t current_pos, size_t* budget = nullptr) {
++  if (budget) { if (!*budget) return false; --*budget; }
+   if (depth == task->code.size()) {
+     return current_pos == task->target_pos;
+   }
+@@ -65,7 +67,7 @@
+     auto x = y.second.find(syllable_id);
+     if (x != y.second.end()) {
+       task->push(task, depth, current_pos, end_vertex_pos);
+-      if (syllabify_dfs(task, depth + 1, end_vertex_pos))
++      if (syllabify_dfs(task, depth + 1, end_vertex_pos, budget))
+         return true;
+       task->pop(task, depth);
+     }
+@@ -96,9 +98,13 @@
+   size_t BuildSyllableGraph(Prism& prism);
+   string GetPreeditString(const Phrase& cand) const;
+   string GetOriginalSpelling(const Phrase& cand) const;
++  int SpikeCorrectionCount(const Code& code, size_t code_length) const;
+   bool IsCorrection(const Code& code, size_t code_length) const;
+ 
+   const SyllableGraph& syllable_graph() const { return syllable_graph_; }
++  void SpikeCarryBudget(const SyllableGraph& source) {
++    syllable_graph_.CarrySpikeBudgetFrom(source);
++  }
+ 
+  protected:
+   ScriptTranslator* translator_;
+@@ -133,6 +139,44 @@
+   virtual bool Next();
+   virtual an<Candidate> Peek();
+ 
++ public:
++  void SpikeCarryBudget(const ScriptTranslation& source) {
++    syllabifier_->SpikeCarryBudget(source.syllabifier_->syllable_graph());
++  }
++  bool SpikeBudgetAvailable() const {
++    const auto& graph = syllabifier_->syllable_graph();
++    return !graph.spike_exhausted && graph.spike_work_left &&
++        graph.spike_nodes_left && graph.spike_chunks_left &&
++        std::chrono::steady_clock::now() < graph.spike_deadline;
++  }
++  size_t SpikePreferredAnchor(const string& raw, Table* table) const {
++    const auto& graph = syllabifier_->syllable_graph();
++    const size_t end = graph.input_length;
++    if (end > 32) return 0;
++    std::array<int,33> cost, anchor;
++    cost.fill(100000); anchor.fill(-1); cost[end]=0;
++    for (size_t p=end; p-->0;) {
++      auto it=graph.edges.find(p);
++      if (it==graph.edges.end()) continue;
++      for (const auto& edge:it->second) {
++        size_t next=edge.first;
++        if (next>end || next<=p || cost[next]==100000) continue;
++        bool normal=false;
++        for (const auto& spelling:edge.second)
++          if (spelling.second.type==kNormalSpelling && !spelling.second.is_correction &&
++              table->GetSyllableById(spelling.first)==raw.substr(p,next-p)) normal=true;
++        int candidate=cost[next]+(normal?0:int(next-p));
++        if (candidate<cost[p]) {
++          cost[p]=candidate;
++          anchor[p]=normal?anchor[next]:int(p);
++        }
++      }
++    }
++    return anchor[0]>=0?size_t(anchor[0]):0;
++  }
++  int SpikeCorrectionCount(const Phrase& phrase) const {
++    return syllabifier_->SpikeCorrectionCount(phrase.code(), phrase.end()-start_);
++  }
+  protected:
+   bool CheckEmpty();
+   bool IsNormalSpelling() const;
+@@ -177,12 +221,15 @@
+   bool enable_correction_;
+ };
+ 
++#include "protected_translation.inc"
++
+ // ScriptTranslator implementation
+ 
+ ScriptTranslator::ScriptTranslator(const Ticket& ticket)
+     : Translator(ticket), Memory(ticket), TranslatorOptions(ticket) {
+   if (!engine_)
+     return;
++  string spike_initial_cache_path;
+   if (Config* config = engine_->schema()->config()) {
+     config->GetInt(name_space_ + "/spelling_hints", &spelling_hints_);
+     config->GetInt(name_space_ + "/max_word_length", &max_word_length_);
+@@ -190,6 +237,15 @@
+     config->GetBool(name_space_ + "/always_show_comments",
+                     &always_show_comments_);
+     config->GetBool(name_space_ + "/enable_correction", &enable_correction_);
++    config->GetBool(name_space_ + "/shixin_spike_protected", &spike_protect_);
++    if (spike_protect_) {
++      config->GetString(name_space_ + "/shixin_spike_initial_cache_file", &spike_initial_cache_path);
++      config->GetInt(name_space_ + "/shixin_spike_bound_probe_cap", &spike_probe_cap_);
++      spike_probe_cap_=std::max(0,std::min(32768,spike_probe_cap_));
++      constexpr const char* keys[] = {"date","time","week","datetime","timestamp","datezh","dateen"};
++      for (size_t i=0;i<spike_reserved_codes_.size();i++)
++        config->GetString(string("date_translator/")+keys[i],&spike_reserved_codes_[i]);
++    }
+     if (!config->GetBool(name_space_ + "/enable_word_completion",
+                          &enable_word_completion_)) {
+       enable_word_completion_ = enable_completion_;
+@@ -197,6 +253,8 @@
+     config->GetInt(name_space_ + "/max_homophones", &max_homophones_);
+     poet_.reset(new Poet(language(), config));
+   }
++  if (spike_protect_ && dict_ && dict_->loaded())
++    for (const auto& table : dict_->tables()) table->PrepareSpikeInitialCache(spike_initial_cache_path);
+   if (enable_correction_) {
+     if (auto* corrector = Corrector::Require("corrector")) {
+       corrector_.reset(corrector->Create(ticket));
+@@ -219,6 +277,54 @@
+       user_dict_ && user_dict_->loaded() && !IsUserDictDisabledFor(input);
+ 
+   size_t end_of_input = engine_->context()->input().length();
++  if (spike_protect_) {
++    auto ordinary = New<ScriptTranslation>(this, nullptr, poet_.get(), input,
++        segment.start, end_of_input, max_sentences_, sentence_cutoff_threshold_);
++    bool has_ordinary = ordinary->Evaluate(dict_.get(), enable_user_dict ? user_dict_.get() : nullptr);
++    an<ScriptTranslation> recovery, broad;
++    bool reserved = false;
++    for (const auto& tag : segment.tags)
++      if (tag == "punct" || tag == "number" || tag == "unicode" ||
++          tag == "calculator" || tag == "radical_lookup" || tag == "email" ||
++          tag == "url" || tag == "underscore" || tag == "gregorian_to_lunar")
++        reserved = true;
++    for (const auto& code : spike_reserved_codes_)
++      if (!code.empty() && input == code) reserved = true;
++    if (!reserved && input.size() >= 3 && input.size() <= 32 && corrector_ && corrector_->SpikeBounded()) {
++      const auto preferred_anchor=ordinary->SpikePreferredAnchor(input,dict_->primary_table().get());
++      const bool cache_first=input.size()==3;
++      corrector_->SpikeAnchor(cache_first?size_t(-1):preferred_anchor);
++      corrector_->SpikeSpecific(!cache_first);
++      corrector_->SpikeAbbreviated(cache_first);
++      recovery = New<ScriptTranslation>(this, corrector_.get(), poet_.get(), input,
++          segment.start, end_of_input, max_sentences_, sentence_cutoff_threshold_);
++      bool has_recovery = recovery->Evaluate(dict_.get(), enable_user_dict ? user_dict_.get() : nullptr);
++      if (recovery->SpikeBudgetAvailable()) {
++        corrector_->SpikeSpecific(cache_first);
++        corrector_->SpikeAbbreviated(false);
++        corrector_->SpikeAnchor(preferred_anchor);
++        broad = New<ScriptTranslation>(this, corrector_.get(), poet_.get(), input,
++            segment.start, end_of_input, max_sentences_, sentence_cutoff_threshold_);
++        broad->SpikeCarryBudget(*recovery);
++        const bool has_broad=broad->Evaluate(dict_.get(), enable_user_dict ? user_dict_.get() : nullptr);
++        const bool incomplete=input.size()==3 && !broad->SpikeBudgetAvailable();
++        // The initial-cache stage completed before this optional second
++        // stage began. Its validated results remain eligible on later expiry.
++        if(!has_broad || incomplete) broad.reset();
++      } else if(input.size()==3) {
++        recovery.reset();
++      }
++      corrector_->SpikeSpecific(false);
++      corrector_->SpikeAbbreviated(false);
++      if (!has_recovery) recovery.reset();
++    }
++    if (!has_ordinary && !recovery && !broad) return nullptr;
++    int page = 5;
++    engine_->schema()->config()->GetInt("menu/page_size", &page);
++    page = std::max(1, std::min(10, page));
++    return New<SpikeProtectedTranslation>(
++        has_ordinary ? New<DistinctTranslation>(ordinary) : nullptr, recovery, broad, page, input.size(), input.size()==3 ? 2 : 4);
++  }
+   // the translator should survive translations it creates
+   auto result = New<ScriptTranslation>(
+       this, corrector_.get(), poet_.get(), input, segment.start, end_of_input,
+@@ -365,6 +471,7 @@
+ }
+ 
+ size_t ScriptSyllabifier::BuildSyllableGraph(Prism& prism) {
++  syllable_graph_.spike_probe_cap=translator_->spike_probe_cap();
+   return (size_t)syllabifier_.BuildSyllableGraph(input_, prism,
+                                                  &syllable_graph_);
+ }
+@@ -405,6 +512,44 @@
+     }
+   }
+   return false;
++}
++
++int ScriptSyllabifier::SpikeCorrectionCount(const Code& code,
++                                     size_t code_length) const {
++  vector<bool> path_attributes;
++  path_attributes.reserve(8);
++
++  SyllabifyTask task{
++      code, syllable_graph_, code_length,
++      // push
++      [&](SyllabifyTask* task, size_t depth, size_t current_pos,
++          size_t next_pos) {
++        auto id = task->code[depth];
++
++        auto start_iter = syllable_graph_.edges.find(current_pos);
++        if (start_iter != syllable_graph_.edges.end()) {
++          auto end_iter = start_iter->second.find(next_pos);
++          if (end_iter != start_iter->second.end()) {
++            auto prop_iter = end_iter->second.find(id);
++            if (prop_iter != end_iter->second.end()) {
++              path_attributes.push_back(prop_iter->second.is_correction);
++              return;
++            }
++          }
++        }
++        // edge not found
++        path_attributes.push_back(false);
++      },
++      // pop
++      [&](SyllabifyTask* task, size_t depth) { path_attributes.pop_back(); }};
++
++  size_t budget = 1024;
++  if (syllabify_dfs(&task, 0, 0, &budget)) {
++    int count = 0;
++    for (bool is_correction : path_attributes) count += is_correction;
++    return count;
++  }
++  return 99;
+ }
+ 
+ string ScriptSyllabifier::GetPreeditString(const Phrase& cand) const {
+@@ -453,12 +598,13 @@
+ bool ScriptTranslation::Evaluate(Dictionary* dict, UserDictionary* user_dict) {
+   size_t consumed = syllabifier_->BuildSyllableGraph(*dict->prism());
+   const auto& syllable_graph = syllabifier_->syllable_graph();
+-  bool predict_word = translator_->enable_word_completion() &&
++  if (syllable_graph.spike_exhausted) return false;
++  bool predict_word = !syllable_graph.spike_bounded && translator_->enable_word_completion() &&
+                       start_ + consumed == end_of_input_;
+ 
+   phrase_ =
+       dict->Lookup(syllable_graph, 0, &translator_->blacklist(), predict_word);
+-  if (user_dict) {
++  if (user_dict && !syllable_graph.spike_exhausted && !syllable_graph.spike_three_initials) {
+     const size_t kUnlimitedDepth = 0;
+     const size_t kNumSyllablesToPredictWord = 4;
+     user_phrase_ =
+@@ -472,6 +618,10 @@
+     phrase_iter_ = phrase_->rbegin();
+   if (user_phrase_)
+     user_phrase_iter_ = user_phrase_->rbegin();
++
++  // A completed graph can safely support entries materialized before lookup
++  // exhaustion. Do not spend more time constructing sentences or user lookups.
++  if (syllable_graph.spike_exhausted) return !CheckEmpty();
+ 
+   auto is_correction_match = [&](auto& iter_pair, size_t len) {
+     if (iter_pair.first != len || iter_pair.second.exhausted())
+@@ -493,8 +643,11 @@
+              << ", has_reliable_user_phrase: " << has_reliable_user_phrase
+              << ", has_at_least_two_syllables: " << has_at_least_two_syllables;
+   // make sentences when there is no exact-matching phrase candidate
++  const bool spike_has_full_phrase = syllable_graph.spike_bounded &&
++      (has_exact_match_phrase(phrase_, phrase_iter_, consumed) ||
++       has_exact_match_phrase(user_phrase_, user_phrase_iter_, consumed));
+   if (has_at_least_two_syllables && !has_reliable_phrase &&
+-      !has_reliable_user_phrase) {
++      !has_reliable_user_phrase && !spike_has_full_phrase) {
+     if (max_sentences_ > 1)
+       sentences_ = MakeSentences(dict, user_dict);
+     else if (max_sentences_) {
+@@ -506,6 +659,7 @@
+     }
+   }
+ 
++  if (syllable_graph.spike_exhausted) return false;
+   return !CheckEmpty();
+ }
+ 
+@@ -545,7 +699,7 @@
+         break;
+       }
+     }
+-  } while (enable_correction_ &&
++  } while (enable_correction_ && !translator_->spike_protect() &&
+            syllabifier_->IsCorrection(candidate_->code(),
+                                       candidate_->end() - start_) &&
+            // limit the number of correction candidates
+diff --git a/src/rime/gear/uniquifier.cc b/src/rime/gear/uniquifier.cc
+--- a/src/rime/gear/uniquifier.cc
++++ b/src/rime/gear/uniquifier.cc
+@@ -35,6 +35,11 @@
+                                                CandidateList::iterator end) {
+   for (auto iter = begin; iter != end; ++iter) {
+     if ((*iter)->text() == target->text()) {
++      // Scratch prototype: a correction consuming a different raw span must
++      // remain selectable beside the ordinary partial candidate.
++      if (((*iter)->is_spike_correction() || target->is_spike_correction()) &&
++          ((*iter)->start() != target->start() || (*iter)->end() != target->end()))
++        continue;
+       return iter;
+     }
+   }
+diff --git a/src/rime/candidate.h b/src/rime/candidate.h
+--- a/src/rime/candidate.h
++++ b/src/rime/candidate.h
+@@ -28,6 +28,8 @@
+   size_t start() const { return start_; }
+   size_t end() const { return end_; }
+   double quality() const { return quality_; }
++
++  virtual bool is_spike_correction() const { return false; }
+ 
+   // candidate text to commit
+   virtual const string& text() const = 0;
+@@ -100,6 +102,8 @@
+   }
+   string preedit() const { return item_->preedit(); }
+ 
++  bool is_spike_correction() const override { return item_->is_spike_correction(); }
++
+   const an<Candidate>& item() const { return item_; }
+ 
+  protected:
+@@ -132,6 +136,10 @@
+     return !items_.empty() ? items_.front()->preedit() : string();
+   }
+ 
++  bool is_spike_correction() const override {
++    return !items_.empty() && items_.front()->is_spike_correction();
++  }
++
+   void Append(an<Candidate> item) {
+     items_.push_back(item);
+     if (quality() < item->quality())

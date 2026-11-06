@@ -1,0 +1,21 @@
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from RepackTable
+[ RUN      ] RepackTable.PreserveAllEntriesAndCodes
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I20261104 10:43:57.716119 0x1f219a1c0 table.cc:353] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.table.bin
+I20261104 10:43:57.721987 0x1f219a1c0 mapped_file.cc:59] creating file '/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/repacked-asan-v1.table.bin'.
+I20261104 10:43:57.722155 0x1f219a1c0 mapped_file.cc:70] opening file for read/write access.
+I20261104 10:43:58.093507 0x1f219a1c0 table.cc:399] saving table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/repacked-asan-v1.table.bin
+I20261104 10:43:58.093570 0x1f219a1c0 mapped_file.cc:118] shrinking file to fit data size. capacity: 121312520
+I20261104 10:43:58.093576 0x1f219a1c0 mapped_file.cc:129] resize file to: 60656260
+I20261104 10:43:58.140687 0x1f219a1c0 table.cc:353] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/repacked-asan-v1.table.bin
+REPACK_LAYOUT index_end_bytes=17127976 string_bytes=7359696 output_bytes=60656260 entry_lists=1049439 tail_lists=651817
+REPACK_VERIFIED short_entries=609764 long_entries=1276287 extra_code_syllables=2065654 bytes=60656260
+[       OK ] RepackTable.PreserveAllEntriesAndCodes (479 ms)
+[----------] 1 test from RepackTable (479 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (480 ms total)
+[  PASSED  ] 1 test.

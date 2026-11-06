@@ -1,0 +1,73 @@
+=== RUN   TestTypoNativeSpikeEditing
+2026-11-04 09:11:02.032 engine ready in 1.153s: librime 1.17.0, modules [default shixin], schemas [rime_ice_warm], 7 policies
+=== RUN   TestTypoNativeSpikeEditing/full_nihso
+=== RUN   TestTypoNativeSpikeEditing/full_nihoa
+=== RUN   TestTypoNativeSpikeEditing/full_njh
+=== RUN   TestTypoNativeSpikeEditing/full_xgr
+=== RUN   TestTypoNativeSpikeEditing/full_zhr
+=== RUN   TestTypoNativeSpikeEditing/full_changshicuowj
+=== RUN   TestTypoNativeSpikeEditing/native_symbols
+=== RUN   TestTypoNativeSpikeEditing/backspace
+=== RUN   TestTypoNativeSpikeEditing/literal_return
+=== RUN   TestTypoNativeSpikeEditing/partial
+    typo_spike_test.go:176: partial commit="" preedit="你好zhong guo"
+--- PASS: TestTypoNativeSpikeEditing (1.50s)
+    --- PASS: TestTypoNativeSpikeEditing/full_nihso (0.00s)
+    --- PASS: TestTypoNativeSpikeEditing/full_nihoa (0.00s)
+    --- PASS: TestTypoNativeSpikeEditing/full_njh (0.01s)
+    --- PASS: TestTypoNativeSpikeEditing/full_xgr (0.00s)
+    --- PASS: TestTypoNativeSpikeEditing/full_zhr (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/full_changshicuowj (0.06s)
+    --- PASS: TestTypoNativeSpikeEditing/native_symbols (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/backspace (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/literal_return (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/partial (0.05s)
+=== RUN   TestTypoNativeSpikeEditing
+2026-11-04 09:11:02.398 engine ready in 68ms: librime 1.17.0, modules [default shixin], schemas [rime_ice_warm], 7 policies
+=== RUN   TestTypoNativeSpikeEditing/full_nihso
+=== RUN   TestTypoNativeSpikeEditing/full_nihoa
+=== RUN   TestTypoNativeSpikeEditing/full_njh
+=== RUN   TestTypoNativeSpikeEditing/full_xgr
+=== RUN   TestTypoNativeSpikeEditing/full_zhr
+=== RUN   TestTypoNativeSpikeEditing/full_changshicuowj
+=== RUN   TestTypoNativeSpikeEditing/native_symbols
+=== RUN   TestTypoNativeSpikeEditing/backspace
+=== RUN   TestTypoNativeSpikeEditing/literal_return
+=== RUN   TestTypoNativeSpikeEditing/partial
+    typo_spike_test.go:176: partial commit="" preedit="你好zhong guo"
+--- PASS: TestTypoNativeSpikeEditing (0.32s)
+    --- PASS: TestTypoNativeSpikeEditing/full_nihso (0.00s)
+    --- PASS: TestTypoNativeSpikeEditing/full_nihoa (0.00s)
+    --- PASS: TestTypoNativeSpikeEditing/full_njh (0.00s)
+    --- PASS: TestTypoNativeSpikeEditing/full_xgr (0.00s)
+    --- PASS: TestTypoNativeSpikeEditing/full_zhr (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/full_changshicuowj (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/native_symbols (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/backspace (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/literal_return (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/partial (0.04s)
+=== RUN   TestTypoNativeSpikeEditing
+2026-11-04 09:11:02.721 engine ready in 67ms: librime 1.17.0, modules [default shixin], schemas [rime_ice_warm], 7 policies
+=== RUN   TestTypoNativeSpikeEditing/full_nihso
+=== RUN   TestTypoNativeSpikeEditing/full_nihoa
+=== RUN   TestTypoNativeSpikeEditing/full_njh
+=== RUN   TestTypoNativeSpikeEditing/full_xgr
+=== RUN   TestTypoNativeSpikeEditing/full_zhr
+=== RUN   TestTypoNativeSpikeEditing/full_changshicuowj
+=== RUN   TestTypoNativeSpikeEditing/native_symbols
+=== RUN   TestTypoNativeSpikeEditing/backspace
+=== RUN   TestTypoNativeSpikeEditing/literal_return
+=== RUN   TestTypoNativeSpikeEditing/partial
+    typo_spike_test.go:176: partial commit="" preedit="你好zhong guo"
+--- PASS: TestTypoNativeSpikeEditing (0.33s)
+    --- PASS: TestTypoNativeSpikeEditing/full_nihso (0.00s)
+    --- PASS: TestTypoNativeSpikeEditing/full_nihoa (0.00s)
+    --- PASS: TestTypoNativeSpikeEditing/full_njh (0.00s)
+    --- PASS: TestTypoNativeSpikeEditing/full_xgr (0.00s)
+    --- PASS: TestTypoNativeSpikeEditing/full_zhr (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/full_changshicuowj (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/native_symbols (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/backspace (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/literal_return (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/partial (0.04s)
+PASS

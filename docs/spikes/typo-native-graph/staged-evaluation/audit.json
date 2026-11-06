@@ -1,0 +1,108 @@
+{
+  "by_input_kind": {
+    "clean": {
+      "examples": 277,
+      "ordinary_top5": 153,
+      "protected_top5": 153,
+      "ordinary_top13": 182,
+      "protected_top13": 178,
+      "gains_top13": 2,
+      "losses_top13": 6,
+      "ordinary_prefix_changes": 1
+    },
+    "typo": {
+      "examples": 553,
+      "ordinary_top5": 35,
+      "protected_top5": 45,
+      "ordinary_top13": 43,
+      "protected_top13": 97,
+      "gains_top13": 55,
+      "losses_top13": 1,
+      "ordinary_prefix_changes": 2
+    }
+  },
+  "prefix_difference_audit": {
+    "sj": "time translator: different capture instants; seconds candidate changed during verification",
+    "ts": "timestamp translator: different capture instants",
+    "vlz": "actual symbol-menu displacement by correction, fixed afterward in a focused engine selection test"
+  },
+  "losses": [
+    {
+      "form": "mixed_even",
+      "id": "88ea9c4408fec6ad1c456ac0f4d411197b91b4bf5ab2709b316b4d62ae33c7bb",
+      "kind": "clean",
+      "ordinary_rank": 11,
+      "prefix_retained": true,
+      "protected_rank": 0,
+      "raw": "gdianz",
+      "split": "dev",
+      "target": "鼓点子"
+    },
+    {
+      "form": "mixed_odd",
+      "id": "3f2db54bb7ca972ab6fc74be8fd0bfb47e9dd0120c8b2dc27c558e59cb277f7e",
+      "kind": "clean",
+      "ordinary_rank": 13,
+      "prefix_retained": true,
+      "protected_rank": 0,
+      "raw": "fengs",
+      "split": "dev",
+      "target": "奉上"
+    },
+    {
+      "form": "initials",
+      "id": "e7bd6f711cbaff0b0cf6a0d21a20651c4b12ba3f7eeb93bce9b12e7ed7fe53fe",
+      "kind": "clean",
+      "ordinary_rank": 11,
+      "prefix_retained": true,
+      "protected_rank": 0,
+      "raw": "flz",
+      "split": "dev",
+      "target": "番荔枝"
+    },
+    {
+      "form": "initials",
+      "id": "25c02ccb0b372e8e7690b2fad5f1e8dd19e7eee955d1f8744f1e7de257346762",
+      "kind": "clean",
+      "ordinary_rank": 12,
+      "prefix_retained": true,
+      "protected_rank": 0,
+      "raw": "mse",
+      "split": "dev",
+      "target": "曼苏尔"
+    },
+    {
+      "form": "mixed_even",
+      "id": "3664b0d1fbd737cfccd4442215101694983a3182a7bf5f5aa62deccd0de54307",
+      "kind": "clean",
+      "ordinary_rank": 12,
+      "prefix_retained": true,
+      "protected_rank": 0,
+      "raw": "qyuan",
+      "split": "test",
+      "target": "请愿"
+    },
+    {
+      "form": "mixed_even",
+      "id": "4f3deb484444481b13b48c9547560be358333cff8fffbe6a6e5be7b16c01c775",
+      "kind": "clean",
+      "ordinary_rank": 11,
+      "prefix_retained": true,
+      "protected_rank": 0,
+      "raw": "qyuan",
+      "split": "test",
+      "target": "请援"
+    },
+    {
+      "form": "mixed_even",
+      "id": "6400578eac9a4e58d18d88f46c3518d1c3da734d7b5de0c3091143b7f3e9ea76",
+      "kind": "swap",
+      "ordinary_rank": 11,
+      "prefix_retained": true,
+      "protected_rank": 0,
+      "raw": "qyaun",
+      "split": "test",
+      "target": "请援"
+    }
+  ]
+}

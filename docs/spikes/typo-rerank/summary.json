@@ -1,0 +1,1400 @@
+{
+  "metrics": {
+    "empty/dev/clean": {
+      "n": 138,
+      "baseline": {
+        "top1": 81,
+        "top5": 110,
+        "top20": 120
+      },
+      "merged": {
+        "top1": 81,
+        "top5": 85,
+        "top20": 120
+      },
+      "baseline_ai": {
+        "top1": 80,
+        "top5": 109,
+        "top20": 120
+      },
+      "merged_ai": {
+        "top1": 59,
+        "top5": 93,
+        "top20": 120
+      },
+      "penalty_ai": {
+        "top1": 66,
+        "top5": 100,
+        "top20": 120
+      },
+      "merged_ai_lost5_vs_baseline_ai": 17,
+      "penalty_ai_lost5_vs_baseline_ai": 10,
+      "merged_ai_lost5_vs_original": 17,
+      "penalty_ai_lost5_vs_original": 10,
+      "baseline_ai_top1_changed": 17,
+      "merged_ai_top1_changed": 56,
+      "penalty_ai_top1_changed": 34
+    },
+    "empty/dev/missing": {
+      "n": 127,
+      "baseline": {
+        "top1": 14,
+        "top5": 18,
+        "top20": 22
+      },
+      "merged": {
+        "top1": 14,
+        "top5": 16,
+        "top20": 22
+      },
+      "baseline_ai": {
+        "top1": 12,
+        "top5": 19,
+        "top20": 22
+      },
+      "merged_ai": {
+        "top1": 12,
+        "top5": 18,
+        "top20": 22
+      },
+      "penalty_ai": {
+        "top1": 12,
+        "top5": 18,
+        "top20": 22
+      },
+      "merged_ai_lost5_vs_baseline_ai": 2,
+      "penalty_ai_lost5_vs_baseline_ai": 2,
+      "merged_ai_lost5_vs_original": 2,
+      "penalty_ai_lost5_vs_original": 2,
+      "baseline_ai_top1_changed": 8,
+      "merged_ai_top1_changed": 38,
+      "penalty_ai_top1_changed": 32
+    },
+    "empty/dev/neighbor": {
+      "n": 134,
+      "baseline": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged": {
+        "top1": 1,
+        "top5": 96,
+        "top20": 96
+      },
+      "baseline_ai": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged_ai": {
+        "top1": 63,
+        "top5": 96,
+        "top20": 96
+      },
+      "penalty_ai": {
+        "top1": 61,
+        "top5": 96,
+        "top20": 96
+      },
+      "merged_ai_lost5_vs_baseline_ai": 0,
+      "penalty_ai_lost5_vs_baseline_ai": 0,
+      "merged_ai_lost5_vs_original": 0,
+      "penalty_ai_lost5_vs_original": 0,
+      "baseline_ai_top1_changed": 2,
+      "merged_ai_top1_changed": 107,
+      "penalty_ai_top1_changed": 104
+    },
+    "empty/dev/repeat": {
+      "n": 136,
+      "baseline": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "baseline_ai": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged_ai": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "penalty_ai": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged_ai_lost5_vs_baseline_ai": 0,
+      "penalty_ai_lost5_vs_baseline_ai": 0,
+      "merged_ai_lost5_vs_original": 0,
+      "penalty_ai_lost5_vs_original": 0,
+      "baseline_ai_top1_changed": 8,
+      "merged_ai_top1_changed": 17,
+      "penalty_ai_top1_changed": 15
+    },
+    "empty/dev/transpose_boundary": {
+      "n": 137,
+      "baseline": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged": {
+        "top1": 0,
+        "top5": 105,
+        "top20": 105
+      },
+      "baseline_ai": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged_ai": {
+        "top1": 57,
+        "top5": 105,
+        "top20": 105
+      },
+      "penalty_ai": {
+        "top1": 55,
+        "top5": 105,
+        "top20": 105
+      },
+      "merged_ai_lost5_vs_baseline_ai": 0,
+      "penalty_ai_lost5_vs_baseline_ai": 0,
+      "merged_ai_lost5_vs_original": 0,
+      "penalty_ai_lost5_vs_original": 0,
+      "baseline_ai_top1_changed": 10,
+      "merged_ai_top1_changed": 83,
+      "penalty_ai_top1_changed": 71
+    },
+    "empty/dev/transpose_within": {
+      "n": 138,
+      "baseline": {
+        "top1": 28,
+        "top5": 48,
+        "top20": 54
+      },
+      "merged": {
+        "top1": 34,
+        "top5": 108,
+        "top20": 114
+      },
+      "baseline_ai": {
+        "top1": 28,
+        "top5": 47,
+        "top20": 54
+      },
+      "merged_ai": {
+        "top1": 61,
+        "top5": 106,
+        "top20": 114
+      },
+      "penalty_ai": {
+        "top1": 61,
+        "top5": 106,
+        "top20": 114
+      },
+      "merged_ai_lost5_vs_baseline_ai": 1,
+      "penalty_ai_lost5_vs_baseline_ai": 1,
+      "merged_ai_lost5_vs_original": 2,
+      "penalty_ai_lost5_vs_original": 2,
+      "baseline_ai_top1_changed": 14,
+      "merged_ai_top1_changed": 68,
+      "penalty_ai_top1_changed": 64
+    },
+    "empty/test/clean": {
+      "n": 128,
+      "baseline": {
+        "top1": 87,
+        "top5": 110,
+        "top20": 110
+      },
+      "merged": {
+        "top1": 87,
+        "top5": 90,
+        "top20": 110
+      },
+      "baseline_ai": {
+        "top1": 83,
+        "top5": 110,
+        "top20": 110
+      },
+      "merged_ai": {
+        "top1": 60,
+        "top5": 99,
+        "top20": 110
+      },
+      "penalty_ai": {
+        "top1": 66,
+        "top5": 105,
+        "top20": 110
+      },
+      "merged_ai_lost5_vs_baseline_ai": 11,
+      "penalty_ai_lost5_vs_baseline_ai": 5,
+      "merged_ai_lost5_vs_original": 11,
+      "penalty_ai_lost5_vs_original": 5,
+      "baseline_ai_top1_changed": 15,
+      "merged_ai_top1_changed": 45,
+      "penalty_ai_top1_changed": 39
+    },
+    "empty/test/missing": {
+      "n": 118,
+      "baseline": {
+        "top1": 11,
+        "top5": 18,
+        "top20": 19
+      },
+      "merged": {
+        "top1": 11,
+        "top5": 17,
+        "top20": 19
+      },
+      "baseline_ai": {
+        "top1": 11,
+        "top5": 18,
+        "top20": 19
+      },
+      "merged_ai": {
+        "top1": 11,
+        "top5": 18,
+        "top20": 19
+      },
+      "penalty_ai": {
+        "top1": 11,
+        "top5": 18,
+        "top20": 19
+      },
+      "merged_ai_lost5_vs_baseline_ai": 0,
+      "penalty_ai_lost5_vs_baseline_ai": 0,
+      "merged_ai_lost5_vs_original": 0,
+      "penalty_ai_lost5_vs_original": 0,
+      "baseline_ai_top1_changed": 10,
+      "merged_ai_top1_changed": 32,
+      "penalty_ai_top1_changed": 30
+    },
+    "empty/test/neighbor": {
+      "n": 128,
+      "baseline": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged": {
+        "top1": 3,
+        "top5": 100,
+        "top20": 100
+      },
+      "baseline_ai": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged_ai": {
+        "top1": 60,
+        "top5": 97,
+        "top20": 100
+      },
+      "penalty_ai": {
+        "top1": 59,
+        "top5": 97,
+        "top20": 100
+      },
+      "merged_ai_lost5_vs_baseline_ai": 0,
+      "penalty_ai_lost5_vs_baseline_ai": 0,
+      "merged_ai_lost5_vs_original": 0,
+      "penalty_ai_lost5_vs_original": 0,
+      "baseline_ai_top1_changed": 4,
+      "merged_ai_top1_changed": 96,
+      "penalty_ai_top1_changed": 94
+    },
+    "empty/test/repeat": {
+      "n": 128,
+      "baseline": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged": {
+        "top1": 0,
+        "top5": 1,
+        "top20": 1
+      },
+      "baseline_ai": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged_ai": {
+        "top1": 1,
+        "top5": 1,
+        "top20": 1
+      },
+      "penalty_ai": {
+        "top1": 1,
+        "top5": 1,
+        "top20": 1
+      },
+      "merged_ai_lost5_vs_baseline_ai": 0,
+      "penalty_ai_lost5_vs_baseline_ai": 0,
+      "merged_ai_lost5_vs_original": 0,
+      "penalty_ai_lost5_vs_original": 0,
+      "baseline_ai_top1_changed": 1,
+      "merged_ai_top1_changed": 6,
+      "penalty_ai_top1_changed": 6
+    },
+    "empty/test/transpose_boundary": {
+      "n": 128,
+      "baseline": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged": {
+        "top1": 0,
+        "top5": 105,
+        "top20": 105
+      },
+      "baseline_ai": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged_ai": {
+        "top1": 54,
+        "top5": 105,
+        "top20": 105
+      },
+      "penalty_ai": {
+        "top1": 52,
+        "top5": 105,
+        "top20": 105
+      },
+      "merged_ai_lost5_vs_baseline_ai": 0,
+      "penalty_ai_lost5_vs_baseline_ai": 0,
+      "merged_ai_lost5_vs_original": 0,
+      "penalty_ai_lost5_vs_original": 0,
+      "baseline_ai_top1_changed": 0,
+      "merged_ai_top1_changed": 79,
+      "penalty_ai_top1_changed": 76
+    },
+    "empty/test/transpose_within": {
+      "n": 128,
+      "baseline": {
+        "top1": 26,
+        "top5": 35,
+        "top20": 35
+      },
+      "merged": {
+        "top1": 37,
+        "top5": 108,
+        "top20": 108
+      },
+      "baseline_ai": {
+        "top1": 27,
+        "top5": 35,
+        "top20": 35
+      },
+      "merged_ai": {
+        "top1": 70,
+        "top5": 108,
+        "top20": 108
+      },
+      "penalty_ai": {
+        "top1": 71,
+        "top5": 108,
+        "top20": 108
+      },
+      "merged_ai_lost5_vs_baseline_ai": 0,
+      "penalty_ai_lost5_vs_baseline_ai": 0,
+      "merged_ai_lost5_vs_original": 0,
+      "penalty_ai_lost5_vs_original": 0,
+      "baseline_ai_top1_changed": 6,
+      "merged_ai_top1_changed": 72,
+      "penalty_ai_top1_changed": 71
+    },
+    "source_context/dev/clean": {
+      "n": 29,
+      "baseline": {
+        "top1": 23,
+        "top5": 29,
+        "top20": 29
+      },
+      "merged": {
+        "top1": 23,
+        "top5": 24,
+        "top20": 29
+      },
+      "baseline_ai": {
+        "top1": 27,
+        "top5": 29,
+        "top20": 29
+      },
+      "merged_ai": {
+        "top1": 24,
+        "top5": 29,
+        "top20": 29
+      },
+      "penalty_ai": {
+        "top1": 27,
+        "top5": 29,
+        "top20": 29
+      },
+      "merged_ai_lost5_vs_baseline_ai": 0,
+      "penalty_ai_lost5_vs_baseline_ai": 0,
+      "merged_ai_lost5_vs_original": 0,
+      "penalty_ai_lost5_vs_original": 0,
+      "baseline_ai_top1_changed": 6,
+      "merged_ai_top1_changed": 9,
+      "penalty_ai_top1_changed": 6
+    },
+    "source_context/dev/missing": {
+      "n": 27,
+      "baseline": {
+        "top1": 1,
+        "top5": 3,
+        "top20": 3
+      },
+      "merged": {
+        "top1": 1,
+        "top5": 1,
+        "top20": 3
+      },
+      "baseline_ai": {
+        "top1": 3,
+        "top5": 3,
+        "top20": 3
+      },
+      "merged_ai": {
+        "top1": 3,
+        "top5": 3,
+        "top20": 3
+      },
+      "penalty_ai": {
+        "top1": 3,
+        "top5": 3,
+        "top20": 3
+      },
+      "merged_ai_lost5_vs_baseline_ai": 0,
+      "penalty_ai_lost5_vs_baseline_ai": 0,
+      "merged_ai_lost5_vs_original": 0,
+      "penalty_ai_lost5_vs_original": 0,
+      "baseline_ai_top1_changed": 4,
+      "merged_ai_top1_changed": 13,
+      "penalty_ai_top1_changed": 12
+    },
+    "source_context/dev/neighbor": {
+      "n": 26,
+      "baseline": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged": {
+        "top1": 1,
+        "top5": 26,
+        "top20": 26
+      },
+      "baseline_ai": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged_ai": {
+        "top1": 21,
+        "top5": 26,
+        "top20": 26
+      },
+      "penalty_ai": {
+        "top1": 21,
+        "top5": 26,
+        "top20": 26
+      },
+      "merged_ai_lost5_vs_baseline_ai": 0,
+      "penalty_ai_lost5_vs_baseline_ai": 0,
+      "merged_ai_lost5_vs_original": 0,
+      "penalty_ai_lost5_vs_original": 0,
+      "baseline_ai_top1_changed": 0,
+      "merged_ai_top1_changed": 23,
+      "penalty_ai_top1_changed": 23
+    },
+    "source_context/dev/repeat": {
+      "n": 29,
+      "baseline": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "baseline_ai": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged_ai": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "penalty_ai": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged_ai_lost5_vs_baseline_ai": 0,
+      "penalty_ai_lost5_vs_baseline_ai": 0,
+      "merged_ai_lost5_vs_original": 0,
+      "penalty_ai_lost5_vs_original": 0,
+      "baseline_ai_top1_changed": 1,
+      "merged_ai_top1_changed": 5,
+      "penalty_ai_top1_changed": 5
+    },
+    "source_context/dev/transpose_boundary": {
+      "n": 29,
+      "baseline": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged": {
+        "top1": 0,
+        "top5": 28,
+        "top20": 28
+      },
+      "baseline_ai": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged_ai": {
+        "top1": 19,
+        "top5": 28,
+        "top20": 28
+      },
+      "penalty_ai": {
+        "top1": 19,
+        "top5": 28,
+        "top20": 28
+      },
+      "merged_ai_lost5_vs_baseline_ai": 0,
+      "penalty_ai_lost5_vs_baseline_ai": 0,
+      "merged_ai_lost5_vs_original": 0,
+      "penalty_ai_lost5_vs_original": 0,
+      "baseline_ai_top1_changed": 2,
+      "merged_ai_top1_changed": 19,
+      "penalty_ai_top1_changed": 19
+    },
+    "source_context/dev/transpose_within": {
+      "n": 29,
+      "baseline": {
+        "top1": 7,
+        "top5": 11,
+        "top20": 11
+      },
+      "merged": {
+        "top1": 9,
+        "top5": 29,
+        "top20": 29
+      },
+      "baseline_ai": {
+        "top1": 9,
+        "top5": 11,
+        "top20": 11
+      },
+      "merged_ai": {
+        "top1": 22,
+        "top5": 29,
+        "top20": 29
+      },
+      "penalty_ai": {
+        "top1": 22,
+        "top5": 29,
+        "top20": 29
+      },
+      "merged_ai_lost5_vs_baseline_ai": 0,
+      "penalty_ai_lost5_vs_baseline_ai": 0,
+      "merged_ai_lost5_vs_original": 0,
+      "penalty_ai_lost5_vs_original": 0,
+      "baseline_ai_top1_changed": 5,
+      "merged_ai_top1_changed": 18,
+      "penalty_ai_top1_changed": 18
+    },
+    "source_context/test/clean": {
+      "n": 19,
+      "baseline": {
+        "top1": 13,
+        "top5": 19,
+        "top20": 19
+      },
+      "merged": {
+        "top1": 13,
+        "top5": 14,
+        "top20": 19
+      },
+      "baseline_ai": {
+        "top1": 17,
+        "top5": 19,
+        "top20": 19
+      },
+      "merged_ai": {
+        "top1": 16,
+        "top5": 19,
+        "top20": 19
+      },
+      "penalty_ai": {
+        "top1": 17,
+        "top5": 19,
+        "top20": 19
+      },
+      "merged_ai_lost5_vs_baseline_ai": 0,
+      "penalty_ai_lost5_vs_baseline_ai": 0,
+      "merged_ai_lost5_vs_original": 0,
+      "penalty_ai_lost5_vs_original": 0,
+      "baseline_ai_top1_changed": 5,
+      "merged_ai_top1_changed": 7,
+      "penalty_ai_top1_changed": 5
+    },
+    "source_context/test/missing": {
+      "n": 17,
+      "baseline": {
+        "top1": 1,
+        "top5": 3,
+        "top20": 3
+      },
+      "merged": {
+        "top1": 1,
+        "top5": 3,
+        "top20": 3
+      },
+      "baseline_ai": {
+        "top1": 3,
+        "top5": 3,
+        "top20": 3
+      },
+      "merged_ai": {
+        "top1": 3,
+        "top5": 3,
+        "top20": 3
+      },
+      "penalty_ai": {
+        "top1": 3,
+        "top5": 3,
+        "top20": 3
+      },
+      "merged_ai_lost5_vs_baseline_ai": 0,
+      "penalty_ai_lost5_vs_baseline_ai": 0,
+      "merged_ai_lost5_vs_original": 0,
+      "penalty_ai_lost5_vs_original": 0,
+      "baseline_ai_top1_changed": 3,
+      "merged_ai_top1_changed": 6,
+      "penalty_ai_top1_changed": 6
+    },
+    "source_context/test/neighbor": {
+      "n": 19,
+      "baseline": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged": {
+        "top1": 1,
+        "top5": 18,
+        "top20": 18
+      },
+      "baseline_ai": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged_ai": {
+        "top1": 14,
+        "top5": 18,
+        "top20": 18
+      },
+      "penalty_ai": {
+        "top1": 14,
+        "top5": 18,
+        "top20": 18
+      },
+      "merged_ai_lost5_vs_baseline_ai": 0,
+      "penalty_ai_lost5_vs_baseline_ai": 0,
+      "merged_ai_lost5_vs_original": 0,
+      "penalty_ai_lost5_vs_original": 0,
+      "baseline_ai_top1_changed": 2,
+      "merged_ai_top1_changed": 15,
+      "penalty_ai_top1_changed": 15
+    },
+    "source_context/test/repeat": {
+      "n": 19,
+      "baseline": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "baseline_ai": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged_ai": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "penalty_ai": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged_ai_lost5_vs_baseline_ai": 0,
+      "penalty_ai_lost5_vs_baseline_ai": 0,
+      "merged_ai_lost5_vs_original": 0,
+      "penalty_ai_lost5_vs_original": 0,
+      "baseline_ai_top1_changed": 0,
+      "merged_ai_top1_changed": 0,
+      "penalty_ai_top1_changed": 0
+    },
+    "source_context/test/transpose_boundary": {
+      "n": 19,
+      "baseline": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged": {
+        "top1": 0,
+        "top5": 19,
+        "top20": 19
+      },
+      "baseline_ai": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged_ai": {
+        "top1": 11,
+        "top5": 19,
+        "top20": 19
+      },
+      "penalty_ai": {
+        "top1": 11,
+        "top5": 19,
+        "top20": 19
+      },
+      "merged_ai_lost5_vs_baseline_ai": 0,
+      "penalty_ai_lost5_vs_baseline_ai": 0,
+      "merged_ai_lost5_vs_original": 0,
+      "penalty_ai_lost5_vs_original": 0,
+      "baseline_ai_top1_changed": 0,
+      "merged_ai_top1_changed": 11,
+      "penalty_ai_top1_changed": 11
+    },
+    "source_context/test/transpose_within": {
+      "n": 19,
+      "baseline": {
+        "top1": 4,
+        "top5": 6,
+        "top20": 6
+      },
+      "merged": {
+        "top1": 5,
+        "top5": 19,
+        "top20": 19
+      },
+      "baseline_ai": {
+        "top1": 6,
+        "top5": 6,
+        "top20": 6
+      },
+      "merged_ai": {
+        "top1": 14,
+        "top5": 19,
+        "top20": 19
+      },
+      "penalty_ai": {
+        "top1": 14,
+        "top5": 19,
+        "top20": 19
+      },
+      "merged_ai_lost5_vs_baseline_ai": 0,
+      "penalty_ai_lost5_vs_baseline_ai": 0,
+      "merged_ai_lost5_vs_original": 0,
+      "penalty_ai_lost5_vs_original": 0,
+      "baseline_ai_top1_changed": 3,
+      "merged_ai_top1_changed": 11,
+      "penalty_ai_top1_changed": 11
+    },
+    "stale_context/dev/clean": {
+      "n": 29,
+      "baseline": {
+        "top1": 23,
+        "top5": 29,
+        "top20": 29
+      },
+      "merged": {
+        "top1": 23,
+        "top5": 24,
+        "top20": 29
+      },
+      "baseline_ai": {
+        "top1": 22,
+        "top5": 29,
+        "top20": 29
+      },
+      "merged_ai": {
+        "top1": 14,
+        "top5": 28,
+        "top20": 29
+      },
+      "penalty_ai": {
+        "top1": 16,
+        "top5": 28,
+        "top20": 29
+      },
+      "merged_ai_lost5_vs_baseline_ai": 1,
+      "penalty_ai_lost5_vs_baseline_ai": 1,
+      "merged_ai_lost5_vs_original": 1,
+      "penalty_ai_lost5_vs_original": 1,
+      "baseline_ai_top1_changed": 6,
+      "merged_ai_top1_changed": 15,
+      "penalty_ai_top1_changed": 13
+    },
+    "stale_context/dev/missing": {
+      "n": 27,
+      "baseline": {
+        "top1": 1,
+        "top5": 3,
+        "top20": 3
+      },
+      "merged": {
+        "top1": 1,
+        "top5": 1,
+        "top20": 3
+      },
+      "baseline_ai": {
+        "top1": 0,
+        "top5": 3,
+        "top20": 3
+      },
+      "merged_ai": {
+        "top1": 0,
+        "top5": 1,
+        "top20": 3
+      },
+      "penalty_ai": {
+        "top1": 0,
+        "top5": 1,
+        "top20": 3
+      },
+      "merged_ai_lost5_vs_baseline_ai": 2,
+      "penalty_ai_lost5_vs_baseline_ai": 2,
+      "merged_ai_lost5_vs_original": 2,
+      "penalty_ai_lost5_vs_original": 2,
+      "baseline_ai_top1_changed": 3,
+      "merged_ai_top1_changed": 12,
+      "penalty_ai_top1_changed": 11
+    },
+    "stale_context/dev/neighbor": {
+      "n": 26,
+      "baseline": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged": {
+        "top1": 1,
+        "top5": 26,
+        "top20": 26
+      },
+      "baseline_ai": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged_ai": {
+        "top1": 16,
+        "top5": 26,
+        "top20": 26
+      },
+      "penalty_ai": {
+        "top1": 16,
+        "top5": 26,
+        "top20": 26
+      },
+      "merged_ai_lost5_vs_baseline_ai": 0,
+      "penalty_ai_lost5_vs_baseline_ai": 0,
+      "merged_ai_lost5_vs_original": 0,
+      "penalty_ai_lost5_vs_original": 0,
+      "baseline_ai_top1_changed": 1,
+      "merged_ai_top1_changed": 23,
+      "penalty_ai_top1_changed": 23
+    },
+    "stale_context/dev/repeat": {
+      "n": 29,
+      "baseline": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "baseline_ai": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged_ai": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "penalty_ai": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged_ai_lost5_vs_baseline_ai": 0,
+      "penalty_ai_lost5_vs_baseline_ai": 0,
+      "merged_ai_lost5_vs_original": 0,
+      "penalty_ai_lost5_vs_original": 0,
+      "baseline_ai_top1_changed": 1,
+      "merged_ai_top1_changed": 5,
+      "penalty_ai_top1_changed": 5
+    },
+    "stale_context/dev/transpose_boundary": {
+      "n": 29,
+      "baseline": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged": {
+        "top1": 0,
+        "top5": 28,
+        "top20": 28
+      },
+      "baseline_ai": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged_ai": {
+        "top1": 14,
+        "top5": 28,
+        "top20": 28
+      },
+      "penalty_ai": {
+        "top1": 14,
+        "top5": 28,
+        "top20": 28
+      },
+      "merged_ai_lost5_vs_baseline_ai": 0,
+      "penalty_ai_lost5_vs_baseline_ai": 0,
+      "merged_ai_lost5_vs_original": 0,
+      "penalty_ai_lost5_vs_original": 0,
+      "baseline_ai_top1_changed": 2,
+      "merged_ai_top1_changed": 18,
+      "penalty_ai_top1_changed": 18
+    },
+    "stale_context/dev/transpose_within": {
+      "n": 29,
+      "baseline": {
+        "top1": 7,
+        "top5": 11,
+        "top20": 11
+      },
+      "merged": {
+        "top1": 9,
+        "top5": 29,
+        "top20": 29
+      },
+      "baseline_ai": {
+        "top1": 6,
+        "top5": 11,
+        "top20": 11
+      },
+      "merged_ai": {
+        "top1": 16,
+        "top5": 29,
+        "top20": 29
+      },
+      "penalty_ai": {
+        "top1": 16,
+        "top5": 29,
+        "top20": 29
+      },
+      "merged_ai_lost5_vs_baseline_ai": 0,
+      "penalty_ai_lost5_vs_baseline_ai": 0,
+      "merged_ai_lost5_vs_original": 0,
+      "penalty_ai_lost5_vs_original": 0,
+      "baseline_ai_top1_changed": 6,
+      "merged_ai_top1_changed": 19,
+      "penalty_ai_top1_changed": 19
+    },
+    "stale_context/test/clean": {
+      "n": 19,
+      "baseline": {
+        "top1": 13,
+        "top5": 19,
+        "top20": 19
+      },
+      "merged": {
+        "top1": 13,
+        "top5": 14,
+        "top20": 19
+      },
+      "baseline_ai": {
+        "top1": 13,
+        "top5": 19,
+        "top20": 19
+      },
+      "merged_ai": {
+        "top1": 6,
+        "top5": 16,
+        "top20": 19
+      },
+      "penalty_ai": {
+        "top1": 8,
+        "top5": 18,
+        "top20": 19
+      },
+      "merged_ai_lost5_vs_baseline_ai": 3,
+      "penalty_ai_lost5_vs_baseline_ai": 1,
+      "merged_ai_lost5_vs_original": 3,
+      "penalty_ai_lost5_vs_original": 1,
+      "baseline_ai_top1_changed": 0,
+      "merged_ai_top1_changed": 10,
+      "penalty_ai_top1_changed": 6
+    },
+    "stale_context/test/missing": {
+      "n": 17,
+      "baseline": {
+        "top1": 1,
+        "top5": 3,
+        "top20": 3
+      },
+      "merged": {
+        "top1": 1,
+        "top5": 3,
+        "top20": 3
+      },
+      "baseline_ai": {
+        "top1": 0,
+        "top5": 3,
+        "top20": 3
+      },
+      "merged_ai": {
+        "top1": 0,
+        "top5": 3,
+        "top20": 3
+      },
+      "penalty_ai": {
+        "top1": 0,
+        "top5": 3,
+        "top20": 3
+      },
+      "merged_ai_lost5_vs_baseline_ai": 0,
+      "penalty_ai_lost5_vs_baseline_ai": 0,
+      "merged_ai_lost5_vs_original": 0,
+      "penalty_ai_lost5_vs_original": 0,
+      "baseline_ai_top1_changed": 4,
+      "merged_ai_top1_changed": 6,
+      "penalty_ai_top1_changed": 6
+    },
+    "stale_context/test/neighbor": {
+      "n": 19,
+      "baseline": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged": {
+        "top1": 1,
+        "top5": 18,
+        "top20": 18
+      },
+      "baseline_ai": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged_ai": {
+        "top1": 11,
+        "top5": 18,
+        "top20": 18
+      },
+      "penalty_ai": {
+        "top1": 11,
+        "top5": 16,
+        "top20": 18
+      },
+      "merged_ai_lost5_vs_baseline_ai": 0,
+      "penalty_ai_lost5_vs_baseline_ai": 0,
+      "merged_ai_lost5_vs_original": 0,
+      "penalty_ai_lost5_vs_original": 0,
+      "baseline_ai_top1_changed": 2,
+      "merged_ai_top1_changed": 16,
+      "penalty_ai_top1_changed": 16
+    },
+    "stale_context/test/repeat": {
+      "n": 19,
+      "baseline": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "baseline_ai": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged_ai": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "penalty_ai": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged_ai_lost5_vs_baseline_ai": 0,
+      "penalty_ai_lost5_vs_baseline_ai": 0,
+      "merged_ai_lost5_vs_original": 0,
+      "penalty_ai_lost5_vs_original": 0,
+      "baseline_ai_top1_changed": 0,
+      "merged_ai_top1_changed": 0,
+      "penalty_ai_top1_changed": 0
+    },
+    "stale_context/test/transpose_boundary": {
+      "n": 19,
+      "baseline": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged": {
+        "top1": 0,
+        "top5": 19,
+        "top20": 19
+      },
+      "baseline_ai": {
+        "top1": 0,
+        "top5": 0,
+        "top20": 0
+      },
+      "merged_ai": {
+        "top1": 9,
+        "top5": 19,
+        "top20": 19
+      },
+      "penalty_ai": {
+        "top1": 9,
+        "top5": 19,
+        "top20": 19
+      },
+      "merged_ai_lost5_vs_baseline_ai": 0,
+      "penalty_ai_lost5_vs_baseline_ai": 0,
+      "merged_ai_lost5_vs_original": 0,
+      "penalty_ai_lost5_vs_original": 0,
+      "baseline_ai_top1_changed": 0,
+      "merged_ai_top1_changed": 11,
+      "penalty_ai_top1_changed": 11
+    },
+    "stale_context/test/transpose_within": {
+      "n": 19,
+      "baseline": {
+        "top1": 4,
+        "top5": 6,
+        "top20": 6
+      },
+      "merged": {
+        "top1": 5,
+        "top5": 19,
+        "top20": 19
+      },
+      "baseline_ai": {
+        "top1": 4,
+        "top5": 6,
+        "top20": 6
+      },
+      "merged_ai": {
+        "top1": 10,
+        "top5": 19,
+        "top20": 19
+      },
+      "penalty_ai": {
+        "top1": 10,
+        "top5": 19,
+        "top20": 19
+      },
+      "merged_ai_lost5_vs_baseline_ai": 0,
+      "penalty_ai_lost5_vs_baseline_ai": 0,
+      "merged_ai_lost5_vs_original": 0,
+      "penalty_ai_lost5_vs_original": 0,
+      "baseline_ai_top1_changed": 2,
+      "merged_ai_top1_changed": 10,
+      "penalty_ai_top1_changed": 10
+    }
+  },
+  "rows": 2130,
+  "timings": {
+    "empty/baseline_score": {
+      "n": 1568,
+      "ns": {
+        "max": 31231333,
+        "p50": 5699625,
+        "p95": 7105583,
+        "p99": 8892209,
+        "p999": 23452583
+      },
+      "over16ms": 6
+    },
+    "empty/merged_score": {
+      "n": 1568,
+      "ns": {
+        "max": 23615875,
+        "p50": 5897583,
+        "p95": 7790291,
+        "p99": 8906458,
+        "p999": 23432000
+      },
+      "over16ms": 4
+    },
+    "empty/penalty_score": {
+      "n": 1568,
+      "ns": {
+        "max": 28957167,
+        "p50": 5592500,
+        "p95": 7388708,
+        "p99": 8417459,
+        "p999": 23702625
+      },
+      "over16ms": 5
+    },
+    "empty/prefill": {
+      "n": 1568,
+      "ns": {
+        "max": 7286542,
+        "p50": 458,
+        "p95": 1583,
+        "p99": 7791,
+        "p999": 14583
+      },
+      "over16ms": 0
+    },
+    "source_context/baseline_score": {
+      "n": 281,
+      "ns": {
+        "max": 20264833,
+        "p50": 5664292,
+        "p95": 7540375,
+        "p99": 13993375,
+        "p999": 20264833
+      },
+      "over16ms": 2
+    },
+    "source_context/merged_score": {
+      "n": 281,
+      "ns": {
+        "max": 18720750,
+        "p50": 6099625,
+        "p95": 7979416,
+        "p99": 9335667,
+        "p999": 18720750
+      },
+      "over16ms": 1
+    },
+    "source_context/penalty_score": {
+      "n": 281,
+      "ns": {
+        "max": 18558875,
+        "p50": 5680583,
+        "p95": 7383000,
+        "p99": 11053458,
+        "p999": 18558875
+      },
+      "over16ms": 1
+    },
+    "source_context/prefill": {
+      "n": 281,
+      "ns": {
+        "max": 17333250,
+        "p50": 6875,
+        "p95": 8299834,
+        "p99": 15835833,
+        "p999": 17333250
+      },
+      "over16ms": 2
+    },
+    "stale_context/baseline_score": {
+      "n": 281,
+      "ns": {
+        "max": 18989250,
+        "p50": 5485958,
+        "p95": 7245208,
+        "p99": 9278583,
+        "p999": 18989250
+      },
+      "over16ms": 1
+    },
+    "stale_context/merged_score": {
+      "n": 281,
+      "ns": {
+        "max": 19648167,
+        "p50": 5997500,
+        "p95": 8069542,
+        "p99": 18664875,
+        "p999": 19648167
+      },
+      "over16ms": 3
+    },
+    "stale_context/penalty_score": {
+      "n": 281,
+      "ns": {
+        "max": 19387250,
+        "p50": 5673625,
+        "p95": 7569292,
+        "p99": 14507458,
+        "p999": 19387250
+      },
+      "over16ms": 2
+    },
+    "stale_context/prefill": {
+      "n": 281,
+      "ns": {
+        "max": 8139750,
+        "p50": 4333,
+        "p95": 10917,
+        "p99": 21542,
+        "p999": 8139750
+      },
+      "over16ms": 0
+    }
+  },
+  "warning": "Scores are offline unconstrained by the 16ms hold. Latency excludes IPC/policy integration; actual late replies would fall back. A changed top1 is not necessarily incorrect with ambiguous homophones."
+}

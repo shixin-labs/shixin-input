@@ -1,0 +1,256 @@
+[1/26] Building CXX object src/CMakeFiles/rime.dir/rime/dict/dict_module.cc.o
+[2/26] Building CXX object src/CMakeFiles/rime.dir/rime/dict/dictionary.cc.o
+[3/26] Building CXX object src/CMakeFiles/rime.dir/rime/dict/dict_compiler.cc.o
+[4/26] Building CXX object src/CMakeFiles/rime.dir/rime/dict/table.cc.o
+[5/26] Building CXX object src/CMakeFiles/rime.dir/rime/dict/entry_collector.cc.o
+[6/26] Building CXX object src/CMakeFiles/rime.dir/rime/dict/user_dictionary.cc.o
+[7/26] Building CXX object src/CMakeFiles/rime.dir/rime/gear/gears_module.cc.o
+In file included from /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/gear/gears_module.cc:13:
+In file included from /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/gear/charset_filter.h:12:
+In file included from /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/filter.h:11:
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:99:17: warning: 'text' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   99 |   const string& text() const { return text_.empty() ? item_->text() : text_; }
+      |                 ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:35:25: note: overridden virtual function is here
+   35 |   virtual const string& text() const = 0;
+      |                         ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:100:10: warning: 'comment' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  100 |   string comment() const {
+      |          ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:37:18: note: overridden virtual function is here
+   37 |   virtual string comment() const { return string(); }
+      |                  ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:103:10: warning: 'preedit' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  103 |   string preedit() const { return item_->preedit(); }
+      |          ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:39:18: note: overridden virtual function is here
+   39 |   virtual string preedit() const { return string(); }
+      |                  ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:128:17: warning: 'text' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  128 |   const string& text() const {
+      |                 ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:35:25: note: overridden virtual function is here
+   35 |   virtual const string& text() const = 0;
+      |                         ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:131:10: warning: 'comment' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  131 |   string comment() const {
+      |          ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:37:18: note: overridden virtual function is here
+   37 |   virtual string comment() const { return string(); }
+      |                  ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:135:10: warning: 'preedit' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  135 |   string preedit() const {
+      |          ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:39:18: note: overridden virtual function is here
+   39 |   virtual string preedit() const { return string(); }
+      |                  ^
+6 warnings generated.
+[8/26] Building CXX object src/CMakeFiles/rime.dir/rime/gear/reverse_lookup_translator.cc.o
+In file included from /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/gear/reverse_lookup_translator.cc:8:
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:99:17: warning: 'text' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   99 |   const string& text() const { return text_.empty() ? item_->text() : text_; }
+      |                 ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:35:25: note: overridden virtual function is here
+   35 |   virtual const string& text() const = 0;
+      |                         ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:100:10: warning: 'comment' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  100 |   string comment() const {
+      |          ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:37:18: note: overridden virtual function is here
+   37 |   virtual string comment() const { return string(); }
+      |                  ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:103:10: warning: 'preedit' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  103 |   string preedit() const { return item_->preedit(); }
+      |          ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:39:18: note: overridden virtual function is here
+   39 |   virtual string preedit() const { return string(); }
+      |                  ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:128:17: warning: 'text' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  128 |   const string& text() const {
+      |                 ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:35:25: note: overridden virtual function is here
+   35 |   virtual const string& text() const = 0;
+      |                         ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:131:10: warning: 'comment' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  131 |   string comment() const {
+      |          ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:37:18: note: overridden virtual function is here
+   37 |   virtual string comment() const { return string(); }
+      |                  ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:135:10: warning: 'preedit' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  135 |   string preedit() const {
+      |          ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:39:18: note: overridden virtual function is here
+   39 |   virtual string preedit() const { return string(); }
+      |                  ^
+6 warnings generated.
+[9/26] Building CXX object src/CMakeFiles/rime.dir/rime/gear/memory.cc.o
+In file included from /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/gear/memory.cc:7:
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:99:17: warning: 'text' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   99 |   const string& text() const { return text_.empty() ? item_->text() : text_; }
+      |                 ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:35:25: note: overridden virtual function is here
+   35 |   virtual const string& text() const = 0;
+      |                         ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:100:10: warning: 'comment' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  100 |   string comment() const {
+      |          ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:37:18: note: overridden virtual function is here
+   37 |   virtual string comment() const { return string(); }
+      |                  ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:103:10: warning: 'preedit' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  103 |   string preedit() const { return item_->preedit(); }
+      |          ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:39:18: note: overridden virtual function is here
+   39 |   virtual string preedit() const { return string(); }
+      |                  ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:128:17: warning: 'text' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  128 |   const string& text() const {
+      |                 ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:35:25: note: overridden virtual function is here
+   35 |   virtual const string& text() const = 0;
+      |                         ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:131:10: warning: 'comment' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  131 |   string comment() const {
+      |          ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:37:18: note: overridden virtual function is here
+   37 |   virtual string comment() const { return string(); }
+      |                  ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:135:10: warning: 'preedit' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  135 |   string preedit() const {
+      |          ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:39:18: note: overridden virtual function is here
+   39 |   virtual string preedit() const { return string(); }
+      |                  ^
+6 warnings generated.
+[10/26] Building CXX object src/CMakeFiles/rime.dir/rime/lever/deployment_tasks.cc.o
+[11/26] Building CXX object tools/CMakeFiles/rime_console.dir/rime_console.cc.o
+In file included from /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/tools/rime_console.cc:9:
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:99:17: warning: 'text' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   99 |   const string& text() const { return text_.empty() ? item_->text() : text_; }
+      |                 ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:35:25: note: overridden virtual function is here
+   35 |   virtual const string& text() const = 0;
+      |                         ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:100:10: warning: 'comment' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  100 |   string comment() const {
+      |          ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:37:18: note: overridden virtual function is here
+   37 |   virtual string comment() const { return string(); }
+      |                  ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:103:10: warning: 'preedit' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  103 |   string preedit() const { return item_->preedit(); }
+      |          ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:39:18: note: overridden virtual function is here
+   39 |   virtual string preedit() const { return string(); }
+      |                  ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:128:17: warning: 'text' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  128 |   const string& text() const {
+      |                 ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:35:25: note: overridden virtual function is here
+   35 |   virtual const string& text() const = 0;
+      |                         ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:131:10: warning: 'comment' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  131 |   string comment() const {
+      |          ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:37:18: note: overridden virtual function is here
+   37 |   virtual string comment() const { return string(); }
+      |                  ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:135:10: warning: 'preedit' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  135 |   string preedit() const {
+      |          ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:39:18: note: overridden virtual function is here
+   39 |   virtual string preedit() const { return string(); }
+      |                  ^
+6 warnings generated.
+[12/26] Building CXX object src/CMakeFiles/rime.dir/rime/gear/table_translator.cc.o
+In file included from /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/gear/table_translator.cc:11:
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:99:17: warning: 'text' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   99 |   const string& text() const { return text_.empty() ? item_->text() : text_; }
+      |                 ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:35:25: note: overridden virtual function is here
+   35 |   virtual const string& text() const = 0;
+      |                         ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:100:10: warning: 'comment' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  100 |   string comment() const {
+      |          ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:37:18: note: overridden virtual function is here
+   37 |   virtual string comment() const { return string(); }
+      |                  ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:103:10: warning: 'preedit' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  103 |   string preedit() const { return item_->preedit(); }
+      |          ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:39:18: note: overridden virtual function is here
+   39 |   virtual string preedit() const { return string(); }
+      |                  ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:128:17: warning: 'text' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  128 |   const string& text() const {
+      |                 ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:35:25: note: overridden virtual function is here
+   35 |   virtual const string& text() const = 0;
+      |                         ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:131:10: warning: 'comment' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  131 |   string comment() const {
+      |          ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:37:18: note: overridden virtual function is here
+   37 |   virtual string comment() const { return string(); }
+      |                  ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:135:10: warning: 'preedit' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  135 |   string preedit() const {
+      |          ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:39:18: note: overridden virtual function is here
+   39 |   virtual string preedit() const { return string(); }
+      |                  ^
+6 warnings generated.
+[13/26] Building CXX object tools/CMakeFiles/rime_table_decompiler.dir/rime_table_decompiler.cc.o
+[14/26] Building CXX object src/CMakeFiles/rime.dir/rime/gear/script_translator.cc.o
+In file included from /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/gear/script_translator.cc:17:
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:99:17: warning: 'text' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   99 |   const string& text() const { return text_.empty() ? item_->text() : text_; }
+      |                 ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:35:25: note: overridden virtual function is here
+   35 |   virtual const string& text() const = 0;
+      |                         ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:100:10: warning: 'comment' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  100 |   string comment() const {
+      |          ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:37:18: note: overridden virtual function is here
+   37 |   virtual string comment() const { return string(); }
+      |                  ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:103:10: warning: 'preedit' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  103 |   string preedit() const { return item_->preedit(); }
+      |          ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:39:18: note: overridden virtual function is here
+   39 |   virtual string preedit() const { return string(); }
+      |                  ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:128:17: warning: 'text' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  128 |   const string& text() const {
+      |                 ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:35:25: note: overridden virtual function is here
+   35 |   virtual const string& text() const = 0;
+      |                         ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:131:10: warning: 'comment' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  131 |   string comment() const {
+      |          ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:37:18: note: overridden virtual function is here
+   37 |   virtual string comment() const { return string(); }
+      |                  ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:135:10: warning: 'preedit' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+  135 |   string preedit() const {
+      |          ^
+/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/src/src/rime/candidate.h:39:18: note: overridden virtual function is here
+   39 |   virtual string preedit() const { return string(); }
+      |                  ^
+6 warnings generated.
+[15/26] Linking CXX shared library lib/librime.1.17.0.dylib
+[16/26] Creating library symlink lib/librime.1.dylib lib/librime.dylib
+[17/26] Linking CXX executable bin/rime_console
+[18/26] Linking CXX executable bin/rime_deployer
+[19/26] Linking CXX executable bin/rime_api_console
+[20/26] Linking CXX executable bin/rime_patch
+[21/26] Linking CXX executable bin/rime_dict_manager
+[22/26] Linking CXX executable bin/rime_table_decompiler
+[23/26] Building CXX object test/CMakeFiles/rime_test.dir/dict_compiler_test.cc.o
+[24/26] Building CXX object test/CMakeFiles/rime_test.dir/dictionary_test.cc.o
+[25/26] Building CXX object test/CMakeFiles/rime_test.dir/table_test.cc.o
+[26/26] Linking CXX executable test/rime_test

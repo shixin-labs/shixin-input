@@ -1,0 +1,5 @@
+=== RUN   TestTypoNativeSpikeResidentMemory
+2026-11-06 07:04:58.586 engine ready in 185ms: librime 1.17.0, modules [default shixin], schemas [rime_ice_warm], 7 policies
+    typo_spike_test.go:361: variant=protected compositions=1500 sampled_rss_bytes=[47742976 65748992 65748992 65765376 65765376 65765376 65765376 65765376 65765376 65765376 65765376]
+--- PASS: TestTypoNativeSpikeResidentMemory (4.35s)
+PASS

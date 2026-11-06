@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "builder": "shixin-typo-mirror-v1",
+  "builder_sha256": "1a5d31acbdd1c89a8c0a7d6aeb0357d981fe226b0e7265a6f76a94eda89c63a2",
+  "files": {
+    "initial": {
+      "path": "/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/verified-mirror-v1/rime_ice.table.bin.initial3",
+      "sha256": "6e53a35f093750fe8e6d521f3355c8d67dc4b1de61e22af6f7ef2d1c27d80b3c",
+      "bytes": 1309492
+    },
+    "mirror": {
+      "path": "/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/verified-mirror-v1/rime_ice.table.bin.mirror3",
+      "sha256": "8b687c18dd89ee1365d774802a6654809685a8889d001ca00d6e1751dd5c8b52",
+      "bytes": 2012642
+    },
+    "prism": {
+      "path": "/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/verified-mirror-v1/rime_ice.prism.bin",
+      "sha256": "b863f7c6989ba87cb3361ff6c3277edceb767b7fcbfff0ea84a17ed3cd13a908",
+      "bytes": 40032
+    },
+    "table": {
+      "path": "/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/verified-mirror-v1/rime_ice.table.bin",
+      "sha256": "c72cf853efcfa4370bd003d7bbd4e327dc9b5e46687ea24a4e32be4f412fef17",
+      "bytes": 60656260
+    }
+  }
+}

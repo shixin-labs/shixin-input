@@ -1,0 +1,39 @@
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from RepackTable
+[ RUN      ] RepackTable.PreserveAllEntriesAndCodes
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I20261104 10:42:54.470099 0x1f219a1c0 table.cc:353] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.table.bin
+I20261104 10:42:54.474051 0x1f219a1c0 mapped_file.cc:59] creating file '/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/repacked-v1.table.bin'.
+I20261104 10:42:54.474179 0x1f219a1c0 mapped_file.cc:70] opening file for read/write access.
+I20261104 10:42:54.740399 0x1f219a1c0 table.cc:399] saving table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/repacked-v1.table.bin
+I20261104 10:42:54.740431 0x1f219a1c0 mapped_file.cc:118] shrinking file to fit data size. capacity: 121312520
+I20261104 10:42:54.740435 0x1f219a1c0 mapped_file.cc:129] resize file to: 60656260
+I20261104 10:42:54.812815 0x1f219a1c0 table.cc:353] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/repacked-v1.table.bin
+REPACK_LAYOUT index_end_bytes=17127976 string_bytes=7359696 output_bytes=60656260 entry_lists=1049439 tail_lists=651817
+REPACK_VERIFIED short_entries=609764 long_entries=1276287 extra_code_syllables=2065654 bytes=60656260
+[       OK ] RepackTable.PreserveAllEntriesAndCodes (370 ms)
+[----------] 1 test from RepackTable (370 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (370 ms total)
+[  PASSED  ] 1 test.
+        0.49 real         0.05 user         0.05 sys
+           200982528  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+                8698  page reclaims
+                7464  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                 234  voluntary context switches
+                2114  involuntary context switches
+           985121341  instructions retired
+           436735371  cycles elapsed
+            78021136  peak memory footprint

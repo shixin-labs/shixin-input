@@ -1,0 +1,62 @@
+[
+  {
+    "kind": "clean",
+    "length_bucket": "2-3",
+    "n": 23,
+    "exhausted": 9,
+    "verified_hits": 1,
+    "baseline_recall": 7,
+    "pool_recall": 7,
+    "penalty_top5": 0
+  },
+  {
+    "kind": "clean",
+    "length_bucket": "4+",
+    "n": 11,
+    "exhausted": 10,
+    "verified_hits": 1,
+    "baseline_recall": 9,
+    "pool_recall": 9,
+    "penalty_top5": 6
+  },
+  {
+    "kind": "neighbor",
+    "length_bucket": "2-3",
+    "n": 24,
+    "exhausted": 11,
+    "verified_hits": 0,
+    "baseline_recall": 0,
+    "pool_recall": 0,
+    "penalty_top5": 0
+  },
+  {
+    "kind": "neighbor",
+    "length_bucket": "4+",
+    "n": 11,
+    "exhausted": 8,
+    "verified_hits": 3,
+    "baseline_recall": 0,
+    "pool_recall": 3,
+    "penalty_top5": 2
+  },
+  {
+    "kind": "swap",
+    "length_bucket": "2-3",
+    "n": 22,
+    "exhausted": 9,
+    "verified_hits": 0,
+    "baseline_recall": 0,
+    "pool_recall": 0,
+    "penalty_top5": 0
+  },
+  {
+    "kind": "swap",
+    "length_bucket": "4+",
+    "n": 11,
+    "exhausted": 11,
+    "verified_hits": 0,
+    "baseline_recall": 0,
+    "pool_recall": 0,
+    "penalty_top5": 0
+  }
+]

@@ -1,0 +1,33 @@
+{
+  "counts": {
+    "dev_clean": 138,
+    "dev_missing": 127,
+    "dev_neighbor": 134,
+    "dev_repeat": 136,
+    "dev_transpose_boundary": 137,
+    "dev_transpose_within": 138,
+    "dictionary_rows": 1873509,
+    "dictionary_skipped": 984778,
+    "final_raw_codes": 1366,
+    "lexicon_codes": 785119,
+    "query_prefixes": 6653,
+    "test_clean": 128,
+    "test_missing": 118,
+    "test_neighbor": 128,
+    "test_repeat": 128,
+    "test_transpose_boundary": 128,
+    "test_transpose_within": 128
+  },
+  "families_per_split": 100,
+  "sampling": "SHA256(recovery-v1/family), lowest N per dev/test split; no tuning",
+  "source_sha256": {
+    "8105": "1f9a42b91dea6982baee2551981780271aeffd78876662b9c9f324e56b37b120",
+    "base": "0418d5103d8e40c8fff4b686a873ad03e9836cd0419ecae0b7e1e2526312dba0",
+    "dev": "1b6cd81efaec3b05183036a5118a6ac4aaae884a40e2675600d9b624b8ff23a1",
+    "ext": "8e49a0294c0139e63c815cc33a2d438cc144eb7889297d30cec899a368697c06",
+    "others": "c7475d773e619f61b88d47fa8ec789aba02aa0d1c98edaed309e53487b048b32",
+    "tencent": "352239dc875343cd49a04d7e79a9b73c5c95ad54e7fe1f8608b30c855a942904",
+    "test": "378677df71f490188b4a2787fff533e29ff93073d0d77924845e1d8b96439c6c"
+  },
+  "version": 1
+}

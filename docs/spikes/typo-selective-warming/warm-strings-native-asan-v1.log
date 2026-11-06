@@ -1,0 +1,28 @@
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+[==========] Running 3 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 3 tests from SpikeCanonical
+[ RUN      ] SpikeCanonical.StringWarmingPreservesTableAndClosedState
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I20261104 10:29:00.532105 0x1f219a1c0 table.cc:353] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.table.bin
+[       OK ] SpikeCanonical.StringWarmingPreservesTableAndClosedState (36 ms)
+[ RUN      ] SpikeCanonical.OwnerLifetimeAndMissingArtifact
+I20261104 10:29:00.568387 0x1f219a1c0 table.cc:353] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.table.bin
+I20261104 10:29:00.568662 0x1f219a1c0 table.cc:353] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/compact-top8-v1.table.bin
+I20261104 10:29:00.625719 0x1f219a1c0 table.cc:353] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.table.bin
+I20261104 10:29:00.625930 0x1f219a1c0 table.cc:353] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/compact-top8-v1.table.bin.missing
+E20261104 10:29:00.625974 0x1f219a1c0 mapped_file.cc:78] attempt to open non-existent file '/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/compact-top8-v1.table.bin.missing'.
+E20261104 10:29:00.625986 0x1f219a1c0 table.cc:359] Error opening table file '/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/compact-top8-v1.table.bin.missing'.
+[       OK ] SpikeCanonical.OwnerLifetimeAndMissingArtifact (57 ms)
+[ RUN      ] SpikeCanonical.DictionaryChunksDecodeWithAuxiliaryOwner
+I20261104 10:29:00.626406 0x1f219a1c0 dictionary.cc:411] loading dictionary 'rime_ice'.
+I20261104 10:29:00.626437 0x1f219a1c0 table.cc:353] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.table.bin
+I20261104 10:29:00.626524 0x1f219a1c0 prism.cc:83] loading prism file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.prism.bin
+I20261104 10:29:00.626834 0x1f219a1c0 prism.cc:121] found double array image of size 2304.
+I20261104 10:29:00.626876 0x1f219a1c0 table.cc:353] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/compact-top8-v1.table.bin
+[       OK ] SpikeCanonical.DictionaryChunksDecodeWithAuxiliaryOwner (5 ms)
+[----------] 3 tests from SpikeCanonical (100 ms total)
+
+[----------] Global test environment tear-down
+[==========] 3 tests from 1 test suite ran. (100 ms total)
+[  PASSED  ] 3 tests.

@@ -1,0 +1,179 @@
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from SeparateStream
+[ RUN      ] SeparateStream.RealDictionaryOrdinaryPagesAndExplicitCommit
+raw=nihao candidates: 记号 你要 你报 必好 你搞 你还 密好 泥淖
+mode=0 nihao repeat=0 ordinary=29 corrections=8
+raw=nihao candidates: 记号 你要 你报 必好 你搞 你还 密好 泥淖
+mode=0 nihao repeat=1 ordinary=29 corrections=8
+raw=nihoa candidates: 你好 你报 你会啦 你很可爱 你还怕 泥淖 牛哦啊 拟好
+mode=0 nihoa repeat=0 ordinary=31 corrections=8
+raw=nihoa candidates: 你好 你报 你会啦 你很可爱 你还怕 泥淖 牛哦啊 拟好
+mode=0 nihoa repeat=1 ordinary=31 corrections=8
+diagnostic bytes=5 anchor=0 stage={evaluated:1,found:1,available:1,graph:1,stop:0,phase:5,work:32323,nodes:2045,chunks:2046} stage={evaluated:1,found:1,available:1,graph:1,stop:0,phase:5,work:28878,nodes:1653,chunks:1732}
+raw=niaho candidates: 你好 年哦 你受 你啊波 泥中 加厚 耐候 拟好
+mode=0 niaho repeat=0 ordinary=29 corrections=8
+diagnostic bytes=5 anchor=0 stage={evaluated:1,found:1,available:1,graph:1,stop:0,phase:5,work:32323,nodes:2045,chunks:2046} stage={evaluated:1,found:1,available:1,graph:1,stop:0,phase:5,work:28878,nodes:1653,chunks:1732}
+raw=niaho candidates: 你好 年哦 你受 你啊波 泥中 加厚 耐候 拟好
+mode=0 niaho repeat=1 ordinary=29 corrections=8
+raw=nihso candidates: 你好 你和我 你是 你受 你和哦 您是哦 扭送 棘手
+mode=0 nihso repeat=0 ordinary=28 corrections=8
+raw=nihso candidates: 你好 你和我 你是 你受 你和哦 您是哦 扭送 棘手
+mode=0 nihso repeat=1 ordinary=28 corrections=8
+raw=ni'hso candidates: 你好 你和我 你是 你受 你和哦 棘手 你很善良 你也是哦
+mode=0 ni'hso repeat=0 ordinary=28 corrections=8
+raw=ni'hso candidates: 你好 你和我 你是 你受 你和哦 棘手 你很善良 你也是哦
+mode=0 ni'hso repeat=1 ordinary=28 corrections=8
+raw=njh candidates: 你会 扭矩 怒火 基金会 比较好 诺基亚 你究竟 回家后
+mode=0 njh repeat=0 ordinary=100 corrections=8
+raw=njh candidates: 你会 扭矩 怒火 基金会 比较好 诺基亚 你究竟 回家后
+mode=0 njh repeat=1 ordinary=100 corrections=8
+raw=zhongguo candidates: 中火 中冓 终归 重活 重轨 重货 中贵 中国货
+mode=0 zhongguo repeat=0 ordinary=28 corrections=8
+raw=zhongguo candidates: 中火 中冓 终归 重活 重轨 重货 中贵 中国货
+mode=0 zhongguo repeat=1 ordinary=28 corrections=8
+raw=shijie candidates: 直接 视觉 舒解 髓结 是灭 实际上 是捏 十几度
+mode=0 shijie repeat=0 ordinary=100 corrections=8
+raw=shijie candidates: 直接 视觉 舒解 髓结 是灭 实际上 是捏 十几度
+mode=0 shijie repeat=1 ordinary=100 corrections=8
+raw=nh candidates:
+mode=0 nh repeat=0 ordinary=100 corrections=0
+raw=nh candidates:
+mode=0 nh repeat=1 ordinary=100 corrections=0
+raw=xgr candidates: 性格 三个人 吸引人 中国人 德国人 新规定 向别人 西方人
+mode=0 xgr repeat=0 ordinary=100 corrections=8
+raw=xgr candidates: 性格 三个人 吸引人 中国人 德国人 新规定 向别人 西方人
+mode=0 xgr repeat=1 ordinary=100 corrections=8
+raw=nihao candidates: 記號 你要 你報 必好 你搞 你還 密好 泥淖
+mode=1 nihao repeat=0 ordinary=29 corrections=8
+raw=nihao candidates: 記號 你要 你報 必好 你搞 你還 密好 泥淖
+mode=1 nihao repeat=1 ordinary=29 corrections=8
+raw=nihoa candidates: 你好 你報 你會啦 你很可愛 你還怕 泥淖 牛哦啊 擬好
+mode=1 nihoa repeat=0 ordinary=31 corrections=8
+raw=nihoa candidates: 你好 你報 你會啦 你很可愛 你還怕 泥淖 牛哦啊 擬好
+mode=1 nihoa repeat=1 ordinary=31 corrections=8
+diagnostic bytes=5 anchor=0 stage={evaluated:1,found:1,available:1,graph:1,stop:0,phase:5,work:32323,nodes:2045,chunks:2046} stage={evaluated:1,found:1,available:1,graph:1,stop:0,phase:5,work:28878,nodes:1653,chunks:1732}
+raw=niaho candidates: 你好 年哦 你受 你啊波 泥中 加厚 耐候 擬好
+mode=1 niaho repeat=0 ordinary=29 corrections=8
+diagnostic bytes=5 anchor=0 stage={evaluated:1,found:1,available:1,graph:1,stop:0,phase:5,work:32323,nodes:2045,chunks:2046} stage={evaluated:1,found:1,available:1,graph:1,stop:0,phase:5,work:28878,nodes:1653,chunks:1732}
+raw=niaho candidates: 你好 年哦 你受 你啊波 泥中 加厚 耐候 擬好
+mode=1 niaho repeat=1 ordinary=29 corrections=8
+raw=nihso candidates: 你好 你和我 你是 你受 你和哦 您是哦 扭送 棘手
+mode=1 nihso repeat=0 ordinary=28 corrections=8
+raw=nihso candidates: 你好 你和我 你是 你受 你和哦 您是哦 扭送 棘手
+mode=1 nihso repeat=1 ordinary=28 corrections=8
+raw=ni'hso candidates: 你好 你和我 你是 你受 你和哦 棘手 你很善良 你也是哦
+mode=1 ni'hso repeat=0 ordinary=28 corrections=8
+raw=ni'hso candidates: 你好 你和我 你是 你受 你和哦 棘手 你很善良 你也是哦
+mode=1 ni'hso repeat=1 ordinary=28 corrections=8
+raw=njh candidates: 你會 扭矩 怒火 基金會 比較好 諾基亞 你究竟 回家後
+mode=1 njh repeat=0 ordinary=100 corrections=8
+raw=njh candidates: 你會 扭矩 怒火 基金會 比較好 諾基亞 你究竟 回家後
+mode=1 njh repeat=1 ordinary=100 corrections=8
+raw=zhongguo candidates: 中火 中冓 終歸 重活 重軌 重貨 中貴 中國貨
+mode=1 zhongguo repeat=0 ordinary=30 corrections=8
+raw=zhongguo candidates: 中火 中冓 終歸 重活 重軌 重貨 中貴 中國貨
+mode=1 zhongguo repeat=1 ordinary=30 corrections=8
+raw=shijie candidates: 直接 視覺 舒解 髓結 是滅 實際上 是捏 十幾度
+mode=1 shijie repeat=0 ordinary=100 corrections=8
+raw=shijie candidates: 直接 視覺 舒解 髓結 是滅 實際上 是捏 十幾度
+mode=1 shijie repeat=1 ordinary=100 corrections=8
+raw=nh candidates:
+mode=1 nh repeat=0 ordinary=100 corrections=0
+raw=nh candidates:
+mode=1 nh repeat=1 ordinary=100 corrections=0
+raw=xgr candidates: 性格 三個人 吸引人 中國人 德國人 新規定 向別人 西方人
+mode=1 xgr repeat=0 ordinary=100 corrections=8
+raw=xgr candidates: 性格 三個人 吸引人 中國人 德國人 新規定 向別人 西方人
+mode=1 xgr repeat=1 ordinary=100 corrections=8
+raw=nihao candidates: 记号 你要 你报 必好 你搞 你还 密好 泥淖
+mode=2 nihao repeat=0 ordinary=30 corrections=8
+raw=nihao candidates: 记号 你要 你报 必好 你搞 你还 密好 泥淖
+mode=2 nihao repeat=1 ordinary=30 corrections=8
+raw=nihoa candidates: 你好 👋 你报 你会啦 你很可爱 你还怕 泥淖 牛哦啊
+mode=2 nihoa repeat=0 ordinary=32 corrections=8
+raw=nihoa candidates: 你好 👋 你报 你会啦 你很可爱 你还怕 泥淖 牛哦啊
+mode=2 nihoa repeat=1 ordinary=32 corrections=8
+diagnostic bytes=5 anchor=0 stage={evaluated:1,found:1,available:1,graph:1,stop:0,phase:5,work:32323,nodes:2045,chunks:2046} stage={evaluated:1,found:1,available:1,graph:1,stop:0,phase:5,work:28878,nodes:1653,chunks:1732}
+raw=niaho candidates: 你好 👋 年哦 你受 你啊波 泥中 加厚 耐候
+mode=2 niaho repeat=0 ordinary=29 corrections=8
+diagnostic bytes=5 anchor=0 stage={evaluated:1,found:1,available:1,graph:1,stop:0,phase:5,work:32323,nodes:2045,chunks:2046} stage={evaluated:1,found:1,available:1,graph:1,stop:0,phase:5,work:28878,nodes:1653,chunks:1732}
+raw=niaho candidates: 你好 👋 年哦 你受 你啊波 泥中 加厚 耐候
+mode=2 niaho repeat=1 ordinary=29 corrections=8
+raw=nihso candidates: 你好 👋 你和我 你是 你受 你和哦 您是哦 扭送
+mode=2 nihso repeat=0 ordinary=28 corrections=8
+raw=nihso candidates: 你好 👋 你和我 你是 你受 你和哦 您是哦 扭送
+mode=2 nihso repeat=1 ordinary=28 corrections=8
+raw=ni'hso candidates: 你好 👋 你和我 你是 你受 你和哦 棘手 你很善良
+mode=2 ni'hso repeat=0 ordinary=28 corrections=8
+raw=ni'hso candidates: 你好 👋 你和我 你是 你受 你和哦 棘手 你很善良
+mode=2 ni'hso repeat=1 ordinary=28 corrections=8
+raw=njh candidates: 你会 扭矩 怒火 基金会 比较好 诺基亚 你究竟 回家后
+mode=2 njh repeat=0 ordinary=100 corrections=8
+raw=njh candidates: 你会 扭矩 怒火 基金会 比较好 诺基亚 你究竟 回家后
+mode=2 njh repeat=1 ordinary=100 corrections=8
+raw=zhongguo candidates: 中火 中冓 终归 重活 重轨 重货 中贵 中国货
+mode=2 zhongguo repeat=0 ordinary=30 corrections=8
+raw=zhongguo candidates: 中火 中冓 终归 重活 重轨 重货 中贵 中国货
+mode=2 zhongguo repeat=1 ordinary=30 corrections=8
+raw=shijie candidates: 直接 视觉 舒解 髓结 是灭 实际上 是捏 十几度
+mode=2 shijie repeat=0 ordinary=100 corrections=8
+raw=shijie candidates: 直接 视觉 舒解 髓结 是灭 实际上 是捏 十几度
+mode=2 shijie repeat=1 ordinary=100 corrections=8
+raw=nh candidates:
+mode=2 nh repeat=0 ordinary=100 corrections=0
+raw=nh candidates:
+mode=2 nh repeat=1 ordinary=100 corrections=0
+raw=xgr candidates: 性格 三个人 众 㐺 吸引人 中国人 德国人 新规定
+mode=2 xgr repeat=0 ordinary=100 corrections=8
+raw=xgr candidates: 性格 三个人 众 㐺 吸引人 中国人 德国人 新规定
+mode=2 xgr repeat=1 ordinary=100 corrections=8
+raw=nihao candidates: 記號 你要 你報 必好 你搞 你還 密好 泥淖
+mode=3 nihao repeat=0 ordinary=30 corrections=8
+raw=nihao candidates: 記號 你要 你報 必好 你搞 你還 密好 泥淖
+mode=3 nihao repeat=1 ordinary=30 corrections=8
+raw=nihoa candidates: 你好 👋 你報 你會啦 你很可愛 你還怕 泥淖 牛哦啊
+mode=3 nihoa repeat=0 ordinary=32 corrections=8
+raw=nihoa candidates: 你好 👋 你報 你會啦 你很可愛 你還怕 泥淖 牛哦啊
+mode=3 nihoa repeat=1 ordinary=32 corrections=8
+diagnostic bytes=5 anchor=0 stage={evaluated:1,found:1,available:1,graph:1,stop:0,phase:5,work:32323,nodes:2045,chunks:2046} stage={evaluated:1,found:1,available:1,graph:1,stop:0,phase:5,work:28878,nodes:1653,chunks:1732}
+raw=niaho candidates: 你好 👋 年哦 你受 你啊波 泥中 加厚 耐候
+mode=3 niaho repeat=0 ordinary=29 corrections=8
+diagnostic bytes=5 anchor=0 stage={evaluated:1,found:1,available:1,graph:1,stop:0,phase:5,work:32323,nodes:2045,chunks:2046} stage={evaluated:1,found:1,available:1,graph:1,stop:0,phase:5,work:28878,nodes:1653,chunks:1732}
+raw=niaho candidates: 你好 👋 年哦 你受 你啊波 泥中 加厚 耐候
+mode=3 niaho repeat=1 ordinary=29 corrections=8
+raw=nihso candidates: 你好 👋 你和我 你是 你受 你和哦 您是哦 扭送
+mode=3 nihso repeat=0 ordinary=28 corrections=8
+raw=nihso candidates: 你好 👋 你和我 你是 你受 你和哦 您是哦 扭送
+mode=3 nihso repeat=1 ordinary=28 corrections=8
+raw=ni'hso candidates: 你好 👋 你和我 你是 你受 你和哦 棘手 你很善良
+mode=3 ni'hso repeat=0 ordinary=28 corrections=8
+raw=ni'hso candidates: 你好 👋 你和我 你是 你受 你和哦 棘手 你很善良
+mode=3 ni'hso repeat=1 ordinary=28 corrections=8
+raw=njh candidates: 你會 扭矩 怒火 基金會 比較好 諾基亞 你究竟 回家後
+mode=3 njh repeat=0 ordinary=100 corrections=8
+raw=njh candidates: 你會 扭矩 怒火 基金會 比較好 諾基亞 你究竟 回家後
+mode=3 njh repeat=1 ordinary=100 corrections=8
+raw=zhongguo candidates: 中火 中冓 終歸 重活 重軌 重貨 中貴 中國貨
+mode=3 zhongguo repeat=0 ordinary=32 corrections=8
+raw=zhongguo candidates: 中火 中冓 終歸 重活 重軌 重貨 中貴 中國貨
+mode=3 zhongguo repeat=1 ordinary=32 corrections=8
+raw=shijie candidates: 直接 視覺 舒解 髓結 是滅 實際上 是捏 十幾度
+mode=3 shijie repeat=0 ordinary=100 corrections=8
+raw=shijie candidates: 直接 視覺 舒解 髓結 是滅 實際上 是捏 十幾度
+mode=3 shijie repeat=1 ordinary=100 corrections=8
+raw=nh candidates:
+mode=3 nh repeat=0 ordinary=100 corrections=0
+raw=nh candidates:
+mode=3 nh repeat=1 ordinary=100 corrections=0
+raw=xgr candidates: 性格 三個人 衆 㐺 吸引人 中國人 德國人 新規定
+mode=3 xgr repeat=0 ordinary=100 corrections=8
+raw=xgr candidates: 性格 三個人 衆 㐺 吸引人 中國人 德國人 新規定
+mode=3 xgr repeat=1 ordinary=100 corrections=8
+[       OK ] SeparateStream.RealDictionaryOrdinaryPagesAndExplicitCommit (929 ms)
+[----------] 1 test from SeparateStream (929 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (929 ms total)
+[  PASSED  ] 1 test.

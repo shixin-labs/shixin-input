@@ -1,0 +1,52 @@
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+[==========] Running 2 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 2 tests from CompactTable
+[ RUN      ] CompactTable.BuildAndVerifyCanonicalReadings
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I20261104 10:04:45.428148 0x1f219a1c0 table.cc:305] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.table.bin
+I20261104 10:04:45.930376 0x1f219a1c0 table.cc:373] building table.
+I20261104 10:04:45.930402 0x1f219a1c0 table.cc:374] num syllables: 440
+I20261104 10:04:45.930406 0x1f219a1c0 table.cc:375] num entries: 601322
+I20261104 10:04:45.930409 0x1f219a1c0 table.cc:376] estimated file size: 38502784
+I20261104 10:04:45.930412 0x1f219a1c0 mapped_file.cc:59] creating file '/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/compact-top8-v1.table.bin'.
+I20261104 10:04:45.930520 0x1f219a1c0 mapped_file.cc:70] opening file for read/write access.
+I20261104 10:04:45.930551 0x1f219a1c0 table.cc:382] creating metadata.
+I20261104 10:04:45.930558 0x1f219a1c0 table.cc:396] creating syllabary.
+I20261104 10:04:45.930572 0x1f219a1c0 table.cc:409] creating table index.
+I20261104 10:04:46.103437 0x1f219a1c0 table.cc:351] saving table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/compact-top8-v1.table.bin
+I20261104 10:04:46.103459 0x1f219a1c0 mapped_file.cc:118] shrinking file to fit data size. capacity: 38502784
+I20261104 10:04:46.103462 0x1f219a1c0 mapped_file.cc:129] resize file to: 15072644
+I20261104 10:04:46.113168 0x1f219a1c0 table.cc:305] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/compact-top8-v1.table.bin
+COMPACT_TABLE groups=487252 records=601322 verified=601322 bytes=15072644 string_table_bytes=1868560
+[       OK ] CompactTable.BuildAndVerifyCanonicalReadings (914 ms)
+[ RUN      ] CompactTable.FreshLoadAndWarm
+spikes/typo-recovery/native-graph/compact_table_test.cc:152: Skipped
+
+
+[  SKIPPED ] CompactTable.FreshLoadAndWarm (0 ms)
+[----------] 2 tests from CompactTable (914 ms total)
+
+[----------] Global test environment tear-down
+[==========] 2 tests from 1 test suite ran. (914 ms total)
+[  PASSED  ] 1 test.
+[  SKIPPED ] 1 test, listed below:
+[  SKIPPED ] CompactTable.FreshLoadAndWarm
+        3.65 real         0.57 user         0.09 sys
+           303529984  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+               15058  page reclaims
+                4586  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                  29  voluntary context switches
+                2496  involuntary context switches
+          6974640150  instructions retired
+          2580346978  cycles elapsed
+           227770968  peak memory footprint

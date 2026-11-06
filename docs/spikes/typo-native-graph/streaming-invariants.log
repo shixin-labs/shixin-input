@@ -1,0 +1,36 @@
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+Note: Google Test filter = SpikePrism.BudgetedLookupOnlyRetainsCompletedEntries:SpikePrism.SparseIntersectionPreservesCandidates:SpikePrism.StagesShareBudgetAndKeepInitialCorrections
+[==========] Running 3 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 3 tests from SpikePrism
+[ RUN      ] SpikePrism.SparseIntersectionPreservesCandidates
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I20261104 05:36:06.782430 0x1f219a1c0 dictionary.cc:401] loading dictionary 'rime_ice'.
+I20261104 05:36:06.783610 0x1f219a1c0 table.cc:264] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.table.bin
+I20261104 05:36:06.788257 0x1f219a1c0 prism.cc:83] loading prism file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.prism.bin
+I20261104 05:36:06.788613 0x1f219a1c0 prism.cc:121] found double array image of size 2304.
+EQUIVALENT njh entries=4830
+EQUIVALENT nihso entries=36
+EQUIVALENT changshicuowj entries=1593
+EQUIVALENT nihsozhongguo entries=39
+[       OK ] SpikePrism.SparseIntersectionPreservesCandidates (134 ms)
+[ RUN      ] SpikePrism.StagesShareBudgetAndKeepInitialCorrections
+I20261104 05:36:06.917140 0x1f219a1c0 prism.cc:83] loading prism file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.prism.bin
+I20261104 05:36:06.917222 0x1f219a1c0 prism.cc:121] found double array image of size 2304.
+[       OK ] SpikePrism.StagesShareBudgetAndKeepInitialCorrections (0 ms)
+[ RUN      ] SpikePrism.BudgetedLookupOnlyRetainsCompletedEntries
+I20261104 05:36:06.917305 0x1f219a1c0 dictionary.cc:401] loading dictionary 'rime_ice'.
+I20261104 05:36:06.917310 0x1f219a1c0 table.cc:264] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.table.bin
+I20261104 05:36:06.917368 0x1f219a1c0 prism.cc:83] loading prism file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.prism.bin
+I20261104 05:36:06.917400 0x1f219a1c0 prism.cc:121] found double array image of size 2304.
+PARTIAL cap=1 entries=0 full=5431
+PARTIAL cap=32 entries=93 full=5431
+PARTIAL cap=128 entries=685 full=5431
+PARTIAL cap=512 entries=2885 full=5431
+PARTIAL cap=2048 entries=3116 full=5431
+[       OK ] SpikePrism.BudgetedLookupOnlyRetainsCompletedEntries (67 ms)
+[----------] 3 tests from SpikePrism (202 ms total)
+
+[----------] Global test environment tear-down
+[==========] 3 tests from 1 test suite ran. (203 ms total)
+[  PASSED  ] 3 tests.

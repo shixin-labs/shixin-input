@@ -1,0 +1,29 @@
+=== RUN   TestTypoNativeSpikeEditing
+2026-11-04 06:44:26.470 engine ready in 357ms: librime 1.17.0, modules [default shixin], schemas [rime_ice_warm], 7 policies
+=== RUN   TestTypoNativeSpikeEditing/full_nihso
+=== RUN   TestTypoNativeSpikeEditing/full_nihoa
+=== RUN   TestTypoNativeSpikeEditing/full_njh
+=== RUN   TestTypoNativeSpikeEditing/full_xgr
+    typo_spike_test.go:105: corrected "中国人" unavailable: [香港人: 像个人: 向个人: 修改人: 西瓜瓤: 虚弱:纠错 →  虚荣:纠错 →  旭日:纠错 →  蓄热:纠错 →  新规定:纠错 →  新古典:纠错 →  香港日: 西瓜肉: 相关人: 孝感人: 小工人: 肖狗人: 小官人: 小果然: 写稿人: 谢根荣: 新感染: 心肝肉: 新个人: 新工人: 欣贵人: 下个人: 学古人: 新贵人: 相关: 效果: 香港: 修改: 新股: 习惯: 性格: 性感: 选购: 星光: 血管: 悬挂: 西瓜: 想过: 峡谷: 像个: 想个: 小狗: 新高: 徐公: 戏骨:]
+=== RUN   TestTypoNativeSpikeEditing/full_zhr
+    typo_spike_test.go:105: corrected "中国人" unavailable: [转让: 主人: 众人: 正如: 注入: 这:纠错 →  着:纠错 →  者:纠错 →  坐会儿:纠错 →  最狠的:纠错 →  最后的:纠错 →  周日: 转入: 专人: 猪肉: 真人: 这让: 这人: 阵容: 证人: 重任: 装入: 准入: 找人: 终日: 骤然: 真如: 植入: 招人: 整日: 着人: 妆容: 整容: 主任: 灼热: 置入: 哲人: 诸如: 坠入: 沾染: 助人: 招惹: 侏儒: 峥嵘: 赘肉: 值日: 追认: 制热: 只让: 致人:]
+=== RUN   TestTypoNativeSpikeEditing/full_changshicuowj
+=== RUN   TestTypoNativeSpikeEditing/native_symbols
+=== RUN   TestTypoNativeSpikeEditing/backspace
+=== RUN   TestTypoNativeSpikeEditing/literal_return
+=== RUN   TestTypoNativeSpikeEditing/partial
+    typo_spike_test.go:163: partial commit="" preedit="你好zhong guo"
+--- FAIL: TestTypoNativeSpikeEditing (0.70s)
+    --- PASS: TestTypoNativeSpikeEditing/full_nihso (0.00s)
+    --- PASS: TestTypoNativeSpikeEditing/full_nihoa (0.00s)
+    --- PASS: TestTypoNativeSpikeEditing/full_njh (0.01s)
+    --- FAIL: TestTypoNativeSpikeEditing/full_xgr (0.01s)
+    --- FAIL: TestTypoNativeSpikeEditing/full_zhr (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/full_changshicuowj (0.06s)
+    --- PASS: TestTypoNativeSpikeEditing/native_symbols (0.03s)
+    --- PASS: TestTypoNativeSpikeEditing/backspace (0.03s)
+    --- PASS: TestTypoNativeSpikeEditing/literal_return (0.03s)
+    --- PASS: TestTypoNativeSpikeEditing/partial (0.05s)
+FAIL
+FAIL	shixin/tools/menu-capture	3.917s
+FAIL

@@ -1,0 +1,25 @@
+{
+  "hashes": {
+    "contexts.jsonl": "eb21f67eff5939642209d446f5124549b10e04178794ca3016118edcf548b074",
+    "menus.jsonl": "323b25ad652e7f3d4d11b2b36f070c451eb11fcfc265df3347c6d597c14b1180",
+    "model": "c6c2d5bb1eac4b7a7cffc60bfb8e794af26c3d5b6700d8d9b09296b13d1669e8",
+    "search.jsonl": "adb6e7d6bb12a70fdaedb714c05cf339ffc09d951571617040ebc9d9c89de50a",
+    "selected.jsonl": "4f93ca91ccd783efa42868c87e3c7655922cd715e345c2aa88c9376683045e5c"
+  },
+  "limitations": "Same captured bounded menus; not the exact native export ABI/pipeline. Source-derived contexts selected without model feedback; handmade fixtures excluded from aggregate metrics.",
+  "model": "ERNIE-4.5-0.3B-Base q8_0 (pinned shipped model)",
+  "movable_candidate_occurrences": 8145,
+  "partial_candidates": "frozen using EntryFixed; no shorter-prefix scoring",
+  "penalty": "fixed 2*edit_cost/10 log-score units; 1.6 for swap, 2.0 for substitution, applied once through Weight/Beta; not tuned",
+  "policy": {
+    "Beta": 0.3,
+    "Margin": 0.5,
+    "Guard": 0,
+    "Page": 5,
+    "Short": 3
+  },
+  "priors": "log(1+source frequency), first rime-ice source wins; missing text prior=0; NOT native Phrase::weight",
+  "rows": 2130,
+  "timing": "offline scorer calls and prefill measured separately; no IPC/16ms hold enforced; no app QoS priority adjustment",
+  "unknown_prior_occurrences": 937
+}

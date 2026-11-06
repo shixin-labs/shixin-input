@@ -1,0 +1,17 @@
+a3591d863f4ee7b1ac72a3251f13fdf737b8f5551919f727203ec488033cb42d  spikes/typo-recovery/native-graph/librime.patch
+a22275305c088b7de213e33c644de7158991c5d077bf7dec1273613d095dd059  spikes/typo-recovery/native-graph/canonical_native_test.cc
+c1b0fb431039a57df5068a7d04b013f7c150647c76d1dc9b5b2d69f798186183  spikes/typo-recovery/prepare-mirror/main.go
+dccee7fd311a1ce8c25028b6fcad92ba9d43d652b703dfdfb11b10c97a0f0ce6  spikes/typo-recovery/prepare-mirror/main_test.go
+3101df6080c158432478b1ddbb21df188c714bb1f087aca7bd37299577c40358  build/typo-recovery/native-graph/out/lib/librime.1.17.0.dylib
+974323f9c811fec747526f54374bb0ef3e7d0e54cc88d58bdc9ab702b7ee160b  docs/spikes/typo-canonical-cache/evaluation/codes.jsonl
+6ebecdf9b579307ae9044028295f6da9e3cda62dcb0b7327ab6bd4a9c7cb1523  docs/spikes/typo-canonical-cache/evaluation/library.sha256
+41d6ef93edd7744957c787f05432af072f109856cb48d2b97a6fca7408859561  docs/spikes/typo-canonical-cache/evaluation/mirror-comparison.json
+374e087b80470e7f6942cd89ec10e1c7a57e84f01f26b47032188df1932eb731  docs/spikes/typo-canonical-cache/evaluation/protected.jsonl
+94b366c7425526208e906630eae0df502688e41052a76d7c5880e0731cd63df5  docs/spikes/typo-canonical-cache/evaluation/protected.log
+443398a65a4c7c6eda4590e9c60e86f9ef0c88db9412461436519f540169aa28  docs/spikes/typo-canonical-cache/warm-original/warm-original-build.log
+d1016b6e345a8e409659902a7c44f906da4ec2c9d3f17b84876e5f97798121ca  docs/spikes/typo-canonical-cache/warm-original/warm-original-editing-v1.log
+d952936fbb244e834bdaae56573a9c7690828f6d565e7de246b74725b8073ab1  docs/spikes/typo-canonical-cache/warm-original/warm-original-memory-mirror-v1.log
+604935adc0b366b255989cd7de11b66220f49765b0bc0e1ec9fa87d1c5d691ee  docs/spikes/typo-canonical-cache/warm-original/warm-original-memory-ordinary-v1.log
+1b6b0c875589c2010282b2ea6e841239f9b398aead11836c6a72445bebd88bea  docs/spikes/typo-canonical-cache/warm-original/warm-original-memory-v1.log
+9b7d619a6b9660a8aec63cc50083be646dd4e2b93f92c85ac11d02e15bce01a2  docs/spikes/typo-canonical-cache/warm-original/warm-original-performance-v1.log
+a84d8a81edb7d0a611c9ebf3a26f97f4d70c54be4f7fc7fbd537403a14730b23  docs/spikes/typo-canonical-cache/canonical-memory-v1.log

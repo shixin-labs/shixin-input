@@ -1,0 +1,28 @@
+=== RUN   TestTypoNativeSpikeEditing
+2026-11-04 06:28:14.109 engine ready in 309ms: librime 1.17.0, modules [default shixin], schemas [rime_ice_warm], 7 policies
+=== RUN   TestTypoNativeSpikeEditing/full_nihso
+=== RUN   TestTypoNativeSpikeEditing/full_nihoa
+=== RUN   TestTypoNativeSpikeEditing/full_njh
+=== RUN   TestTypoNativeSpikeEditing/full_xgr
+=== RUN   TestTypoNativeSpikeEditing/full_zhr
+    typo_spike_test.go:105: corrected "中国人" unavailable: [转让: 主人: 众人: 正如: 注入: 这:纠错 →  着:纠错 →  者:纠错 →  折:纠错 →  综合体:纠错 →  综合题:纠错 →  周日: 转入: 专人: 猪肉: 真人: 这让: 这人: 阵容: 证人: 重任: 装入: 准入: 找人: 终日: 骤然: 真如: 植入: 招人: 整日: 着人: 妆容: 整容: 主任: 灼热: 置入: 哲人: 诸如: 坠入: 沾染: 助人: 招惹: 侏儒: 峥嵘: 赘肉: 值日: 追认: 制热: 只让: 致人:]
+=== RUN   TestTypoNativeSpikeEditing/full_changshicuowj
+=== RUN   TestTypoNativeSpikeEditing/native_symbols
+=== RUN   TestTypoNativeSpikeEditing/backspace
+=== RUN   TestTypoNativeSpikeEditing/literal_return
+=== RUN   TestTypoNativeSpikeEditing/partial
+    typo_spike_test.go:163: partial commit="" preedit="你好zhong guo"
+--- FAIL: TestTypoNativeSpikeEditing (0.64s)
+    --- PASS: TestTypoNativeSpikeEditing/full_nihso (0.00s)
+    --- PASS: TestTypoNativeSpikeEditing/full_nihoa (0.00s)
+    --- PASS: TestTypoNativeSpikeEditing/full_njh (0.00s)
+    --- PASS: TestTypoNativeSpikeEditing/full_xgr (0.01s)
+    --- FAIL: TestTypoNativeSpikeEditing/full_zhr (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/full_changshicuowj (0.06s)
+    --- PASS: TestTypoNativeSpikeEditing/native_symbols (0.03s)
+    --- PASS: TestTypoNativeSpikeEditing/backspace (0.03s)
+    --- PASS: TestTypoNativeSpikeEditing/literal_return (0.03s)
+    --- PASS: TestTypoNativeSpikeEditing/partial (0.05s)
+FAIL
+FAIL	shixin/tools/menu-capture	0.804s
+FAIL

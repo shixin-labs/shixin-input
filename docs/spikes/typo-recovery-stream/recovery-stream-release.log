@@ -1,0 +1,17 @@
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+[==========] Running 4 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 4 tests from RecoveryStream
+[ RUN      ] RecoveryStream.IndependentOrdinaryCursorAndNativeIdentity
+[       OK ] RecoveryStream.IndependentOrdinaryCursorAndNativeIdentity (0 ms)
+[ RUN      ] RecoveryStream.BoundedDedupAndPhaseQuotas
+[       OK ] RecoveryStream.BoundedDedupAndPhaseQuotas (0 ms)
+[ RUN      ] RecoveryStream.ScanCapsAndAbsentFirstStage
+[       OK ] RecoveryStream.ScanCapsAndAbsentFirstStage (0 ms)
+[ RUN      ] RecoveryStream.LegacyAdapterPreservesOrdinaryRelativeOrder
+[       OK ] RecoveryStream.LegacyAdapterPreservesOrdinaryRelativeOrder (0 ms)
+[----------] 4 tests from RecoveryStream (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 4 tests from 1 test suite ran. (0 ms total)
+[  PASSED  ] 4 tests.

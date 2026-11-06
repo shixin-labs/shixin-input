@@ -1,0 +1,22 @@
+=== RUN   TestTypoNativeSpikeEditing
+2026-11-04 04:54:54.100 engine ready in 191ms: librime 1.17.0, modules [default shixin], schemas [rime_ice_warm], 7 policies
+=== RUN   TestTypoNativeSpikeEditing/full_nihso
+=== RUN   TestTypoNativeSpikeEditing/full_nihoa
+=== RUN   TestTypoNativeSpikeEditing/full_njh
+    typo_spike_test.go:90: corrected "你好" unavailable: [你就会: 那句话: 那家伙: 农机化: 那就好: 农交会: 内角和: 闹饥荒: 南京话: 内交货: 你几号: 哪家好: 你计划: 拟计划: 闹剧荒: 南胶河: 南京好: 内卷化: 能激活: 能减缓: 能降火: 能教好: 能教会: 能结合: 能结婚: 能进化: 能净化: 南京红: 哪句话: 你讲话: 你将会: 你结婚: 脑计划: 年计划: 凝结核: 宁静海: 牛角号: 牛金花: 农机户: 南极海: 那家好: 女教皇: 女警花: 那就换: 农救会: 牛家黄: 你就: 那就: 扭矩: 年间:]
+=== RUN   TestTypoNativeSpikeEditing/full_changshicuowj
+=== RUN   TestTypoNativeSpikeEditing/backspace
+=== RUN   TestTypoNativeSpikeEditing/literal_return
+=== RUN   TestTypoNativeSpikeEditing/partial
+    typo_spike_test.go:134: partial commit="" preedit="你好zhong guo"
+--- FAIL: TestTypoNativeSpikeEditing (0.41s)
+    --- PASS: TestTypoNativeSpikeEditing/full_nihso (0.00s)
+    --- PASS: TestTypoNativeSpikeEditing/full_nihoa (0.00s)
+    --- FAIL: TestTypoNativeSpikeEditing/full_njh (0.01s)
+    --- PASS: TestTypoNativeSpikeEditing/full_changshicuowj (0.02s)
+    --- PASS: TestTypoNativeSpikeEditing/backspace (0.03s)
+    --- PASS: TestTypoNativeSpikeEditing/literal_return (0.03s)
+    --- PASS: TestTypoNativeSpikeEditing/partial (0.04s)
+FAIL
+FAIL	shixin/tools/menu-capture	3.599s
+FAIL

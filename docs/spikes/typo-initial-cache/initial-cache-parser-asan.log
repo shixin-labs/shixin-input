@@ -1,0 +1,25 @@
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from SubtreeBounds
+[ RUN      ] SubtreeBounds.ThreeInitialNeighborDiagnostic
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I20261104 08:30:54.341728 0x1f219a1c0 table.cc:288] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.table.bin
+BOUNDS syllables=440 two_prefixes=91335 three_prefixes=957664 three_entries=461449 float_bytes=367100 metadata_payload_bytes=383380 preprocessing_us=8920
+FIXED_WORKSPACE_BYTES 66432
+QUERY xgr states=245 probes=5579 peak_states=1915 first_us=285 warm_p50_us=114.25 warm_max_us=120.042 cap32768_complete=50/50 top=中国人,这个人,效果图,三个人,整个人,吸引人,德国人,四个人,
+QUERY zhr states=183 probes=6096 peak_states=2110 first_us=154 warm_p50_us=107.833 warm_max_us=120.333 cap32768_complete=50/50 top=中国人,这个人,收货人,中获得,智慧的,在很多,整个人,受害人,
+QUERY zgt states=170 probes=6311 peak_states=2032 first_us=136 warm_p50_us=103.667 warm_max_us=115.5 cap32768_complete=50/50 top=中国人,在不同,这个人,这一天,阿根廷,效果图,整个人,在各个,
+QUERY ngr states=152 probes=4035 peak_states=1354 first_us=189 warm_p50_us=72.834 warm_max_us=79.25 cap32768_complete=50/50 top=每个人,年月日,被告人,美国人,几个人,你跟他,你跟她,韩国人,
+QUERY zfr states=230 probes=6001 peak_states=1828 first_us=156 warm_p50_us=106.25 warm_max_us=115.292 cap32768_complete=50/50 top=主持人,中国人,这个人,责任人,自然人,丈夫的,整个人,在个人,
+QUERY zge states=126 probes=5442 peak_states=2015 first_us=108 warm_p50_us=86.25 warm_max_us=92 cap32768_complete=50/50 top=中国人,总公司,子公司,这个人,在国外,在公司,中国队,珍贵的,
+QUERY zgf states=147 probes=6026 peak_states=2027 first_us=108 warm_p50_us=95.208 warm_max_us=99.166 cap32768_complete=50/50 top=中国人,中关村,这个人,中国队,这部分,珍贵的,在规定,主办方,
+QUERY zvr states=186 probes=3556 peak_states=1096 first_us=84 warm_p50_us=67.625 warm_max_us=73.917 cap32768_complete=50/50 top=主持人,中国人,这个人,整个人,在别人,在个人,正常人,张国荣,
+ALPHABET_SWEEP codes=17576 complete=17576 exhausted=0 max_peak=2746 max_probes=9451 max_visited=1628 oracle_variants=6110291
+INITIAL_CACHE records=77447 payload_bytes=1309460 workspace_bytes=676 max_probes=144 all_codes_exact=17576
+[       OK ] SubtreeBounds.ThreeInitialNeighborDiagnostic (2046 ms)
+[----------] 1 test from SubtreeBounds (2046 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (2046 ms total)
+[  PASSED  ] 1 test.

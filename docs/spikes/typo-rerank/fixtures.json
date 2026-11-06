@@ -1,0 +1,74 @@
+[
+  {
+    "ai_page": [
+      "讨人",
+      "高人",
+      "告人",
+      "搞人",
+      "要人"
+    ],
+    "ai_rank": 1,
+    "baseline_rank": 2,
+    "context": "这个孩子很",
+    "merged_rank": 6,
+    "origin": "hand_authored_diagnostic_not_benchmark",
+    "penalty_ai_page": [
+      "讨人",
+      "高人",
+      "告人",
+      "搞人",
+      "要人"
+    ],
+    "penalty_ai_rank": 1,
+    "raw": "taoren",
+    "target": "讨人"
+  },
+  {
+    "ai_page": [
+      "讨人",
+      "高人",
+      "告人",
+      "搞人",
+      "要人"
+    ],
+    "ai_rank": 1,
+    "baseline_rank": 2,
+    "context": "他总爱挑别人的毛病，实在太",
+    "merged_rank": 6,
+    "origin": "hand_authored_diagnostic_not_benchmark",
+    "penalty_ai_page": [
+      "讨人",
+      "高人",
+      "告人",
+      "搞人",
+      "要人"
+    ],
+    "penalty_ai_rank": 1,
+    "raw": "taoren",
+    "target": "讨人"
+  },
+  {
+    "ai_page": [
+      "桃仁",
+      "高人",
+      "告人",
+      "搞人",
+      "要人"
+    ],
+    "ai_rank": 1,
+    "baseline_rank": 1,
+    "context": "医生在处方中写下了中药",
+    "merged_rank": 1,
+    "origin": "hand_authored_diagnostic_not_benchmark",
+    "penalty_ai_page": [
+      "桃仁",
+      "高人",
+      "告人",
+      "要人",
+      "讨人"
+    ],
+    "penalty_ai_rank": 1,
+    "raw": "taoren",
+    "target": "桃仁"
+  }
+]

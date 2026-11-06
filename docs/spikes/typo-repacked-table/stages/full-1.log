@@ -1,0 +1,23 @@
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+Note: Google Test filter = SpikeCacheStages.FirstAndRepeatedQueries
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from SpikeCacheStages
+[ RUN      ] SpikeCacheStages.FirstAndRepeatedQueries
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I20261104 10:53:57.892246 0x1f219a1c0 dictionary.cc:411] loading dictionary 'rime_ice'.
+I20261104 10:53:57.892450 0x1f219a1c0 table.cc:387] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/verified-repack-v1/rime_ice.table.bin
+I20261104 10:53:57.892508 0x1f219a1c0 prism.cc:83] loading prism file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/verified-repack-v1/rime_ice.prism.bin
+I20261104 10:53:57.892532 0x1f219a1c0 prism.cc:121] found double array image of size 2304.
+CACHE_STAGES raw=cnjw attempt=0 graph_us=22 lookup_us=112 lookup_minor_faults=5 lookup_major_faults=0 decode_us=34 decoded=64 text_bytes=192 graph_spellings=83 graph_work=96 lookup_work=2426 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=3
+CACHE_STAGES raw=cnjw attempt=1 graph_us=10 lookup_us=76 lookup_minor_faults=1 lookup_major_faults=0 decode_us=20 decoded=64 text_bytes=192 graph_spellings=83 graph_work=96 lookup_work=2426 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=3
+CACHE_STAGES raw=cnjw attempt=2 graph_us=9 lookup_us=72 lookup_minor_faults=3 lookup_major_faults=0 decode_us=18 decoded=64 text_bytes=192 graph_spellings=83 graph_work=96 lookup_work=2426 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=3
+CACHE_STAGES raw=cnjw attempt=3 graph_us=8 lookup_us=64 lookup_minor_faults=0 lookup_major_faults=0 decode_us=18 decoded=64 text_bytes=192 graph_spellings=83 graph_work=96 lookup_work=2426 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=3
+CACHE_STAGES raw=cnjw attempt=4 graph_us=7 lookup_us=61 lookup_minor_faults=0 lookup_major_faults=0 decode_us=18 decoded=64 text_bytes=192 graph_spellings=83 graph_work=96 lookup_work=2426 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=3
+CACHE_STAGES raw=cnjw attempt=5 graph_us=6 lookup_us=63 lookup_minor_faults=2 lookup_major_faults=0 decode_us=18 decoded=64 text_bytes=192 graph_spellings=83 graph_work=96 lookup_work=2426 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=3
+[       OK ] SpikeCacheStages.FirstAndRepeatedQueries (6 ms)
+[----------] 1 test from SpikeCacheStages (6 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (6 ms total)
+[  PASSED  ] 1 test.

@@ -1,0 +1,6 @@
+=== RUN   TestTypoNativeBridgeSpike
+    typo_bridge_spike_test.go:130: warm native snapshot read/decode p50=2µs p99=2.5µs max=9.208µs
+    typo_bridge_spike_test.go:168: purego native snapshot read/decode and stale selection: zero Go allocations with reused buffers
+--- PASS: TestTypoNativeBridgeSpike (0.17s)
+PASS
+ok  	shixin/internal/rime	3.376s

@@ -1,0 +1,36 @@
+=== RUN   TestPrivateSnapshotUsesVerifiedCopies
+--- PASS: TestPrivateSnapshotUsesVerifiedCopies (0.02s)
+=== RUN   TestMismatchRemovesOnlyNewSnapshot
+=== RUN   TestMismatchRemovesOnlyNewSnapshot/table
+=== RUN   TestMismatchRemovesOnlyNewSnapshot/prism
+=== RUN   TestMismatchRemovesOnlyNewSnapshot/initial
+=== RUN   TestMismatchRemovesOnlyNewSnapshot/mirror
+--- PASS: TestMismatchRemovesOnlyNewSnapshot (0.05s)
+    --- PASS: TestMismatchRemovesOnlyNewSnapshot/table (0.00s)
+    --- PASS: TestMismatchRemovesOnlyNewSnapshot/prism (0.01s)
+    --- PASS: TestMismatchRemovesOnlyNewSnapshot/initial (0.01s)
+    --- PASS: TestMismatchRemovesOnlyNewSnapshot/mirror (0.02s)
+=== RUN   TestManifestRejectsInvalidContract
+=== RUN   TestManifestRejectsInvalidContract/missing
+=== RUN   TestManifestRejectsInvalidContract/relative_source
+=== RUN   TestManifestRejectsInvalidContract/negative_size
+=== RUN   TestManifestRejectsInvalidContract/oversize
+=== RUN   TestManifestRejectsInvalidContract/version
+=== RUN   TestManifestRejectsInvalidContract/unknown_role
+=== RUN   TestManifestRejectsInvalidContract/bad_digest
+=== RUN   TestManifestRejectsInvalidContract/total_size
+=== RUN   TestManifestRejectsInvalidContract/builder
+=== RUN   TestManifestRejectsInvalidContract/builder_digest
+--- PASS: TestManifestRejectsInvalidContract (0.01s)
+    --- PASS: TestManifestRejectsInvalidContract/missing (0.00s)
+    --- PASS: TestManifestRejectsInvalidContract/relative_source (0.00s)
+    --- PASS: TestManifestRejectsInvalidContract/negative_size (0.00s)
+    --- PASS: TestManifestRejectsInvalidContract/oversize (0.00s)
+    --- PASS: TestManifestRejectsInvalidContract/version (0.00s)
+    --- PASS: TestManifestRejectsInvalidContract/unknown_role (0.00s)
+    --- PASS: TestManifestRejectsInvalidContract/bad_digest (0.00s)
+    --- PASS: TestManifestRejectsInvalidContract/total_size (0.00s)
+    --- PASS: TestManifestRejectsInvalidContract/builder (0.00s)
+    --- PASS: TestManifestRejectsInvalidContract/builder_digest (0.00s)
+PASS
+ok  	shixin/spikes/typo-recovery/prepare-mirror	2.577s

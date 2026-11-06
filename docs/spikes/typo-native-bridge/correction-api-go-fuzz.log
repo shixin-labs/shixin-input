@@ -1,0 +1,7 @@
+fuzz: elapsed: 0s, gathering baseline coverage: 0/2 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 2/2 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 48985 (16317/sec), new interesting: 1 (total: 3)
+fuzz: elapsed: 6s, execs: 48985 (0/sec), new interesting: 1 (total: 3)
+fuzz: elapsed: 6s, execs: 48985 (0/sec), new interesting: 1 (total: 3)
+PASS
+ok  	shixin/spikes/typo-recovery/bridge	8.031s

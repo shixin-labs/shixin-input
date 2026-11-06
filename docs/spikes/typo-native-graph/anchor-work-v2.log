@@ -1,0 +1,41 @@
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+Note: Google Test filter = SpikePrism.InspectAnchoredLookupWork
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from SpikePrism
+[ RUN      ] SpikePrism.InspectAnchoredLookupWork
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I20261104 04:39:39.406220 0x1f219a1c0 dictionary.cc:385] loading dictionary 'rime_ice'.
+I20261104 04:39:39.406471 0x1f219a1c0 table.cc:270] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.table.bin
+I20261104 04:39:39.409772 0x1f219a1c0 prism.cc:83] loading prism file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.prism.bin
+I20261104 04:39:39.410643 0x1f219a1c0 prism.cc:121] found double array image of size 2304.
+BUILD left=32374 exhausted=0
+LOOKUP start=0 work=6387 nodes=509 chunks=397 groups=7 exhausted=0
+WORD 0 尝试错误 -13.8155
+WORD 0 常识错误 -13.8155
+LOOKUP start=1 work=2366 nodes=140 chunks=92 groups=5 exhausted=0
+LOOKUP start=2 work=1415 nodes=83 chunks=52 groups=4 exhausted=0
+LOOKUP start=3 work=1253 nodes=205 chunks=144 groups=3 exhausted=0
+LOOKUP start=4 work=194 nodes=40 chunks=37 groups=3 exhausted=0
+LOOKUP start=5 work=81 nodes=3 chunks=3 groups=3 exhausted=0
+LOOKUP start=8 work=337 nodes=18 chunks=18 groups=4 exhausted=0
+WORD 8 错误 -9.90222
+WORD 8 错误集 -16.373
+WORD 8 搓丝机 -18.1777
+LOOKUP start=10 work=535 nodes=27 chunks=16 groups=3 exhausted=0
+LOOKUP start=11 work=2320 nodes=69 chunks=615 groups=2 exhausted=0
+WORD 11 文件 -6.68137
+WORD 11 玩家 -6.68361
+WORD 11 我就 -6.68367
+WORD 11 未经 -6.68394
+WORD 11 玩具 -6.89871
+WORD 11 忘记 -6.97959
+WORD 11 危机 -7.04733
+WORD 11 我家 -7.39812
+LOOKUP start=12 work=43 nodes=1 chunks=14 groups=1 exhausted=0
+[       OK ] SpikePrism.InspectAnchoredLookupWork (48 ms)
+[----------] 1 test from SpikePrism (48 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (48 ms total)
+[  PASSED  ] 1 test.

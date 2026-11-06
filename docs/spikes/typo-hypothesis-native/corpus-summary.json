@@ -1,0 +1,492 @@
+{
+  "ordinary_changes": [
+    {
+      "code": "sj",
+      "repeat": 0
+    },
+    {
+      "code": "sj",
+      "repeat": 1
+    },
+    {
+      "code": "ts",
+      "repeat": 0
+    },
+    {
+      "code": "ts",
+      "repeat": 1
+    }
+  ],
+  "repeats": {
+    "0": {
+      "metrics": {
+        "all": {
+          "n": 830,
+          "previous": 313,
+          "policy": 341,
+          "gain": 43,
+          "loss": 15
+        },
+        "clean": {
+          "n": 277,
+          "previous": 154,
+          "policy": 159,
+          "gain": 6,
+          "loss": 1
+        },
+        "full/clean": {
+          "n": 64,
+          "previous": 54,
+          "policy": 54,
+          "gain": 1,
+          "loss": 1
+        },
+        "swap": {
+          "n": 275,
+          "previous": 70,
+          "policy": 80,
+          "gain": 12,
+          "loss": 2
+        },
+        "full/swap": {
+          "n": 64,
+          "previous": 36,
+          "policy": 35,
+          "gain": 1,
+          "loss": 2
+        },
+        "neighbor": {
+          "n": 278,
+          "previous": 89,
+          "policy": 102,
+          "gain": 25,
+          "loss": 12
+        },
+        "full/neighbor": {
+          "n": 64,
+          "previous": 46,
+          "policy": 46,
+          "gain": 6,
+          "loss": 6
+        },
+        "initials/neighbor": {
+          "n": 64,
+          "previous": 3,
+          "policy": 4,
+          "gain": 2,
+          "loss": 1
+        },
+        "mixed_even/clean": {
+          "n": 64,
+          "previous": 34,
+          "policy": 36,
+          "gain": 2,
+          "loss": 0
+        },
+        "mixed_even/swap": {
+          "n": 64,
+          "previous": 13,
+          "policy": 17,
+          "gain": 4,
+          "loss": 0
+        },
+        "mixed_even/neighbor": {
+          "n": 63,
+          "previous": 10,
+          "policy": 20,
+          "gain": 10,
+          "loss": 0
+        },
+        "mixed_odd/clean": {
+          "n": 64,
+          "previous": 36,
+          "policy": 37,
+          "gain": 1,
+          "loss": 0
+        },
+        "mixed_odd/swap": {
+          "n": 64,
+          "previous": 20,
+          "policy": 26,
+          "gain": 6,
+          "loss": 0
+        },
+        "mixed_odd/neighbor": {
+          "n": 63,
+          "previous": 27,
+          "policy": 28,
+          "gain": 6,
+          "loss": 5
+        },
+        "initials/clean": {
+          "n": 61,
+          "previous": 18,
+          "policy": 19,
+          "gain": 1,
+          "loss": 0
+        },
+        "initials/swap": {
+          "n": 59,
+          "previous": 0,
+          "policy": 0,
+          "gain": 0,
+          "loss": 0
+        },
+        "digraph_initials/clean": {
+          "n": 24,
+          "previous": 12,
+          "policy": 13,
+          "gain": 1,
+          "loss": 0
+        },
+        "digraph_initials/swap": {
+          "n": 24,
+          "previous": 1,
+          "policy": 2,
+          "gain": 1,
+          "loss": 0
+        },
+        "digraph_initials/neighbor": {
+          "n": 24,
+          "previous": 3,
+          "policy": 4,
+          "gain": 1,
+          "loss": 0
+        }
+      },
+      "losses": [
+        {
+          "raw": "ruyingzuixing",
+          "target": "如影随形",
+          "form": "full",
+          "kind": "neighbor"
+        },
+        {
+          "raw": "baoxai",
+          "target": "保险丝",
+          "form": "mixed_odd",
+          "kind": "neighbor"
+        },
+        {
+          "raw": "guaylix",
+          "target": "瓜田李下",
+          "form": "mixed_odd",
+          "kind": "neighbor"
+        },
+        {
+          "raw": "qidzhif",
+          "target": "齐人之福",
+          "form": "mixed_odd",
+          "kind": "neighbor"
+        },
+        {
+          "raw": "nanoyu",
+          "target": "男优",
+          "form": "full",
+          "kind": "swap"
+        },
+        {
+          "raw": "renzyicxue",
+          "target": "分子遗传学",
+          "form": "mixed_odd",
+          "kind": "neighbor"
+        },
+        {
+          "raw": "raianxian",
+          "target": "泰安县",
+          "form": "full",
+          "kind": "neighbor"
+        },
+        {
+          "raw": "qianchuanr",
+          "target": "钱串儿",
+          "form": "full",
+          "kind": "clean"
+        },
+        {
+          "raw": "svh",
+          "target": "市场化",
+          "form": "initials",
+          "kind": "neighbor"
+        },
+        {
+          "raw": "shihua",
+          "target": "碎花",
+          "form": "full",
+          "kind": "neighbor"
+        },
+        {
+          "raw": "qkngy",
+          "target": "情缘",
+          "form": "mixed_odd",
+          "kind": "neighbor"
+        },
+        {
+          "raw": "wingyuan",
+          "target": "请愿",
+          "form": "full",
+          "kind": "neighbor"
+        },
+        {
+          "raw": "qinguyan",
+          "target": "请援",
+          "form": "full",
+          "kind": "swap"
+        },
+        {
+          "raw": "qinfyuan",
+          "target": "请援",
+          "form": "full",
+          "kind": "neighbor"
+        },
+        {
+          "raw": "buqufendaxiaoxue",
+          "target": "不区分大小写",
+          "form": "full",
+          "kind": "neighbor"
+        }
+      ]
+    },
+    "1": {
+      "metrics": {
+        "all": {
+          "n": 830,
+          "previous": 313,
+          "policy": 337,
+          "gain": 41,
+          "loss": 17
+        },
+        "clean": {
+          "n": 277,
+          "previous": 154,
+          "policy": 159,
+          "gain": 6,
+          "loss": 1
+        },
+        "full/clean": {
+          "n": 64,
+          "previous": 54,
+          "policy": 54,
+          "gain": 1,
+          "loss": 1
+        },
+        "swap": {
+          "n": 275,
+          "previous": 70,
+          "policy": 78,
+          "gain": 11,
+          "loss": 3
+        },
+        "full/swap": {
+          "n": 64,
+          "previous": 36,
+          "policy": 35,
+          "gain": 1,
+          "loss": 2
+        },
+        "neighbor": {
+          "n": 278,
+          "previous": 89,
+          "policy": 100,
+          "gain": 24,
+          "loss": 13
+        },
+        "full/neighbor": {
+          "n": 64,
+          "previous": 46,
+          "policy": 46,
+          "gain": 5,
+          "loss": 5
+        },
+        "initials/neighbor": {
+          "n": 64,
+          "previous": 3,
+          "policy": 3,
+          "gain": 2,
+          "loss": 2
+        },
+        "mixed_even/clean": {
+          "n": 64,
+          "previous": 34,
+          "policy": 36,
+          "gain": 2,
+          "loss": 0
+        },
+        "mixed_even/swap": {
+          "n": 64,
+          "previous": 13,
+          "policy": 17,
+          "gain": 4,
+          "loss": 0
+        },
+        "mixed_even/neighbor": {
+          "n": 63,
+          "previous": 10,
+          "policy": 20,
+          "gain": 10,
+          "loss": 0
+        },
+        "mixed_odd/clean": {
+          "n": 64,
+          "previous": 36,
+          "policy": 37,
+          "gain": 1,
+          "loss": 0
+        },
+        "mixed_odd/swap": {
+          "n": 64,
+          "previous": 20,
+          "policy": 24,
+          "gain": 5,
+          "loss": 1
+        },
+        "mixed_odd/neighbor": {
+          "n": 63,
+          "previous": 27,
+          "policy": 27,
+          "gain": 6,
+          "loss": 6
+        },
+        "initials/clean": {
+          "n": 61,
+          "previous": 18,
+          "policy": 19,
+          "gain": 1,
+          "loss": 0
+        },
+        "initials/swap": {
+          "n": 59,
+          "previous": 0,
+          "policy": 0,
+          "gain": 0,
+          "loss": 0
+        },
+        "digraph_initials/clean": {
+          "n": 24,
+          "previous": 12,
+          "policy": 13,
+          "gain": 1,
+          "loss": 0
+        },
+        "digraph_initials/swap": {
+          "n": 24,
+          "previous": 1,
+          "policy": 2,
+          "gain": 1,
+          "loss": 0
+        },
+        "digraph_initials/neighbor": {
+          "n": 24,
+          "previous": 3,
+          "policy": 4,
+          "gain": 1,
+          "loss": 0
+        }
+      },
+      "losses": [
+        {
+          "raw": "ruyingzuixing",
+          "target": "如影随形",
+          "form": "full",
+          "kind": "neighbor"
+        },
+        {
+          "raw": "baoxai",
+          "target": "保险丝",
+          "form": "mixed_odd",
+          "kind": "neighbor"
+        },
+        {
+          "raw": "guaylix",
+          "target": "瓜田李下",
+          "form": "mixed_odd",
+          "kind": "neighbor"
+        },
+        {
+          "raw": "qidzhif",
+          "target": "齐人之福",
+          "form": "mixed_odd",
+          "kind": "neighbor"
+        },
+        {
+          "raw": "nanoyu",
+          "target": "男优",
+          "form": "full",
+          "kind": "swap"
+        },
+        {
+          "raw": "anny",
+          "target": "男友",
+          "form": "mixed_odd",
+          "kind": "swap"
+        },
+        {
+          "raw": "renzyicxue",
+          "target": "分子遗传学",
+          "form": "mixed_odd",
+          "kind": "neighbor"
+        },
+        {
+          "raw": "raianxian",
+          "target": "泰安县",
+          "form": "full",
+          "kind": "neighbor"
+        },
+        {
+          "raw": "qianchuanr",
+          "target": "钱串儿",
+          "form": "full",
+          "kind": "clean"
+        },
+        {
+          "raw": "svh",
+          "target": "市场化",
+          "form": "initials",
+          "kind": "neighbor"
+        },
+        {
+          "raw": "shihua",
+          "target": "碎花",
+          "form": "full",
+          "kind": "neighbor"
+        },
+        {
+          "raw": "oldyy",
+          "target": "克罗地亚语",
+          "form": "initials",
+          "kind": "neighbor"
+        },
+        {
+          "raw": "conyj",
+          "target": "从军",
+          "form": "mixed_odd",
+          "kind": "neighbor"
+        },
+        {
+          "raw": "qkngy",
+          "target": "情缘",
+          "form": "mixed_odd",
+          "kind": "neighbor"
+        },
+        {
+          "raw": "wingyuan",
+          "target": "请愿",
+          "form": "full",
+          "kind": "neighbor"
+        },
+        {
+          "raw": "qinguyan",
+          "target": "请援",
+          "form": "full",
+          "kind": "swap"
+        },
+        {
+          "raw": "qinfyuan",
+          "target": "请援",
+          "form": "full",
+          "kind": "neighbor"
+        }
+      ]
+    }
+  }
+}

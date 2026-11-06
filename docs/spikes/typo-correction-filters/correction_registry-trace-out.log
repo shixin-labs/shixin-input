@@ -1,0 +1,31 @@
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+[==========] Running 10 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 10 tests from CorrectionRegistry
+[ RUN      ] CorrectionRegistry.ExplicitSelectionInvalidatesBeforeNotification
+[       OK ] CorrectionRegistry.ExplicitSelectionInvalidatesBeforeNotification (0 ms)
+[ RUN      ] CorrectionRegistry.ScopeRawSpanAndPublicationGuards
+[       OK ] CorrectionRegistry.ScopeRawSpanAndPublicationGuards (0 ms)
+[ RUN      ] CorrectionRegistry.ShownSnapshotRejectsLateReplacement
+[       OK ] CorrectionRegistry.ShownSnapshotRejectsLateReplacement (0 ms)
+[ RUN      ] CorrectionRegistry.RejectsMutatedCandidateContent
+[       OK ] CorrectionRegistry.RejectsMutatedCandidateContent (0 ms)
+[ RUN      ] CorrectionRegistry.BoundedValidationAndOwnership
+REGISTRY_BYTES 3696
+[       OK ] CorrectionRegistry.BoundedValidationAndOwnership (0 ms)
+[ RUN      ] CorrectionRegistry.PublicationCounterNeverWraps
+[       OK ] CorrectionRegistry.PublicationCounterNeverWraps (0 ms)
+[ RUN      ] CorrectionRegistry.ExactRawTextAndCodeLimits
+[       OK ] CorrectionRegistry.ExactRawTextAndCodeLimits (0 ms)
+[ RUN      ] CorrectionRegistry.AbsoluteSpanAfterAnEarlierSelection
+[       OK ] CorrectionRegistry.AbsoluteSpanAfterAnEarlierSelection (0 ms)
+[ RUN      ] CorrectionRegistry.BoundedSnapshotsDoNotAllocateAfterWarmup
+REGISTRY_CYCLES count=1000 allocations=0 mean_ns=4619
+[       OK ] CorrectionRegistry.BoundedSnapshotsDoNotAllocateAfterWarmup (4 ms)
+[ RUN      ] CorrectionRegistry.NativeTraceRequiresMatchingRawAndValidEditShape
+[       OK ] CorrectionRegistry.NativeTraceRequiresMatchingRawAndValidEditShape (0 ms)
+[----------] 10 tests from CorrectionRegistry (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 10 tests from 1 test suite ran. (5 ms total)
+[  PASSED  ] 10 tests.

@@ -1,0 +1,38 @@
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+[==========] Running 3 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 1 test from SpikeMirror
+[ RUN      ] SpikeMirror.NativeIdentityLifetimeAndMissingArtifact
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I20261104 09:15:13.719863 0x1f219a1c0 dictionary.cc:406] loading dictionary 'rime_ice'.
+I20261104 09:15:13.721164 0x1f219a1c0 table.cc:305] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/verified-mirror-v1/rime_ice.table.bin
+I20261104 09:15:13.724953 0x1f219a1c0 prism.cc:83] loading prism file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/verified-mirror-v1/rime_ice.prism.bin
+I20261104 09:15:13.725263 0x1f219a1c0 prism.cc:121] found double array image of size 2304.
+I20261104 09:15:13.745157 0x1f219a1c0 table.cc:305] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/verified-mirror-v1/rime_ice.table.bin
+[       OK ] SpikeMirror.NativeIdentityLifetimeAndMissingArtifact (31 ms)
+[----------] 1 test from SpikeMirror (31 ms total)
+
+[----------] 2 tests from SpikeCacheStages
+[ RUN      ] SpikeCacheStages.FirstAndRepeatedQueries
+I20261104 09:15:13.751706 0x1f219a1c0 dictionary.cc:406] loading dictionary 'rime_ice'.
+I20261104 09:15:13.751716 0x1f219a1c0 table.cc:305] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/verified-mirror-v1/rime_ice.table.bin
+I20261104 09:15:13.751790 0x1f219a1c0 prism.cc:83] loading prism file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/verified-mirror-v1/rime_ice.prism.bin
+I20261104 09:15:13.751833 0x1f219a1c0 prism.cc:121] found double array image of size 2304.
+CACHE_STAGES raw=xgr attempt=0 graph_us=80 lookup_us=7 graph_spellings=317 graph_work=341 lookup_work=152 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=1
+CACHE_STAGES raw=xgr attempt=1 graph_us=65 lookup_us=4 graph_spellings=317 graph_work=341 lookup_work=152 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=1
+CACHE_STAGES raw=xgr attempt=2 graph_us=49 lookup_us=4 graph_spellings=317 graph_work=341 lookup_work=152 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=1
+CACHE_STAGES raw=xgr attempt=3 graph_us=47 lookup_us=4 graph_spellings=317 graph_work=341 lookup_work=152 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=1
+CACHE_STAGES raw=xgr attempt=4 graph_us=43 lookup_us=4 graph_spellings=317 graph_work=341 lookup_work=152 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=1
+CACHE_STAGES raw=xgr attempt=5 graph_us=42 lookup_us=3 graph_spellings=317 graph_work=341 lookup_work=152 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=1
+[       OK ] SpikeCacheStages.FirstAndRepeatedQueries (11 ms)
+[ RUN      ] SpikeCacheStages.RejectsExpiryDuringNativeVisitor
+I20261104 09:15:13.763449 0x1f219a1c0 dictionary.cc:406] loading dictionary 'rime_ice'.
+I20261104 09:15:13.763455 0x1f219a1c0 table.cc:305] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/verified-mirror-v1/rime_ice.table.bin
+I20261104 09:15:13.763516 0x1f219a1c0 prism.cc:83] loading prism file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/verified-mirror-v1/rime_ice.prism.bin
+I20261104 09:15:13.763552 0x1f219a1c0 prism.cc:121] found double array image of size 2304.
+[       OK ] SpikeCacheStages.RejectsExpiryDuringNativeVisitor (269 ms)
+[----------] 2 tests from SpikeCacheStages (281 ms total)
+
+[----------] Global test environment tear-down
+[==========] 3 tests from 2 test suites ran. (313 ms total)
+[  PASSED  ] 3 tests.

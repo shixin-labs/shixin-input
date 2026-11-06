@@ -1,0 +1,80 @@
+[
+  {
+    "condition": "empty",
+    "form": "digraph_initials",
+    "n": 13,
+    "fallback_top5": 6
+  },
+  {
+    "condition": "empty",
+    "form": "full",
+    "n": 35,
+    "fallback_top5": 26
+  },
+  {
+    "condition": "empty",
+    "form": "initials",
+    "n": 34,
+    "fallback_top5": 7
+  },
+  {
+    "condition": "empty",
+    "form": "mixed_even",
+    "n": 35,
+    "fallback_top5": 15
+  },
+  {
+    "condition": "empty",
+    "form": "mixed_odd",
+    "n": 35,
+    "fallback_top5": 16
+  },
+  {
+    "condition": "source_context",
+    "form": "full",
+    "n": 5,
+    "fallback_top5": 5
+  },
+  {
+    "condition": "source_context",
+    "form": "initials",
+    "n": 4,
+    "fallback_top5": 1
+  },
+  {
+    "condition": "source_context",
+    "form": "mixed_even",
+    "n": 5,
+    "fallback_top5": 5
+  },
+  {
+    "condition": "source_context",
+    "form": "mixed_odd",
+    "n": 5,
+    "fallback_top5": 5
+  },
+  {
+    "condition": "stale_context",
+    "form": "full",
+    "n": 5,
+    "fallback_top5": 5
+  },
+  {
+    "condition": "stale_context",
+    "form": "initials",
+    "n": 4,
+    "fallback_top5": 0
+  },
+  {
+    "condition": "stale_context",
+    "form": "mixed_even",
+    "n": 5,
+    "fallback_top5": 2
+  },
+  {
+    "condition": "stale_context",
+    "form": "mixed_odd",
+    "n": 5,
+    "fallback_top5": 3
+  }
+]

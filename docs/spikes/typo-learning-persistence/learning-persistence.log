@@ -1,0 +1,39 @@
+=== RUN   TestTypoLearningPersistenceSpike
+=== RUN   TestTypoLearningPersistenceSpike/neighbor
+    typo_learning_spike_test.go:85: write: === RUN   TestTypoLearningPersistenceSpike
+        --- PASS: TestTypoLearningPersistenceSpike (0.18s)
+        PASS
+    typo_learning_spike_test.go:85: export: === RUN   TestTypoLearningPersistenceSpike
+        --- PASS: TestTypoLearningPersistenceSpike (0.02s)
+        PASS
+    typo_learning_spike_test.go:105: persisted canonical entry: 你好	ni hao	8
+=== RUN   TestTypoLearningPersistenceSpike/native_alias
+    typo_learning_spike_test.go:85: write: === RUN   TestTypoLearningPersistenceSpike
+        --- PASS: TestTypoLearningPersistenceSpike (0.10s)
+        PASS
+    typo_learning_spike_test.go:85: export: === RUN   TestTypoLearningPersistenceSpike
+        --- PASS: TestTypoLearningPersistenceSpike (0.02s)
+        PASS
+    typo_learning_spike_test.go:105: persisted canonical entry: 你好	ni hao	8
+=== RUN   TestTypoLearningPersistenceSpike/emoji
+    typo_learning_spike_test.go:85: write: === RUN   TestTypoLearningPersistenceSpike
+        --- PASS: TestTypoLearningPersistenceSpike (0.11s)
+        PASS
+    typo_learning_spike_test.go:85: export: === RUN   TestTypoLearningPersistenceSpike
+        --- PASS: TestTypoLearningPersistenceSpike (0.02s)
+        PASS
+    typo_learning_spike_test.go:105: persisted canonical entry: 你好	ni hao	8
+=== RUN   TestTypoLearningPersistenceSpike/unselected
+    typo_learning_spike_test.go:85: write: === RUN   TestTypoLearningPersistenceSpike
+        --- PASS: TestTypoLearningPersistenceSpike (0.10s)
+        PASS
+    typo_learning_spike_test.go:85: export: === RUN   TestTypoLearningPersistenceSpike
+        --- PASS: TestTypoLearningPersistenceSpike (0.02s)
+        PASS
+--- PASS: TestTypoLearningPersistenceSpike (0.66s)
+    --- PASS: TestTypoLearningPersistenceSpike/neighbor (0.25s)
+    --- PASS: TestTypoLearningPersistenceSpike/native_alias (0.14s)
+    --- PASS: TestTypoLearningPersistenceSpike/emoji (0.14s)
+    --- PASS: TestTypoLearningPersistenceSpike/unselected (0.14s)
+PASS
+ok  	shixin/internal/rime	2.263s

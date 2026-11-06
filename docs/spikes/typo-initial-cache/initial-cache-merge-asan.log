@@ -1,0 +1,19 @@
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+[==========] Running 5 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 5 tests from ProtectedMerge
+[ RUN      ] ProtectedMerge.BroadStageSurvivesSpecificFullSpanQuota
+[       OK ] ProtectedMerge.BroadStageSurvivesSpecificFullSpanQuota (0 ms)
+[ RUN      ] ProtectedMerge.DuplicateScanCannotStarveBroadStage
+[       OK ] ProtectedMerge.DuplicateScanCannotStarveBroadStage (0 ms)
+[ RUN      ] ProtectedMerge.ReservesTwoSlotsWithinEightCandidateTotal
+[       OK ] ProtectedMerge.ReservesTwoSlotsWithinEightCandidateTotal (0 ms)
+[ RUN      ] ProtectedMerge.SameTextDifferentRawSpanIsSelectable
+[       OK ] ProtectedMerge.SameTextDifferentRawSpanIsSelectable (0 ms)
+[ RUN      ] ProtectedMerge.CacheFirstLeavesFourSpecificFullSpanSlots
+[       OK ] ProtectedMerge.CacheFirstLeavesFourSpecificFullSpanSlots (0 ms)
+[----------] 5 tests from ProtectedMerge (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 5 tests from 1 test suite ran. (0 ms total)
+[  PASSED  ] 5 tests.

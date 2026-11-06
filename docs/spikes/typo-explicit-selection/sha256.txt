@@ -1,0 +1,11 @@
+100638af3925ecfe1c68c533fc1824f19c92c34c5276c71a45dbdda1463b8e8d  spikes/typo-recovery/native-graph/librime.patch
+ea7fe6ccb988d8405adc1cf72785902de2b1cb284e99dc09e0cbada7d5fd2585  spikes/typo-recovery/native-graph/explicit_selection_test.cc
+34565f554c8e2b61f1fe53a2b316562127ff3d6b00203e1ab77ce408b61d7000  build/typo-recovery/native-graph/out/lib/librime.1.17.0.dylib
+4b56b6b141efc40eeb25f7b8cda7592a9a7e4dadbb33c69c606b8218bc42aefc  build/typo-recovery/native-graph/asan/lib/librime.1.17.0.dylib
+b2459afafb183f2a8bf41adb48b13776684560380d2bc331fada1e7cd983661b  docs/spikes/typo-explicit-selection/explicit-selection-ctest-asan-v2.log
+a7ef07e97a41160638c33420be7b77cb04852b7005e5318a5dac15350e1cd7f4  docs/spikes/typo-explicit-selection/explicit-selection-ctest-v3.log
+57e2769966edf9db94b8454853284341d0e1c3216de1120a0adc36f739866dea  docs/spikes/typo-explicit-selection/explicit-selection-engine-asan-v3.log
+450811cd269e3f10b76e818eb783e5d8acfde40a9c4f5e2833dec73cbae90088  docs/spikes/typo-explicit-selection/explicit-selection-engine-v1.log
+e3887a279d56ede9dab07d45a2f5bedef8faf4a491df9c2142b70b34af2d7bdb  docs/spikes/typo-explicit-selection/explicit-selection-engine-v3.log
+ac984752354a2b68cd55e171540d15b4b610da209fb0f78230623729b81f2952  docs/spikes/typo-explicit-selection/explicit-selection-native-asan-v3.log
+9c910c6504960059a1368922dbd4bace3b5160b3c07064317de08e257e43f59e  docs/spikes/typo-explicit-selection/explicit-selection-native-out-v3.log

@@ -1,0 +1,9 @@
+Test project /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/asan
+    Start 1: shixin_test
+1/2 Test #1: shixin_test ......................   Passed    0.03 sec
+    Start 2: rime_test
+2/2 Test #2: rime_test ........................   Passed    1.37 sec
+
+100% tests passed out of 2
+
+Total Test time (real) =   1.41 sec

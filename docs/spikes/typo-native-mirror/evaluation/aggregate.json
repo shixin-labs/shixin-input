@@ -1,0 +1,22 @@
+{
+  "clean": {
+    "examples": 277,
+    "ordinary_top5": 153,
+    "protected_top5": 153,
+    "ordinary_top13": 182,
+    "protected_top13": 173,
+    "gains_top13": 2,
+    "losses_top13": 11,
+    "ordinary_prefix_changes": 1
+  },
+  "typo": {
+    "examples": 553,
+    "ordinary_top5": 35,
+    "protected_top5": 45,
+    "ordinary_top13": 43,
+    "protected_top13": 99,
+    "gains_top13": 59,
+    "losses_top13": 3,
+    "ordinary_prefix_changes": 1
+  }
+}

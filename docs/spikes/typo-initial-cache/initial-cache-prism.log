@@ -1,0 +1,50 @@
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+Note: Google Test filter = SpikePrism.SparseIntersectionPreservesCandidates:SpikePrism.StagesShareBudgetAndKeepInitialCorrections:SpikePrism.BudgetedLookupOnlyRetainsCompletedEntries:SpikePrism.NativeBoundsIdentityAndExhaustion
+[==========] Running 4 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 4 tests from SpikePrism
+[ RUN      ] SpikePrism.SparseIntersectionPreservesCandidates
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I20261104 08:19:11.390775 0x1f219a1c0 dictionary.cc:401] loading dictionary 'rime_ice'.
+I20261104 08:19:11.391762 0x1f219a1c0 table.cc:288] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.table.bin
+I20261104 08:19:11.396823 0x1f219a1c0 prism.cc:83] loading prism file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.prism.bin
+I20261104 08:19:11.397250 0x1f219a1c0 prism.cc:121] found double array image of size 2304.
+EQUIVALENT njh entries=4830
+EQUIVALENT nihso entries=36
+EQUIVALENT changshicuowj entries=1593
+EQUIVALENT nihsozhongguo entries=39
+[       OK ] SpikePrism.SparseIntersectionPreservesCandidates (133 ms)
+[ RUN      ] SpikePrism.StagesShareBudgetAndKeepInitialCorrections
+I20261104 08:19:11.523739 0x1f219a1c0 prism.cc:83] loading prism file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.prism.bin
+I20261104 08:19:11.523777 0x1f219a1c0 prism.cc:121] found double array image of size 2304.
+[       OK ] SpikePrism.StagesShareBudgetAndKeepInitialCorrections (0 ms)
+[ RUN      ] SpikePrism.BudgetedLookupOnlyRetainsCompletedEntries
+I20261104 08:19:11.523832 0x1f219a1c0 dictionary.cc:401] loading dictionary 'rime_ice'.
+I20261104 08:19:11.523836 0x1f219a1c0 table.cc:288] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.table.bin
+I20261104 08:19:11.523980 0x1f219a1c0 prism.cc:83] loading prism file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.prism.bin
+I20261104 08:19:11.524006 0x1f219a1c0 prism.cc:121] found double array image of size 2304.
+PARTIAL cap=1 entries=0 full=5431
+PARTIAL cap=32 entries=93 full=5431
+PARTIAL cap=128 entries=685 full=5431
+PARTIAL cap=512 entries=2885 full=5431
+PARTIAL cap=2048 entries=3116 full=5431
+[       OK ] SpikePrism.BudgetedLookupOnlyRetainsCompletedEntries (44 ms)
+[ RUN      ] SpikePrism.NativeBoundsIdentityAndExhaustion
+I20261104 08:19:11.568536 0x1f219a1c0 dictionary.cc:401] loading dictionary 'rime_ice'.
+I20261104 08:19:11.568543 0x1f219a1c0 table.cc:288] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.table.bin
+I20261104 08:19:11.568606 0x1f219a1c0 prism.cc:83] loading prism file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.prism.bin
+I20261104 08:19:11.568629 0x1f219a1c0 prism.cc:121] found double array image of size 2304.
+BOUNDS_900US xgr attempt=0 us=651 exhausted=0 groups=1 work_left=32267
+BOUNDS_900US xgr attempt=1 us=98 exhausted=0 groups=1 work_left=32267
+BOUNDS_900US xgr attempt=2 us=39 exhausted=0 groups=1 work_left=32267
+NATIVE_BOUNDS xgr identity and four exhaustion modes pass
+BOUNDS_900US zhr attempt=0 us=46 exhausted=0 groups=1 work_left=32286
+BOUNDS_900US zhr attempt=1 us=27 exhausted=0 groups=1 work_left=32286
+BOUNDS_900US zhr attempt=2 us=24 exhausted=0 groups=1 work_left=32286
+NATIVE_BOUNDS zhr identity and four exhaustion modes pass
+[       OK ] SpikePrism.NativeBoundsIdentityAndExhaustion (4 ms)
+[----------] 4 tests from SpikePrism (182 ms total)
+
+[----------] Global test environment tear-down
+[==========] 4 tests from 1 test suite ran. (182 ms total)
+[  PASSED  ] 4 tests.

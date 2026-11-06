@@ -1,0 +1,105 @@
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from CanonicalCacheSize
+[ RUN      ] CanonicalCacheSize.ReadingCapsAndFocusedTargets
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I20261104 09:54:38.395720 0x1f219a1c0 table.cc:305] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.table.bin
+TARGET text=你好 native_reading_rank=1
+TARGET text=吊灯 native_reading_rank=1
+TARGET text=纯净物 native_reading_rank=1
+TARGET text=把酒 native_reading_rank=2
+TARGET text=保险丝 native_reading_rank=1
+TARGET text=纯净物 native_reading_rank=1
+TARGET text=从军 native_reading_rank=1
+TARGET text=大伙儿 native_reading_rank=0
+TARGET text=大楼 native_reading_rank=1
+TARGET text=吊灯 native_reading_rank=1
+TARGET text=番荔枝 native_reading_rank=1
+TARGET text=奉上 native_reading_rank=1
+TARGET text=风尚 native_reading_rank=2
+TARGET text=古刹 native_reading_rank=1
+TARGET text=鼓点子 native_reading_rank=1
+TARGET text=贵方 native_reading_rank=2
+TARGET text=闺房 native_reading_rank=1
+TARGET text=建始县 native_reading_rank=1
+TARGET text=领到 native_reading_rank=2
+TARGET text=领导 native_reading_rank=1
+TARGET text=曼苏尔 native_reading_rank=1
+TARGET text=男优 native_reading_rank=3
+TARGET text=男友 native_reading_rank=1
+TARGET text=钱串儿 native_reading_rank=0
+TARGET text=秦二世 native_reading_rank=1
+TARGET text=庆元 native_reading_rank=0
+TARGET text=情愿 native_reading_rank=2
+TARGET text=情缘 native_reading_rank=1
+TARGET text=清原 native_reading_rank=0
+TARGET text=清苑 native_reading_rank=0
+TARGET text=清远 native_reading_rank=0
+TARGET text=请愿 native_reading_rank=4
+TARGET text=请援 native_reading_rank=3
+TARGET text=青原 native_reading_rank=0
+TARGET text=阮崇武 native_reading_rank=1
+TARGET text=市场化 native_reading_rank=1
+TARGET text=思量 native_reading_rank=1
+TARGET text=碎花 native_reading_rank=2
+TARGET text=绥化 native_reading_rank=1
+TARGET text=台安县 native_reading_rank=1
+TARGET text=泰安县 native_reading_rank=2
+TARGET text=摊晒 native_reading_rank=1
+TARGET text=休假 native_reading_rank=1
+TARGET text=叶里温 native_reading_rank=0
+TARGET text=再制纸 native_reading_rank=0
+TARGET text=支原体 native_reading_rank=1
+CORPUS_RETENTION variant=hybrid cap=1 labels=43 native_present=34 retained=22
+DROPPED variant=hybrid cap=1 text=把酒 native_reading_rank=2
+DROPPED variant=hybrid cap=1 text=番荔枝 native_reading_rank=1
+DROPPED variant=hybrid cap=1 text=风尚 native_reading_rank=2
+DROPPED variant=hybrid cap=1 text=鼓点子 native_reading_rank=1
+DROPPED variant=hybrid cap=1 text=贵方 native_reading_rank=2
+DROPPED variant=hybrid cap=1 text=建始县 native_reading_rank=1
+DROPPED variant=hybrid cap=1 text=领到 native_reading_rank=2
+DROPPED variant=hybrid cap=1 text=男优 native_reading_rank=3
+DROPPED variant=hybrid cap=1 text=情愿 native_reading_rank=2
+DROPPED variant=hybrid cap=1 text=请愿 native_reading_rank=4
+DROPPED variant=hybrid cap=1 text=请援 native_reading_rank=3
+DROPPED variant=hybrid cap=1 text=碎花 native_reading_rank=2
+CANONICAL_SIZE variant=two_reading_plus_initial_three cap=1 records=143121 two_records=65674 three_records=77447 groups=140582 unique_texts=142738 text_pool_bytes=1231227 prefix_nodes=30836 projected_payload_bytes=6836335 nihao=1 diaodeng=1 chunjingwu=1
+CORPUS_RETENTION variant=hybrid cap=2 labels=43 native_present=34 retained=28
+DROPPED variant=hybrid cap=2 text=番荔枝 native_reading_rank=1
+DROPPED variant=hybrid cap=2 text=鼓点子 native_reading_rank=1
+DROPPED variant=hybrid cap=2 text=建始县 native_reading_rank=1
+DROPPED variant=hybrid cap=2 text=男优 native_reading_rank=3
+DROPPED variant=hybrid cap=2 text=请愿 native_reading_rank=4
+DROPPED variant=hybrid cap=2 text=请援 native_reading_rank=3
+CANONICAL_SIZE variant=two_reading_plus_initial_three cap=2 records=175925 two_records=98478 three_records=77447 groups=140582 unique_texts=175259 text_pool_bytes=1458892 prefix_nodes=30836 projected_payload_bytes=7720080 nihao=1 diaodeng=1 chunjingwu=1
+CORPUS_RETENTION variant=hybrid cap=4 labels=43 native_present=34 retained=31
+DROPPED variant=hybrid cap=4 text=番荔枝 native_reading_rank=1
+DROPPED variant=hybrid cap=4 text=鼓点子 native_reading_rank=1
+DROPPED variant=hybrid cap=4 text=建始县 native_reading_rank=1
+CANONICAL_SIZE variant=two_reading_plus_initial_three cap=4 records=202644 two_records=125197 three_records=77447 groups=140582 unique_texts=201659 text_pool_bytes=1643717 prefix_nodes=30836 projected_payload_bytes=8439285 nihao=1 diaodeng=1 chunjingwu=1
+CORPUS_RETENTION variant=canonical cap=1 labels=43 native_present=34 retained=24
+DROPPED variant=canonical cap=1 text=把酒 native_reading_rank=2
+DROPPED variant=canonical cap=1 text=风尚 native_reading_rank=2
+DROPPED variant=canonical cap=1 text=贵方 native_reading_rank=2
+DROPPED variant=canonical cap=1 text=领到 native_reading_rank=2
+DROPPED variant=canonical cap=1 text=男优 native_reading_rank=3
+DROPPED variant=canonical cap=1 text=情愿 native_reading_rank=2
+DROPPED variant=canonical cap=1 text=请愿 native_reading_rank=4
+DROPPED variant=canonical cap=1 text=请援 native_reading_rank=3
+DROPPED variant=canonical cap=1 text=碎花 native_reading_rank=2
+DROPPED variant=canonical cap=1 text=泰安县 native_reading_rank=2
+CANONICAL_SIZE variant=two_and_three_reading cap=1 records=486812 two_records=65674 three_records=421138 groups=486812 unique_texts=483636 text_pool_bytes=4640338 prefix_nodes=72010 projected_payload_bytes=23317730 nihao=1 diaodeng=1 chunjingwu=1
+CORPUS_RETENTION variant=canonical cap=2 labels=43 native_present=34 retained=31
+DROPPED variant=canonical cap=2 text=男优 native_reading_rank=3
+DROPPED variant=canonical cap=2 text=请愿 native_reading_rank=4
+DROPPED variant=canonical cap=2 text=请援 native_reading_rank=3
+CANONICAL_SIZE variant=two_and_three_reading cap=2 records=553514 two_records=98478 three_records=455036 groups=486812 unique_texts=549666 text_pool_bytes=5203124 prefix_nodes=72010 projected_payload_bytes=25214556 nihao=1 diaodeng=1 chunjingwu=1
+CORPUS_RETENTION variant=canonical cap=4 labels=43 native_present=34 retained=34
+CANONICAL_SIZE variant=two_and_three_reading cap=4 records=586245 two_records=125197 three_records=461048 groups=486812 unique_texts=581994 text_pool_bytes=5447235 prefix_nodes=72010 projected_payload_bytes=26113287 nihao=1 diaodeng=1 chunjingwu=1
+[       OK ] CanonicalCacheSize.ReadingCapsAndFocusedTargets (949 ms)
+[----------] 1 test from CanonicalCacheSize (949 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (950 ms total)
+[  PASSED  ] 1 test.

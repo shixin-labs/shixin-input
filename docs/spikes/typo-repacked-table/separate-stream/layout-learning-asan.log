@@ -1,0 +1,47 @@
+=== RUN   TestTypoLearningPersistenceSpike
+=== RUN   TestTypoLearningPersistenceSpike/neighbor
+    typo_learning_spike_test.go:85: write: === RUN   TestTypoLearningPersistenceSpike
+        --- PASS: TestTypoLearningPersistenceSpike (0.38s)
+        PASS
+    typo_learning_spike_test.go:85: export: === RUN   TestTypoLearningPersistenceSpike
+        --- PASS: TestTypoLearningPersistenceSpike (0.02s)
+        PASS
+    typo_learning_spike_test.go:105: persisted canonical entry: 你好	ni hao	8
+=== RUN   TestTypoLearningPersistenceSpike/native_alias
+    typo_learning_spike_test.go:85: write: === RUN   TestTypoLearningPersistenceSpike
+        --- PASS: TestTypoLearningPersistenceSpike (0.26s)
+        PASS
+    typo_learning_spike_test.go:85: export: === RUN   TestTypoLearningPersistenceSpike
+        --- PASS: TestTypoLearningPersistenceSpike (0.02s)
+        PASS
+    typo_learning_spike_test.go:105: persisted canonical entry: 你好	ni hao	8
+=== RUN   TestTypoLearningPersistenceSpike/swap
+    typo_learning_spike_test.go:85: write: === RUN   TestTypoLearningPersistenceSpike
+        --- PASS: TestTypoLearningPersistenceSpike (0.28s)
+        PASS
+    typo_learning_spike_test.go:85: export: === RUN   TestTypoLearningPersistenceSpike
+        --- PASS: TestTypoLearningPersistenceSpike (0.02s)
+        PASS
+    typo_learning_spike_test.go:105: persisted canonical entry: 你好	ni hao	8
+=== RUN   TestTypoLearningPersistenceSpike/emoji
+    typo_learning_spike_test.go:85: write: === RUN   TestTypoLearningPersistenceSpike
+        --- PASS: TestTypoLearningPersistenceSpike (0.29s)
+        PASS
+    typo_learning_spike_test.go:85: export: === RUN   TestTypoLearningPersistenceSpike
+        --- PASS: TestTypoLearningPersistenceSpike (0.02s)
+        PASS
+    typo_learning_spike_test.go:105: persisted canonical entry: 你好	ni hao	8
+=== RUN   TestTypoLearningPersistenceSpike/unselected
+    typo_learning_spike_test.go:85: write: === RUN   TestTypoLearningPersistenceSpike
+        --- PASS: TestTypoLearningPersistenceSpike (0.28s)
+        PASS
+    typo_learning_spike_test.go:85: export: === RUN   TestTypoLearningPersistenceSpike
+        --- PASS: TestTypoLearningPersistenceSpike (0.02s)
+        PASS
+--- PASS: TestTypoLearningPersistenceSpike (1.86s)
+    --- PASS: TestTypoLearningPersistenceSpike/neighbor (0.47s)
+    --- PASS: TestTypoLearningPersistenceSpike/native_alias (0.32s)
+    --- PASS: TestTypoLearningPersistenceSpike/swap (0.37s)
+    --- PASS: TestTypoLearningPersistenceSpike/emoji (0.35s)
+    --- PASS: TestTypoLearningPersistenceSpike/unselected (0.34s)
+PASS

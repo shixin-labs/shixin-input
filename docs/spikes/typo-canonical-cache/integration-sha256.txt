@@ -1,0 +1,7 @@
+9b1630ba74e9957e9064b27fbea832e557edb60a8802682ae4e34ab0f41874a5  spikes/typo-recovery/native-graph/librime.patch
+76111c54e2b03acc7740371057b5c65b67ba0f86a2bdb859930e561747f14ae0  spikes/typo-recovery/native-graph/canonical_native_test.cc
+38e2a7a9aec5a98bcdbf2f8825f812351712a414772fbf575409a76fe752aaad  build/typo-recovery/native-graph/out/lib/librime.1.17.0.dylib
+8ca20338ef386c0b302ffee68bd6ed60bf2aec1c548c9c90e4b12f1e444d3c2f  docs/spikes/typo-canonical-cache/canonical-editing-v1.log
+b6565a7cc4d262313aeef314c39a1957fd09ea41f77f249a3bd53438b5fffe7b  docs/spikes/typo-canonical-cache/canonical-latency-v1.log
+3e446e929e89e50c43e0c9f847b260f6225f89a025c95fb33880d70be427cbd0  docs/spikes/typo-canonical-cache/canonical-owner-v1.log
+8b96498a350383b0eaede37b75ab2172bf98cef05ae2fd8bc4af06b7108901a9  docs/spikes/typo-canonical-cache/focused-menus-v1.jsonl

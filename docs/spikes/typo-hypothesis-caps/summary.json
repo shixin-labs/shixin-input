@@ -1,0 +1,1474 @@
+{
+  "losses_vs_20": [
+    {
+      "form": "mixed_even",
+      "k": 2,
+      "kind": "swap",
+      "raw": "gdainz",
+      "target": "鼓点子"
+    },
+    {
+      "form": "mixed_even",
+      "k": 4,
+      "kind": "swap",
+      "raw": "gdainz",
+      "target": "鼓点子"
+    },
+    {
+      "form": "mixed_even",
+      "k": 8,
+      "kind": "swap",
+      "raw": "gdainz",
+      "target": "鼓点子"
+    },
+    {
+      "form": "mixed_even",
+      "k": 16,
+      "kind": "swap",
+      "raw": "gdainz",
+      "target": "鼓点子"
+    },
+    {
+      "form": "mixed_even",
+      "k": 2,
+      "kind": "neighbor",
+      "raw": "gdiabz",
+      "target": "鼓点子"
+    },
+    {
+      "form": "mixed_even",
+      "k": 4,
+      "kind": "neighbor",
+      "raw": "gdiabz",
+      "target": "鼓点子"
+    },
+    {
+      "form": "mixed_even",
+      "k": 8,
+      "kind": "neighbor",
+      "raw": "gdiabz",
+      "target": "鼓点子"
+    },
+    {
+      "form": "mixed_even",
+      "k": 16,
+      "kind": "neighbor",
+      "raw": "gdiabz",
+      "target": "鼓点子"
+    },
+    {
+      "form": "initials",
+      "k": 4,
+      "kind": "swap",
+      "raw": "jxs",
+      "target": "建始县"
+    },
+    {
+      "form": "initials",
+      "k": 8,
+      "kind": "swap",
+      "raw": "jxs",
+      "target": "建始县"
+    },
+    {
+      "form": "initials",
+      "k": 16,
+      "kind": "swap",
+      "raw": "jxs",
+      "target": "建始县"
+    },
+    {
+      "form": "initials",
+      "k": 4,
+      "kind": "neighbor",
+      "raw": "usx",
+      "target": "建始县"
+    },
+    {
+      "form": "initials",
+      "k": 8,
+      "kind": "neighbor",
+      "raw": "usx",
+      "target": "建始县"
+    },
+    {
+      "form": "initials",
+      "k": 16,
+      "kind": "neighbor",
+      "raw": "usx",
+      "target": "建始县"
+    },
+    {
+      "form": "digraph_initials",
+      "k": 2,
+      "kind": "swap",
+      "raw": "jhsx",
+      "target": "建始县"
+    },
+    {
+      "form": "digraph_initials",
+      "k": 4,
+      "kind": "swap",
+      "raw": "jhsx",
+      "target": "建始县"
+    },
+    {
+      "form": "digraph_initials",
+      "k": 8,
+      "kind": "swap",
+      "raw": "jhsx",
+      "target": "建始县"
+    },
+    {
+      "form": "digraph_initials",
+      "k": 16,
+      "kind": "swap",
+      "raw": "jhsx",
+      "target": "建始县"
+    },
+    {
+      "form": "digraph_initials",
+      "k": 4,
+      "kind": "neighbor",
+      "raw": "hshx",
+      "target": "建始县"
+    },
+    {
+      "form": "digraph_initials",
+      "k": 8,
+      "kind": "neighbor",
+      "raw": "hshx",
+      "target": "建始县"
+    },
+    {
+      "form": "digraph_initials",
+      "k": 16,
+      "kind": "neighbor",
+      "raw": "hshx",
+      "target": "建始县"
+    },
+    {
+      "form": "initials",
+      "k": 2,
+      "kind": "clean",
+      "raw": "dhr",
+      "target": "大伙儿"
+    },
+    {
+      "form": "initials",
+      "k": 4,
+      "kind": "clean",
+      "raw": "dhr",
+      "target": "大伙儿"
+    },
+    {
+      "form": "initials",
+      "k": 8,
+      "kind": "clean",
+      "raw": "dhr",
+      "target": "大伙儿"
+    },
+    {
+      "form": "initials",
+      "k": 16,
+      "kind": "clean",
+      "raw": "dhr",
+      "target": "大伙儿"
+    },
+    {
+      "form": "mixed_odd",
+      "k": 2,
+      "kind": "swap",
+      "raw": "fnegs",
+      "target": "奉上"
+    },
+    {
+      "form": "mixed_odd",
+      "k": 4,
+      "kind": "swap",
+      "raw": "fnegs",
+      "target": "奉上"
+    },
+    {
+      "form": "mixed_odd",
+      "k": 8,
+      "kind": "swap",
+      "raw": "fnegs",
+      "target": "奉上"
+    },
+    {
+      "form": "mixed_odd",
+      "k": 16,
+      "kind": "swap",
+      "raw": "fnegs",
+      "target": "奉上"
+    },
+    {
+      "form": "mixed_odd",
+      "k": 2,
+      "kind": "neighbor",
+      "raw": "febgs",
+      "target": "奉上"
+    },
+    {
+      "form": "mixed_odd",
+      "k": 4,
+      "kind": "neighbor",
+      "raw": "febgs",
+      "target": "奉上"
+    },
+    {
+      "form": "mixed_odd",
+      "k": 8,
+      "kind": "neighbor",
+      "raw": "febgs",
+      "target": "奉上"
+    },
+    {
+      "form": "mixed_odd",
+      "k": 16,
+      "kind": "neighbor",
+      "raw": "febgs",
+      "target": "奉上"
+    },
+    {
+      "form": "mixed_even",
+      "k": 2,
+      "kind": "swap",
+      "raw": "fshnag",
+      "target": "风尚"
+    },
+    {
+      "form": "mixed_even",
+      "k": 4,
+      "kind": "swap",
+      "raw": "fshnag",
+      "target": "风尚"
+    },
+    {
+      "form": "mixed_even",
+      "k": 8,
+      "kind": "swap",
+      "raw": "fshnag",
+      "target": "风尚"
+    },
+    {
+      "form": "mixed_even",
+      "k": 16,
+      "kind": "swap",
+      "raw": "fshnag",
+      "target": "风尚"
+    },
+    {
+      "form": "mixed_even",
+      "k": 2,
+      "kind": "neighbor",
+      "raw": "fshajg",
+      "target": "风尚"
+    },
+    {
+      "form": "mixed_even",
+      "k": 4,
+      "kind": "neighbor",
+      "raw": "fshajg",
+      "target": "风尚"
+    },
+    {
+      "form": "mixed_even",
+      "k": 8,
+      "kind": "neighbor",
+      "raw": "fshajg",
+      "target": "风尚"
+    },
+    {
+      "form": "mixed_even",
+      "k": 16,
+      "kind": "neighbor",
+      "raw": "fshajg",
+      "target": "风尚"
+    },
+    {
+      "form": "initials",
+      "k": 8,
+      "kind": "swap",
+      "raw": "jzsm",
+      "target": "竞争模式"
+    },
+    {
+      "form": "initials",
+      "k": 16,
+      "kind": "swap",
+      "raw": "jzsm",
+      "target": "竞争模式"
+    },
+    {
+      "form": "initials",
+      "k": 2,
+      "kind": "neighbor",
+      "raw": "izms",
+      "target": "竞争模式"
+    },
+    {
+      "form": "initials",
+      "k": 4,
+      "kind": "neighbor",
+      "raw": "izms",
+      "target": "竞争模式"
+    },
+    {
+      "form": "initials",
+      "k": 8,
+      "kind": "neighbor",
+      "raw": "izms",
+      "target": "竞争模式"
+    },
+    {
+      "form": "initials",
+      "k": 16,
+      "kind": "neighbor",
+      "raw": "izms",
+      "target": "竞争模式"
+    },
+    {
+      "form": "initials",
+      "k": 4,
+      "kind": "swap",
+      "raw": "fzl",
+      "target": "番荔枝"
+    },
+    {
+      "form": "initials",
+      "k": 8,
+      "kind": "swap",
+      "raw": "fzl",
+      "target": "番荔枝"
+    },
+    {
+      "form": "initials",
+      "k": 16,
+      "kind": "swap",
+      "raw": "fzl",
+      "target": "番荔枝"
+    },
+    {
+      "form": "initials",
+      "k": 4,
+      "kind": "neighbor",
+      "raw": "vlz",
+      "target": "番荔枝"
+    },
+    {
+      "form": "initials",
+      "k": 8,
+      "kind": "neighbor",
+      "raw": "vlz",
+      "target": "番荔枝"
+    },
+    {
+      "form": "initials",
+      "k": 16,
+      "kind": "neighbor",
+      "raw": "vlz",
+      "target": "番荔枝"
+    },
+    {
+      "form": "mixed_even",
+      "k": 16,
+      "kind": "clean",
+      "raw": "nyou",
+      "target": "男优"
+    },
+    {
+      "form": "mixed_even",
+      "k": 2,
+      "kind": "swap",
+      "raw": "nyuo",
+      "target": "男优"
+    },
+    {
+      "form": "mixed_even",
+      "k": 4,
+      "kind": "swap",
+      "raw": "nyuo",
+      "target": "男优"
+    },
+    {
+      "form": "mixed_even",
+      "k": 8,
+      "kind": "swap",
+      "raw": "nyuo",
+      "target": "男优"
+    },
+    {
+      "form": "mixed_even",
+      "k": 16,
+      "kind": "swap",
+      "raw": "nyuo",
+      "target": "男优"
+    },
+    {
+      "form": "mixed_even",
+      "k": 2,
+      "kind": "neighbor",
+      "raw": "nyoj",
+      "target": "男优"
+    },
+    {
+      "form": "mixed_even",
+      "k": 4,
+      "kind": "neighbor",
+      "raw": "nyoj",
+      "target": "男优"
+    },
+    {
+      "form": "mixed_even",
+      "k": 8,
+      "kind": "neighbor",
+      "raw": "nyoj",
+      "target": "男优"
+    },
+    {
+      "form": "mixed_even",
+      "k": 16,
+      "kind": "neighbor",
+      "raw": "nyoj",
+      "target": "男优"
+    },
+    {
+      "form": "mixed_odd",
+      "k": 2,
+      "kind": "swap",
+      "raw": "anny",
+      "target": "男优"
+    },
+    {
+      "form": "mixed_odd",
+      "k": 4,
+      "kind": "swap",
+      "raw": "anny",
+      "target": "男优"
+    },
+    {
+      "form": "mixed_odd",
+      "k": 8,
+      "kind": "swap",
+      "raw": "anny",
+      "target": "男优"
+    },
+    {
+      "form": "mixed_odd",
+      "k": 16,
+      "kind": "swap",
+      "raw": "anny",
+      "target": "男优"
+    },
+    {
+      "form": "mixed_odd",
+      "k": 2,
+      "kind": "neighbor",
+      "raw": "nzny",
+      "target": "男优"
+    },
+    {
+      "form": "mixed_odd",
+      "k": 4,
+      "kind": "neighbor",
+      "raw": "nzny",
+      "target": "男优"
+    },
+    {
+      "form": "mixed_odd",
+      "k": 8,
+      "kind": "neighbor",
+      "raw": "nzny",
+      "target": "男优"
+    },
+    {
+      "form": "mixed_odd",
+      "k": 16,
+      "kind": "neighbor",
+      "raw": "nzny",
+      "target": "男优"
+    },
+    {
+      "form": "initials",
+      "k": 4,
+      "kind": "swap",
+      "raw": "yn",
+      "target": "男友"
+    },
+    {
+      "form": "initials",
+      "k": 8,
+      "kind": "swap",
+      "raw": "yn",
+      "target": "男友"
+    },
+    {
+      "form": "initials",
+      "k": 16,
+      "kind": "swap",
+      "raw": "yn",
+      "target": "男友"
+    },
+    {
+      "form": "initials",
+      "k": 8,
+      "kind": "neighbor",
+      "raw": "hy",
+      "target": "男友"
+    },
+    {
+      "form": "initials",
+      "k": 16,
+      "kind": "neighbor",
+      "raw": "hy",
+      "target": "男友"
+    },
+    {
+      "form": "initials",
+      "k": 8,
+      "kind": "swap",
+      "raw": "sme",
+      "target": "曼苏尔"
+    },
+    {
+      "form": "initials",
+      "k": 16,
+      "kind": "swap",
+      "raw": "sme",
+      "target": "曼苏尔"
+    },
+    {
+      "form": "initials",
+      "k": 16,
+      "kind": "neighbor",
+      "raw": "nse",
+      "target": "曼苏尔"
+    },
+    {
+      "form": "mixed_even",
+      "k": 2,
+      "kind": "swap",
+      "raw": "tnax",
+      "target": "台安县"
+    },
+    {
+      "form": "mixed_even",
+      "k": 4,
+      "kind": "swap",
+      "raw": "tnax",
+      "target": "台安县"
+    },
+    {
+      "form": "mixed_even",
+      "k": 8,
+      "kind": "swap",
+      "raw": "tnax",
+      "target": "台安县"
+    },
+    {
+      "form": "mixed_even",
+      "k": 16,
+      "kind": "swap",
+      "raw": "tnax",
+      "target": "台安县"
+    },
+    {
+      "form": "digraph_initials",
+      "k": 2,
+      "kind": "clean",
+      "raw": "qchr",
+      "target": "钱串儿"
+    },
+    {
+      "form": "digraph_initials",
+      "k": 4,
+      "kind": "clean",
+      "raw": "qchr",
+      "target": "钱串儿"
+    },
+    {
+      "form": "digraph_initials",
+      "k": 8,
+      "kind": "clean",
+      "raw": "qchr",
+      "target": "钱串儿"
+    },
+    {
+      "form": "digraph_initials",
+      "k": 16,
+      "kind": "clean",
+      "raw": "qchr",
+      "target": "钱串儿"
+    },
+    {
+      "form": "mixed_odd",
+      "k": 16,
+      "kind": "clean",
+      "raw": "qingy",
+      "target": "情愿"
+    },
+    {
+      "form": "mixed_odd",
+      "k": 2,
+      "kind": "swap",
+      "raw": "qigny",
+      "target": "情愿"
+    },
+    {
+      "form": "mixed_odd",
+      "k": 4,
+      "kind": "swap",
+      "raw": "qigny",
+      "target": "情愿"
+    },
+    {
+      "form": "mixed_odd",
+      "k": 8,
+      "kind": "swap",
+      "raw": "qigny",
+      "target": "情愿"
+    },
+    {
+      "form": "mixed_odd",
+      "k": 16,
+      "kind": "swap",
+      "raw": "qigny",
+      "target": "情愿"
+    },
+    {
+      "form": "mixed_odd",
+      "k": 2,
+      "kind": "neighbor",
+      "raw": "qungy",
+      "target": "情愿"
+    },
+    {
+      "form": "mixed_odd",
+      "k": 4,
+      "kind": "neighbor",
+      "raw": "qungy",
+      "target": "情愿"
+    },
+    {
+      "form": "mixed_odd",
+      "k": 8,
+      "kind": "neighbor",
+      "raw": "qungy",
+      "target": "情愿"
+    },
+    {
+      "form": "mixed_odd",
+      "k": 16,
+      "kind": "neighbor",
+      "raw": "qungy",
+      "target": "情愿"
+    },
+    {
+      "form": "mixed_even",
+      "k": 2,
+      "kind": "swap",
+      "raw": "qyuna",
+      "target": "请愿"
+    },
+    {
+      "form": "mixed_even",
+      "k": 4,
+      "kind": "swap",
+      "raw": "qyuna",
+      "target": "请愿"
+    },
+    {
+      "form": "mixed_even",
+      "k": 8,
+      "kind": "swap",
+      "raw": "qyuna",
+      "target": "请愿"
+    },
+    {
+      "form": "mixed_even",
+      "k": 16,
+      "kind": "swap",
+      "raw": "qyuna",
+      "target": "请愿"
+    },
+    {
+      "form": "mixed_even",
+      "k": 2,
+      "kind": "neighbor",
+      "raw": "qyuaj",
+      "target": "请愿"
+    },
+    {
+      "form": "mixed_even",
+      "k": 4,
+      "kind": "neighbor",
+      "raw": "qyuaj",
+      "target": "请愿"
+    },
+    {
+      "form": "mixed_even",
+      "k": 8,
+      "kind": "neighbor",
+      "raw": "qyuaj",
+      "target": "请愿"
+    },
+    {
+      "form": "mixed_even",
+      "k": 16,
+      "kind": "neighbor",
+      "raw": "qyuaj",
+      "target": "请愿"
+    },
+    {
+      "form": "mixed_even",
+      "k": 2,
+      "kind": "swap",
+      "raw": "qyaun",
+      "target": "请援"
+    },
+    {
+      "form": "mixed_even",
+      "k": 4,
+      "kind": "swap",
+      "raw": "qyaun",
+      "target": "请援"
+    },
+    {
+      "form": "mixed_even",
+      "k": 8,
+      "kind": "swap",
+      "raw": "qyaun",
+      "target": "请援"
+    },
+    {
+      "form": "mixed_even",
+      "k": 16,
+      "kind": "swap",
+      "raw": "qyaun",
+      "target": "请援"
+    },
+    {
+      "form": "mixed_even",
+      "k": 4,
+      "kind": "neighbor",
+      "raw": "ayuan",
+      "target": "请援"
+    },
+    {
+      "form": "mixed_even",
+      "k": 8,
+      "kind": "neighbor",
+      "raw": "ayuan",
+      "target": "请援"
+    },
+    {
+      "form": "mixed_even",
+      "k": 16,
+      "kind": "neighbor",
+      "raw": "ayuan",
+      "target": "请援"
+    }
+  ],
+  "max_planner_work": 6251,
+  "metrics": {
+    "16/all": {
+      "N": 830,
+      "Baseline": 212,
+      "Available": 522,
+      "CorrectionOnly": 369,
+      "LostToPer20": 33,
+      "HypothesisTarget": 548,
+      "Candidates": 45609
+    },
+    "16/clean": {
+      "N": 277,
+      "Baseline": 173,
+      "Available": 179,
+      "CorrectionOnly": 26,
+      "LostToPer20": 4,
+      "HypothesisTarget": 0,
+      "Candidates": 17358
+    },
+    "16/digraph_initials/clean": {
+      "N": 24,
+      "Baseline": 14,
+      "Available": 15,
+      "CorrectionOnly": 1,
+      "LostToPer20": 1,
+      "HypothesisTarget": 0,
+      "Candidates": 2439
+    },
+    "16/digraph_initials/neighbor": {
+      "N": 24,
+      "Baseline": 0,
+      "Available": 14,
+      "CorrectionOnly": 14,
+      "LostToPer20": 1,
+      "HypothesisTarget": 24,
+      "Candidates": 2022
+    },
+    "16/digraph_initials/swap": {
+      "N": 24,
+      "Baseline": 0,
+      "Available": 14,
+      "CorrectionOnly": 14,
+      "LostToPer20": 1,
+      "HypothesisTarget": 24,
+      "Candidates": 2089
+    },
+    "16/full/clean": {
+      "N": 64,
+      "Baseline": 53,
+      "Available": 53,
+      "CorrectionOnly": 6,
+      "LostToPer20": 0,
+      "HypothesisTarget": 0,
+      "Candidates": 1326
+    },
+    "16/full/neighbor": {
+      "N": 64,
+      "Baseline": 0,
+      "Available": 53,
+      "CorrectionOnly": 53,
+      "LostToPer20": 0,
+      "HypothesisTarget": 64,
+      "Candidates": 1229
+    },
+    "16/full/swap": {
+      "N": 64,
+      "Baseline": 15,
+      "Available": 53,
+      "CorrectionOnly": 53,
+      "LostToPer20": 0,
+      "HypothesisTarget": 64,
+      "Candidates": 1025
+    },
+    "16/initials/clean": {
+      "N": 61,
+      "Baseline": 21,
+      "Available": 23,
+      "CorrectionOnly": 2,
+      "LostToPer20": 1,
+      "HypothesisTarget": 0,
+      "Candidates": 6242
+    },
+    "16/initials/neighbor": {
+      "N": 64,
+      "Baseline": 0,
+      "Available": 20,
+      "CorrectionOnly": 20,
+      "LostToPer20": 5,
+      "HypothesisTarget": 62,
+      "Candidates": 5609
+    },
+    "16/initials/swap": {
+      "N": 59,
+      "Baseline": 0,
+      "Available": 21,
+      "CorrectionOnly": 21,
+      "LostToPer20": 5,
+      "HypothesisTarget": 59,
+      "Candidates": 5897
+    },
+    "16/mixed_even/clean": {
+      "N": 64,
+      "Baseline": 43,
+      "Available": 46,
+      "CorrectionOnly": 9,
+      "LostToPer20": 1,
+      "HypothesisTarget": 0,
+      "Candidates": 3990
+    },
+    "16/mixed_even/neighbor": {
+      "N": 63,
+      "Baseline": 0,
+      "Available": 43,
+      "CorrectionOnly": 43,
+      "LostToPer20": 5,
+      "HypothesisTarget": 63,
+      "Candidates": 2736
+    },
+    "16/mixed_even/swap": {
+      "N": 64,
+      "Baseline": 13,
+      "Available": 43,
+      "CorrectionOnly": 43,
+      "LostToPer20": 6,
+      "HypothesisTarget": 64,
+      "Candidates": 2986
+    },
+    "16/mixed_odd/clean": {
+      "N": 64,
+      "Baseline": 42,
+      "Available": 42,
+      "CorrectionOnly": 8,
+      "LostToPer20": 1,
+      "HypothesisTarget": 0,
+      "Candidates": 3361
+    },
+    "16/mixed_odd/neighbor": {
+      "N": 63,
+      "Baseline": 0,
+      "Available": 42,
+      "CorrectionOnly": 42,
+      "LostToPer20": 3,
+      "HypothesisTarget": 63,
+      "Candidates": 2549
+    },
+    "16/mixed_odd/swap": {
+      "N": 64,
+      "Baseline": 11,
+      "Available": 40,
+      "CorrectionOnly": 40,
+      "LostToPer20": 3,
+      "HypothesisTarget": 61,
+      "Candidates": 2109
+    },
+    "16/neighbor": {
+      "N": 278,
+      "Baseline": 0,
+      "Available": 172,
+      "CorrectionOnly": 172,
+      "LostToPer20": 14,
+      "HypothesisTarget": 276,
+      "Candidates": 14145
+    },
+    "16/swap": {
+      "N": 275,
+      "Baseline": 39,
+      "Available": 171,
+      "CorrectionOnly": 171,
+      "LostToPer20": 15,
+      "HypothesisTarget": 272,
+      "Candidates": 14106
+    },
+    "2/all": {
+      "N": 830,
+      "Baseline": 212,
+      "Available": 404,
+      "CorrectionOnly": 234,
+      "LostToPer20": 20,
+      "HypothesisTarget": 354,
+      "Candidates": 8392
+    },
+    "2/clean": {
+      "N": 277,
+      "Baseline": 173,
+      "Available": 177,
+      "CorrectionOnly": 8,
+      "LostToPer20": 2,
+      "HypothesisTarget": 0,
+      "Candidates": 2961
+    },
+    "2/digraph_initials/clean": {
+      "N": 24,
+      "Baseline": 14,
+      "Available": 15,
+      "CorrectionOnly": 1,
+      "LostToPer20": 1,
+      "HypothesisTarget": 0,
+      "Candidates": 383
+    },
+    "2/digraph_initials/neighbor": {
+      "N": 24,
+      "Baseline": 0,
+      "Available": 4,
+      "CorrectionOnly": 4,
+      "LostToPer20": 0,
+      "HypothesisTarget": 7,
+      "Candidates": 339
+    },
+    "2/digraph_initials/swap": {
+      "N": 24,
+      "Baseline": 0,
+      "Available": 6,
+      "CorrectionOnly": 6,
+      "LostToPer20": 1,
+      "HypothesisTarget": 11,
+      "Candidates": 305
+    },
+    "2/full/clean": {
+      "N": 64,
+      "Baseline": 53,
+      "Available": 53,
+      "CorrectionOnly": 0,
+      "LostToPer20": 0,
+      "HypothesisTarget": 0,
+      "Candidates": 221
+    },
+    "2/full/neighbor": {
+      "N": 64,
+      "Baseline": 0,
+      "Available": 47,
+      "CorrectionOnly": 47,
+      "LostToPer20": 0,
+      "HypothesisTarget": 57,
+      "Candidates": 235
+    },
+    "2/full/swap": {
+      "N": 64,
+      "Baseline": 15,
+      "Available": 52,
+      "CorrectionOnly": 52,
+      "LostToPer20": 0,
+      "HypothesisTarget": 63,
+      "Candidates": 247
+    },
+    "2/initials/clean": {
+      "N": 61,
+      "Baseline": 21,
+      "Available": 23,
+      "CorrectionOnly": 2,
+      "LostToPer20": 1,
+      "HypothesisTarget": 0,
+      "Candidates": 1007
+    },
+    "2/initials/neighbor": {
+      "N": 64,
+      "Baseline": 0,
+      "Available": 0,
+      "CorrectionOnly": 0,
+      "LostToPer20": 1,
+      "HypothesisTarget": 13,
+      "Candidates": 1059
+    },
+    "2/initials/swap": {
+      "N": 59,
+      "Baseline": 0,
+      "Available": 0,
+      "CorrectionOnly": 0,
+      "LostToPer20": 0,
+      "HypothesisTarget": 19,
+      "Candidates": 1017
+    },
+    "2/mixed_even/clean": {
+      "N": 64,
+      "Baseline": 43,
+      "Available": 44,
+      "CorrectionOnly": 4,
+      "LostToPer20": 0,
+      "HypothesisTarget": 0,
+      "Candidates": 730
+    },
+    "2/mixed_even/neighbor": {
+      "N": 63,
+      "Baseline": 0,
+      "Available": 27,
+      "CorrectionOnly": 27,
+      "LostToPer20": 4,
+      "HypothesisTarget": 43,
+      "Candidates": 607
+    },
+    "2/mixed_even/swap": {
+      "N": 64,
+      "Baseline": 13,
+      "Available": 32,
+      "CorrectionOnly": 32,
+      "LostToPer20": 6,
+      "HypothesisTarget": 50,
+      "Candidates": 636
+    },
+    "2/mixed_odd/clean": {
+      "N": 64,
+      "Baseline": 42,
+      "Available": 42,
+      "CorrectionOnly": 1,
+      "LostToPer20": 0,
+      "HypothesisTarget": 0,
+      "Candidates": 620
+    },
+    "2/mixed_odd/neighbor": {
+      "N": 63,
+      "Baseline": 0,
+      "Available": 26,
+      "CorrectionOnly": 26,
+      "LostToPer20": 3,
+      "HypothesisTarget": 41,
+      "Candidates": 505
+    },
+    "2/mixed_odd/swap": {
+      "N": 64,
+      "Baseline": 11,
+      "Available": 33,
+      "CorrectionOnly": 32,
+      "LostToPer20": 3,
+      "HypothesisTarget": 50,
+      "Candidates": 481
+    },
+    "2/neighbor": {
+      "N": 278,
+      "Baseline": 0,
+      "Available": 104,
+      "CorrectionOnly": 104,
+      "LostToPer20": 8,
+      "HypothesisTarget": 161,
+      "Candidates": 2745
+    },
+    "2/swap": {
+      "N": 275,
+      "Baseline": 39,
+      "Available": 123,
+      "CorrectionOnly": 122,
+      "LostToPer20": 10,
+      "HypothesisTarget": 193,
+      "Candidates": 2686
+    },
+    "4/all": {
+      "N": 830,
+      "Baseline": 212,
+      "Available": 442,
+      "CorrectionOnly": 273,
+      "LostToPer20": 27,
+      "HypothesisTarget": 439,
+      "Candidates": 15852
+    },
+    "4/clean": {
+      "N": 277,
+      "Baseline": 173,
+      "Available": 177,
+      "CorrectionOnly": 8,
+      "LostToPer20": 2,
+      "HypothesisTarget": 0,
+      "Candidates": 5800
+    },
+    "4/digraph_initials/clean": {
+      "N": 24,
+      "Baseline": 14,
+      "Available": 15,
+      "CorrectionOnly": 1,
+      "LostToPer20": 1,
+      "HypothesisTarget": 0,
+      "Candidates": 733
+    },
+    "4/digraph_initials/neighbor": {
+      "N": 24,
+      "Baseline": 0,
+      "Available": 8,
+      "CorrectionOnly": 8,
+      "LostToPer20": 1,
+      "HypothesisTarget": 16,
+      "Candidates": 634
+    },
+    "4/digraph_initials/swap": {
+      "N": 24,
+      "Baseline": 0,
+      "Available": 11,
+      "CorrectionOnly": 11,
+      "LostToPer20": 1,
+      "HypothesisTarget": 21,
+      "Candidates": 594
+    },
+    "4/full/clean": {
+      "N": 64,
+      "Baseline": 53,
+      "Available": 53,
+      "CorrectionOnly": 0,
+      "LostToPer20": 0,
+      "HypothesisTarget": 0,
+      "Candidates": 387
+    },
+    "4/full/neighbor": {
+      "N": 64,
+      "Baseline": 0,
+      "Available": 51,
+      "CorrectionOnly": 51,
+      "LostToPer20": 0,
+      "HypothesisTarget": 61,
+      "Candidates": 392
+    },
+    "4/full/swap": {
+      "N": 64,
+      "Baseline": 15,
+      "Available": 53,
+      "CorrectionOnly": 53,
+      "LostToPer20": 0,
+      "HypothesisTarget": 64,
+      "Candidates": 392
+    },
+    "4/initials/clean": {
+      "N": 61,
+      "Baseline": 21,
+      "Available": 23,
+      "CorrectionOnly": 2,
+      "LostToPer20": 1,
+      "HypothesisTarget": 0,
+      "Candidates": 2015
+    },
+    "4/initials/neighbor": {
+      "N": 64,
+      "Baseline": 0,
+      "Available": 2,
+      "CorrectionOnly": 2,
+      "LostToPer20": 3,
+      "HypothesisTarget": 30,
+      "Candidates": 2087
+    },
+    "4/initials/swap": {
+      "N": 59,
+      "Baseline": 0,
+      "Available": 3,
+      "CorrectionOnly": 3,
+      "LostToPer20": 3,
+      "HypothesisTarget": 33,
+      "Candidates": 2028
+    },
+    "4/mixed_even/clean": {
+      "N": 64,
+      "Baseline": 43,
+      "Available": 44,
+      "CorrectionOnly": 4,
+      "LostToPer20": 0,
+      "HypothesisTarget": 0,
+      "Candidates": 1496
+    },
+    "4/mixed_even/neighbor": {
+      "N": 63,
+      "Baseline": 0,
+      "Available": 33,
+      "CorrectionOnly": 33,
+      "LostToPer20": 5,
+      "HypothesisTarget": 51,
+      "Candidates": 1113
+    },
+    "4/mixed_even/swap": {
+      "N": 64,
+      "Baseline": 13,
+      "Available": 38,
+      "CorrectionOnly": 38,
+      "LostToPer20": 6,
+      "HypothesisTarget": 59,
+      "Candidates": 1110
+    },
+    "4/mixed_odd/clean": {
+      "N": 64,
+      "Baseline": 42,
+      "Available": 42,
+      "CorrectionOnly": 1,
+      "LostToPer20": 0,
+      "HypothesisTarget": 0,
+      "Candidates": 1169
+    },
+    "4/mixed_odd/neighbor": {
+      "N": 63,
+      "Baseline": 0,
+      "Available": 32,
+      "CorrectionOnly": 32,
+      "LostToPer20": 3,
+      "HypothesisTarget": 49,
+      "Candidates": 904
+    },
+    "4/mixed_odd/swap": {
+      "N": 64,
+      "Baseline": 11,
+      "Available": 34,
+      "CorrectionOnly": 34,
+      "LostToPer20": 3,
+      "HypothesisTarget": 55,
+      "Candidates": 798
+    },
+    "4/neighbor": {
+      "N": 278,
+      "Baseline": 0,
+      "Available": 126,
+      "CorrectionOnly": 126,
+      "LostToPer20": 12,
+      "HypothesisTarget": 207,
+      "Candidates": 5130
+    },
+    "4/swap": {
+      "N": 275,
+      "Baseline": 39,
+      "Available": 139,
+      "CorrectionOnly": 139,
+      "LostToPer20": 13,
+      "HypothesisTarget": 232,
+      "Candidates": 4922
+    },
+    "8/all": {
+      "N": 830,
+      "Baseline": 212,
+      "Available": 487,
+      "CorrectionOnly": 319,
+      "LostToPer20": 30,
+      "HypothesisTarget": 506,
+      "Candidates": 28807
+    },
+    "8/clean": {
+      "N": 277,
+      "Baseline": 173,
+      "Available": 178,
+      "CorrectionOnly": 10,
+      "LostToPer20": 2,
+      "HypothesisTarget": 0,
+      "Candidates": 10904
+    },
+    "8/digraph_initials/clean": {
+      "N": 24,
+      "Baseline": 14,
+      "Available": 15,
+      "CorrectionOnly": 1,
+      "LostToPer20": 1,
+      "HypothesisTarget": 0,
+      "Candidates": 1367
+    },
+    "8/digraph_initials/neighbor": {
+      "N": 24,
+      "Baseline": 0,
+      "Available": 10,
+      "CorrectionOnly": 10,
+      "LostToPer20": 1,
+      "HypothesisTarget": 20,
+      "Candidates": 1173
+    },
+    "8/digraph_initials/swap": {
+      "N": 24,
+      "Baseline": 0,
+      "Available": 14,
+      "CorrectionOnly": 14,
+      "LostToPer20": 1,
+      "HypothesisTarget": 24,
+      "Candidates": 1175
+    },
+    "8/full/clean": {
+      "N": 64,
+      "Baseline": 53,
+      "Available": 53,
+      "CorrectionOnly": 0,
+      "LostToPer20": 0,
+      "HypothesisTarget": 0,
+      "Candidates": 702
+    },
+    "8/full/neighbor": {
+      "N": 64,
+      "Baseline": 0,
+      "Available": 53,
+      "CorrectionOnly": 53,
+      "LostToPer20": 0,
+      "HypothesisTarget": 64,
+      "Candidates": 703
+    },
+    "8/full/swap": {
+      "N": 64,
+      "Baseline": 15,
+      "Available": 53,
+      "CorrectionOnly": 53,
+      "LostToPer20": 0,
+      "HypothesisTarget": 64,
+      "Candidates": 645
+    },
+    "8/initials/clean": {
+      "N": 61,
+      "Baseline": 21,
+      "Available": 23,
+      "CorrectionOnly": 2,
+      "LostToPer20": 1,
+      "HypothesisTarget": 0,
+      "Candidates": 4045
+    },
+    "8/initials/neighbor": {
+      "N": 64,
+      "Baseline": 0,
+      "Available": 9,
+      "CorrectionOnly": 9,
+      "LostToPer20": 4,
+      "HypothesisTarget": 45,
+      "Candidates": 3854
+    },
+    "8/initials/swap": {
+      "N": 59,
+      "Baseline": 0,
+      "Available": 15,
+      "CorrectionOnly": 15,
+      "LostToPer20": 5,
+      "HypothesisTarget": 52,
+      "Candidates": 3865
+    },
+    "8/mixed_even/clean": {
+      "N": 64,
+      "Baseline": 43,
+      "Available": 45,
+      "CorrectionOnly": 5,
+      "LostToPer20": 0,
+      "HypothesisTarget": 0,
+      "Candidates": 2678
+    },
+    "8/mixed_even/neighbor": {
+      "N": 63,
+      "Baseline": 0,
+      "Available": 40,
+      "CorrectionOnly": 40,
+      "LostToPer20": 5,
+      "HypothesisTarget": 60,
+      "Candidates": 1812
+    },
+    "8/mixed_even/swap": {
+      "N": 64,
+      "Baseline": 13,
+      "Available": 41,
+      "CorrectionOnly": 41,
+      "LostToPer20": 6,
+      "HypothesisTarget": 62,
+      "Candidates": 1852
+    },
+    "8/mixed_odd/clean": {
+      "N": 64,
+      "Baseline": 42,
+      "Available": 42,
+      "CorrectionOnly": 2,
+      "LostToPer20": 0,
+      "HypothesisTarget": 0,
+      "Candidates": 2112
+    },
+    "8/mixed_odd/neighbor": {
+      "N": 63,
+      "Baseline": 0,
+      "Available": 35,
+      "CorrectionOnly": 35,
+      "LostToPer20": 3,
+      "HypothesisTarget": 55,
+      "Candidates": 1585
+    },
+    "8/mixed_odd/swap": {
+      "N": 64,
+      "Baseline": 11,
+      "Available": 39,
+      "CorrectionOnly": 39,
+      "LostToPer20": 3,
+      "HypothesisTarget": 60,
+      "Candidates": 1239
+    },
+    "8/neighbor": {
+      "N": 278,
+      "Baseline": 0,
+      "Available": 147,
+      "CorrectionOnly": 147,
+      "LostToPer20": 13,
+      "HypothesisTarget": 244,
+      "Candidates": 9127
+    },
+    "8/swap": {
+      "N": 275,
+      "Baseline": 39,
+      "Available": 162,
+      "CorrectionOnly": 162,
+      "LostToPer20": 15,
+      "HypothesisTarget": 262,
+      "Candidates": 8776
+    }
+  },
+  "notes": [
+    "Offline spelling-prior heuristic; no target-conditioned ranking and no AI.",
+    "Per-spelling cap applies to raw native menu prefix; only verified full-span entries count. No refill beyond cap.",
+    "Ordinary first ten kept separate and unchanged by construction, not a product UI test.",
+    "Planner timing excludes native retrieval, replay/probes, IPC and ranking. No shared end-to-end deadline claim.",
+    "Candidate pools can grow to 10*K before deduplication; availability is not top-1 accuracy.",
+    "Reused synthetic development corpus; not held-out real typo accuracy."
+  ],
+  "planner_ns": {
+    "max": 93291,
+    "p50": 10000,
+    "p99": 75459
+  }
+}

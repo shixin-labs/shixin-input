@@ -1,0 +1,32 @@
+[
+  {
+    "form": "digraph_initials",
+    "n": 10,
+    "recall50": 9,
+    "top5": 7
+  },
+  {
+    "form": "full",
+    "n": 26,
+    "recall50": 26,
+    "top5": 26
+  },
+  {
+    "form": "initials",
+    "n": 25,
+    "recall50": 16,
+    "top5": 8
+  },
+  {
+    "form": "mixed_even",
+    "n": 26,
+    "recall50": 23,
+    "top5": 16
+  },
+  {
+    "form": "mixed_odd",
+    "n": 26,
+    "recall50": 22,
+    "top5": 15
+  }
+]

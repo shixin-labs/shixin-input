@@ -1,0 +1,6 @@
+out recovery_translation PASS
+out separate_stream PASS
+out correction_registry PASS
+asan recovery_translation PASS
+asan separate_stream PASS
+asan correction_registry PASS

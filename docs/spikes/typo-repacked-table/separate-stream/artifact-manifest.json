@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "builder": "shixin-typo-mirror-v1",
+  "builder_sha256": "f178079c3a1dea292f5e308d3ef98e74d3ea176c59f55ddb24206512f80043b2",
+  "files": {
+    "initial": {
+      "path": "/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/verified-repack-v1/rime_ice.table.bin.initial3",
+      "sha256": "913247c3d58a354f4c34148d72fa4b7fbf7b49e1a67f576fcddf1dbb4fba46a1",
+      "bytes": 1309492
+    },
+    "mirror": {
+      "path": "/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/verified-repack-v1/rime_ice.table.bin.mirror3",
+      "sha256": "ae7734ae6e22e12c2be8b90aa616637b3a478f424d2a084d1ac97b146a2b5fca",
+      "bytes": 2012642
+    },
+    "prism": {
+      "path": "/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/verified-repack-v1/rime_ice.prism.bin",
+      "sha256": "b863f7c6989ba87cb3361ff6c3277edceb767b7fcbfff0ea84a17ed3cd13a908",
+      "bytes": 40032
+    },
+    "table": {
+      "path": "/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/verified-repack-v1/rime_ice.table.bin",
+      "sha256": "49411e194c7e31416805afd5e421aa6d3d575cf92a961be6959bd5e6ed951035",
+      "bytes": 60656260
+    }
+  }
+}

@@ -1,0 +1,77 @@
+[
+  {
+    "variant": "plain",
+    "retained_bytes": 81247270,
+    "workspace_bytes": 45064,
+    "queries": 2616,
+    "lookup_ns": {
+      "p50": 51958,
+      "p95": 117208,
+      "p99": 152000,
+      "p999": 191500,
+      "max": 228541
+    },
+    "allocations": 0,
+    "exhausted": 1134
+  },
+  {
+    "variant": "strings",
+    "retained_bytes": 75057510,
+    "workspace_bytes": 45064,
+    "queries": 2616,
+    "lookup_ns": {
+      "p50": 51000,
+      "p95": 115583,
+      "p99": 147584,
+      "p999": 189125,
+      "max": 230750
+    },
+    "allocations": 0,
+    "exhausted": 1134
+  },
+  {
+    "variant": "packed",
+    "retained_bytes": 60644346,
+    "workspace_bytes": 45064,
+    "queries": 2616,
+    "lookup_ns": {
+      "p50": 53834,
+      "p95": 119625,
+      "p99": 159333,
+      "p999": 200166,
+      "max": 242000
+    },
+    "allocations": 0,
+    "exhausted": 1134
+  },
+  {
+    "variant": "packed-strings",
+    "retained_bytes": 54454586,
+    "workspace_bytes": 45064,
+    "queries": 2616,
+    "lookup_ns": {
+      "p50": 53709,
+      "p95": 120000,
+      "p99": 158541,
+      "p999": 200958,
+      "max": 246833
+    },
+    "allocations": 0,
+    "exhausted": 1134
+  },
+  {
+    "variant": "loaded",
+    "retained_bytes": 54454586,
+    "workspace_bytes": 45064,
+    "queries": 2616,
+    "lookup_ns": {
+      "p50": 53958,
+      "p95": 121458,
+      "p99": 156792,
+      "p999": 200250,
+      "max": 255125
+    },
+    "allocations": 0,
+    "exhausted": 1134
+  }
+]

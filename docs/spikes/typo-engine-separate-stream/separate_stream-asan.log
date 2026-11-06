@@ -1,0 +1,27 @@
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from SeparateStream
+[ RUN      ] SeparateStream.RealDictionaryOrdinaryPagesAndExplicitCommit
+nihao repeat=0 ordinary=29 corrections=8
+nihao repeat=1 ordinary=29 corrections=8
+nihoa repeat=0 ordinary=31 corrections=8
+nihoa repeat=1 ordinary=31 corrections=8
+nihso repeat=0 ordinary=28 corrections=6
+nihso repeat=1 ordinary=28 corrections=6
+njh repeat=0 ordinary=100 corrections=6
+njh repeat=1 ordinary=100 corrections=6
+zhongguo repeat=0 ordinary=28 corrections=0
+zhongguo repeat=1 ordinary=28 corrections=0
+shijie repeat=0 ordinary=100 corrections=6
+shijie repeat=1 ordinary=100 corrections=6
+nh repeat=0 ordinary=100 corrections=0
+nh repeat=1 ordinary=100 corrections=0
+xgr repeat=0 ordinary=100 corrections=6
+xgr repeat=1 ordinary=100 corrections=6
+[       OK ] SeparateStream.RealDictionaryOrdinaryPagesAndExplicitCommit (181 ms)
+[----------] 1 test from SeparateStream (181 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (181 ms total)
+[  PASSED  ] 1 test.

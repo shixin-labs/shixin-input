@@ -1,0 +1,10 @@
+{
+  "forced": {
+    "identical_codes": 6,
+    "result": "PASS"
+  },
+  "missing": {
+    "identical_codes": 6,
+    "result": "PASS"
+  }
+}

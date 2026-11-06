@@ -1,0 +1,26 @@
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+Note: Google Test filter = SpikePrism.NativeBoundsIdentityAndExhaustion
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from SpikePrism
+[ RUN      ] SpikePrism.NativeBoundsIdentityAndExhaustion
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I20261104 07:57:18.239423 0x1f219a1c0 dictionary.cc:401] loading dictionary 'rime_ice'.
+I20261104 07:57:18.239729 0x1f219a1c0 table.cc:292] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.table.bin
+I20261104 07:57:18.243233 0x1f219a1c0 prism.cc:83] loading prism file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.prism.bin
+I20261104 07:57:18.243410 0x1f219a1c0 prism.cc:121] found double array image of size 2304.
+SPIKE_INIT bounds=/Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.table.bin.bound3 loaded=1 checksum=3475738914 size=60656260 syllables=440 entries=1886051
+BOUNDS_900US xgr attempt=0 us=1183 exhausted=1 groups=0 work_left=31467
+BOUNDS_900US xgr attempt=1 us=905 exhausted=1 groups=0 work_left=31147
+BOUNDS_900US xgr attempt=2 us=2312 exhausted=1 groups=0 work_left=30251
+NATIVE_BOUNDS xgr identity and four exhaustion modes pass
+BOUNDS_900US zhr attempt=0 us=919 exhausted=1 groups=0 work_left=31216
+BOUNDS_900US zhr attempt=1 us=1058 exhausted=1 groups=0 work_left=30256
+BOUNDS_900US zhr attempt=2 us=949 exhausted=1 groups=0 work_left=29872
+NATIVE_BOUNDS zhr identity and four exhaustion modes pass
+[       OK ] SpikePrism.NativeBoundsIdentityAndExhaustion (113 ms)
+[----------] 1 test from SpikePrism (113 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (113 ms total)
+[  PASSED  ] 1 test.

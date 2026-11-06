@@ -1,0 +1,93 @@
+diff --git a/src/rime/dict/corrector.h b/src/rime/dict/corrector.h
+--- a/src/rime/dict/corrector.h
++++ b/src/rime/dict/corrector.h
+@@ -61,6 +61,8 @@
+   virtual ~Corrector() = default;
+   virtual void SpikeSpecific(bool) {}
+   virtual bool SpikeSpecificOnly() const { return false; }
++  virtual bool SpikeSpecificOnlyAt(size_t) const { return SpikeSpecificOnly(); }
++  virtual void SpikeOtherAnchors(bool) {}
+   virtual void SpikeAbbreviated(bool) {}
+   virtual bool SpikeAbbreviatedOnly() const { return false; }
+   virtual bool SpikeBounded() const { return false; }
+diff --git a/src/rime/dict/bounded_corrector.inc b/src/rime/dict/bounded_corrector.inc
+--- a/src/rime/dict/bounded_corrector.inc
++++ b/src/rime/dict/bounded_corrector.inc
+@@ -7,15 +7,20 @@
+   size_t anchor_ = size_t(-1);
+   bool specific_ = false;
+   bool abbreviated_ = false;
++  bool other_anchors_ = false;
+ 
+ public:
+   void SpikeAbbreviated(bool value) override { abbreviated_ = value; }
+   bool SpikeAbbreviatedOnly() const override { return abbreviated_; }
+   void SpikeSpecific(bool value) override { specific_ = value; }
+   bool SpikeSpecificOnly() const override { return specific_; }
++  void SpikeOtherAnchors(bool value) override { other_anchors_ = value; }
++  bool SpikeSpecificOnlyAt(size_t pos) const override {
++    return specific_ || (other_anchors_ && pos != anchor_);
++  }
+   void SpikeAnchor(size_t anchor) override { anchor_ = anchor; }
+   bool SpikeAllows(size_t pos) const override {
+-    return anchor_ == size_t(-1) || pos == anchor_;
++    return other_anchors_ || anchor_ == size_t(-1) || pos == anchor_;
+   }
+   bool SpikeBounded() const override { return true; }
+   void ToleranceSearch(const rime::Prism &prism, const std::string &key,
+diff --git a/src/rime/algo/syllabifier.cc b/src/rime/algo/syllabifier.cc
+--- a/src/rime/algo/syllabifier.cc
++++ b/src/rime/algo/syllabifier.cc
+@@ -99,6 +99,7 @@
+     auto current_input = input.substr(begin_pos);
+     prism.CommonPrefixSearch(current_input, &matches);
+     Corrections corrections;
++    const bool specific_here = graph->spike_bounded && corrector_->SpikeSpecificOnlyAt(begin_pos);
+     if (corrector_) {
+       for (auto& m : matches) {
+         exact_match_syllables.insert(m.value);
+@@ -110,7 +111,7 @@
+         for (auto accessor = prism.QuerySpelling(m.first);
+              !accessor.exhausted(); accessor.Next()) {
+           auto props = accessor.properties();
+-          if (((props.type == kNormalSpelling && !graph->spike_three_initials) || (graph->spike_bounded && !graph->spike_specific_only && props.type == kAbbreviation)) && !props.is_correction) {
++          if (((props.type == kNormalSpelling && !graph->spike_three_initials) || (graph->spike_bounded && !specific_here && props.type == kAbbreviation)) && !props.is_correction) {
+             matches.push_back({m.first, m.second.length});
+             break;
+           }
+@@ -150,7 +151,7 @@
+             // spelling-to-syllable map
+             if (corrector_ && exact_match_syllables.find(m.value) ==
+                                   exact_match_syllables.end()) {
+-              if ((graph->spike_specific_only && props.type != kNormalSpelling) ||
++              if ((specific_here && props.type != kNormalSpelling) ||
+                   (graph->spike_three_initials && props.type != kAbbreviation)) {
+                 accessor.Next();
+                 continue;
+diff --git a/src/rime/gear/script_translator.cc b/src/rime/gear/script_translator.cc
+--- a/src/rime/gear/script_translator.cc
++++ b/src/rime/gear/script_translator.cc
+@@ -339,10 +339,11 @@
+       if (recovery->SpikeBudgetAvailable()) {
+         corrector_->SpikeSpecific(cache_first);
+         corrector_->SpikeAbbreviated(false);
+-        // A fully valid alternate segmentation can hide the typo position.
+-        // The second stage explores other exact-prefix boundaries under the
+-        // same carried composition budget, rather than repeating one anchor.
+-        corrector_->SpikeAnchor(size_t(-1));
++        // Alternate segmentations can hide a full-syllable typo. Broaden
++        // those edits while keeping ambiguous abbreviation edits at the
++        // preferred anchor, all under the carried composition budget.
++        corrector_->SpikeAnchor(preferred_anchor);
++        corrector_->SpikeOtherAnchors(true);
+         broad = New<ScriptTranslation>(this, corrector_.get(), poet_.get(), input,
+             segment.start, end_of_input, max_sentences_, sentence_cutoff_threshold_);
+         broad->SpikeCarryBudget(*recovery);
+@@ -355,6 +356,7 @@
+         recovery.reset();
+       }
+       corrector_->SpikeSpecific(false);
++      corrector_->SpikeOtherAnchors(false);
+       corrector_->SpikeAbbreviated(false);
+       if (!has_recovery) recovery.reset();
+     }

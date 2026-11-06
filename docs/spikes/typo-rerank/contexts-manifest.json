@@ -1,0 +1,9 @@
+{
+  "limitations": "Substring-derived contexts, not human typo traces. Source provenance and pronunciation quality are not independently validated. No model-dependent selection.",
+  "policy": "minimum SHA256(context-v1/target/sentence); punctuation-bearing 12-200-rune sentences; first target occurrence; at least 6 preceding Han characters; last 64 prefix runes; no suffix or target sent to scorer",
+  "source": "Duyu/Pinyin-Hanzi",
+  "source_rows": 1646554,
+  "source_sha256": "420af662df18e4c3730ef2555bd37f583f7f6fa193895387ce335924ef117862",
+  "targets": 265,
+  "targets_with_context": 48
+}

@@ -1,0 +1,21 @@
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+Note: Google Test filter = SpikePrism.SparseIntersectionPreservesCandidates
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from SpikePrism
+[ RUN      ] SpikePrism.SparseIntersectionPreservesCandidates
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I20261104 05:02:33.616673 0x1f219a1c0 dictionary.cc:385] loading dictionary 'rime_ice'.
+I20261104 05:02:33.617013 0x1f219a1c0 table.cc:264] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.table.bin
+I20261104 05:02:33.620801 0x1f219a1c0 prism.cc:83] loading prism file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.prism.bin
+I20261104 05:02:33.621697 0x1f219a1c0 prism.cc:121] found double array image of size 2304.
+EQUIVALENT njh entries=4830
+EQUIVALENT nihso entries=36
+EQUIVALENT changshicuowj entries=1593
+EQUIVALENT nihsozhongguo entries=39
+[       OK ] SpikePrism.SparseIntersectionPreservesCandidates (85 ms)
+[----------] 1 test from SpikePrism (85 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (85 ms total)
+[  PASSED  ] 1 test.

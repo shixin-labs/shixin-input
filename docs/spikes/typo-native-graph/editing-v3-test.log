@@ -1,0 +1,16 @@
+=== RUN   TestTypoNativeSpikeEditing
+2026-11-04 04:00:05.006 engine ready in 1.427s: librime 1.17.0, modules [default shixin], schemas [rime_ice_warm], 7 policies
+=== RUN   TestTypoNativeSpikeEditing/full_nihso
+=== RUN   TestTypoNativeSpikeEditing/full_changshicuowj
+=== RUN   TestTypoNativeSpikeEditing/backspace
+=== RUN   TestTypoNativeSpikeEditing/literal_return
+=== RUN   TestTypoNativeSpikeEditing/partial
+    typo_spike_test.go:134: partial commit="" preedit="你好zhong guo"
+--- PASS: TestTypoNativeSpikeEditing (2.08s)
+    --- PASS: TestTypoNativeSpikeEditing/full_nihso (0.01s)
+    --- PASS: TestTypoNativeSpikeEditing/full_changshicuowj (0.35s)
+    --- PASS: TestTypoNativeSpikeEditing/backspace (0.01s)
+    --- PASS: TestTypoNativeSpikeEditing/literal_return (0.01s)
+    --- PASS: TestTypoNativeSpikeEditing/partial (0.22s)
+PASS
+ok  	shixin/tools/menu-capture	4.765s

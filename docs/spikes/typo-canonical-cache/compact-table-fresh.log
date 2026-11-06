@@ -1,0 +1,36 @@
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+Note: Google Test filter = CompactTable.FreshLoadAndWarm
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from CompactTable
+[ RUN      ] CompactTable.FreshLoadAndWarm
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I20261104 10:08:07.303853 0x1f219a1c0 table.cc:305] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/compact-top8-v1.table.bin
+FRESH_COMPACT text=你好 query_ns=23375
+FRESH_COMPACT text=吊灯 query_ns=1916
+FRESH_COMPACT text=纯净物 query_ns=4458
+FRESH_COMPACT bytes=15072644 load_warm_us=48140 warm_checksum=325600
+[       OK ] CompactTable.FreshLoadAndWarm (48 ms)
+[----------] 1 test from CompactTable (48 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (48 ms total)
+[  PASSED  ] 1 test.
+        0.06 real         0.00 user         0.01 sys
+            18350080  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+                 302  page reclaims
+                1012  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                   1  voluntary context switches
+                 618  involuntary context switches
+            85053235  instructions retired
+            40888056  cycles elapsed
+             1556888  peak memory footprint

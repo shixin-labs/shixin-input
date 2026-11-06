@@ -1,0 +1,15 @@
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from TablePages
+[ RUN      ] TablePages.IndexEntryAndStringCoverage
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I20261104 10:43:55.860090 0x1f219a1c0 table.cc:353] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/repacked-v1.table.bin
+PAGE_LAYOUT page_bytes=4096 file_bytes=60656260 total_pages=14809 metadata_pages=1 index_pages=4182 short_entry_pages=1192 string_pages=1798 index_string_pages=5979 index_entry_string_pages=7170 two_nodes=91335 three_nodes=957664
+PAGE_LAYOUT page_bytes=16384 file_bytes=60656260 total_pages=3703 metadata_pages=1 index_pages=1046 short_entry_pages=299 string_pages=450 index_string_pages=1495 index_entry_string_pages=1793 two_nodes=91335 three_nodes=957664
+[       OK ] TablePages.IndexEntryAndStringCoverage (19 ms)
+[----------] 1 test from TablePages (19 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (19 ms total)
+[  PASSED  ] 1 test.

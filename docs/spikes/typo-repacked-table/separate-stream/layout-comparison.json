@@ -1,0 +1,578 @@
+{
+  "0/0": {
+    "counts": {
+      "all": {
+        "n": 830,
+        "original": 310,
+        "repack": 311,
+        "gain": 1,
+        "loss": 0
+      },
+      "clean": {
+        "n": 277,
+        "original": 154,
+        "repack": 154,
+        "gain": 0,
+        "loss": 0
+      },
+      "full/clean": {
+        "n": 64,
+        "original": 54,
+        "repack": 54,
+        "gain": 0,
+        "loss": 0
+      },
+      "swap": {
+        "n": 275,
+        "original": 67,
+        "repack": 68,
+        "gain": 1,
+        "loss": 0
+      },
+      "full/swap": {
+        "n": 64,
+        "original": 35,
+        "repack": 36,
+        "gain": 1,
+        "loss": 0
+      },
+      "neighbor": {
+        "n": 278,
+        "original": 89,
+        "repack": 89,
+        "gain": 0,
+        "loss": 0
+      },
+      "full/neighbor": {
+        "n": 64,
+        "original": 46,
+        "repack": 46,
+        "gain": 0,
+        "loss": 0
+      },
+      "initials/neighbor": {
+        "n": 64,
+        "original": 3,
+        "repack": 3,
+        "gain": 0,
+        "loss": 0
+      },
+      "mixed_even/clean": {
+        "n": 64,
+        "original": 34,
+        "repack": 34,
+        "gain": 0,
+        "loss": 0
+      },
+      "mixed_even/swap": {
+        "n": 64,
+        "original": 13,
+        "repack": 13,
+        "gain": 0,
+        "loss": 0
+      },
+      "mixed_even/neighbor": {
+        "n": 63,
+        "original": 10,
+        "repack": 10,
+        "gain": 0,
+        "loss": 0
+      },
+      "mixed_odd/clean": {
+        "n": 64,
+        "original": 36,
+        "repack": 36,
+        "gain": 0,
+        "loss": 0
+      },
+      "mixed_odd/swap": {
+        "n": 64,
+        "original": 18,
+        "repack": 18,
+        "gain": 0,
+        "loss": 0
+      },
+      "mixed_odd/neighbor": {
+        "n": 63,
+        "original": 27,
+        "repack": 27,
+        "gain": 0,
+        "loss": 0
+      },
+      "initials/clean": {
+        "n": 61,
+        "original": 18,
+        "repack": 18,
+        "gain": 0,
+        "loss": 0
+      },
+      "initials/swap": {
+        "n": 59,
+        "original": 0,
+        "repack": 0,
+        "gain": 0,
+        "loss": 0
+      },
+      "digraph_initials/clean": {
+        "n": 24,
+        "original": 12,
+        "repack": 12,
+        "gain": 0,
+        "loss": 0
+      },
+      "digraph_initials/swap": {
+        "n": 24,
+        "original": 1,
+        "repack": 1,
+        "gain": 0,
+        "loss": 0
+      },
+      "digraph_initials/neighbor": {
+        "n": 24,
+        "original": 3,
+        "repack": 3,
+        "gain": 0,
+        "loss": 0
+      }
+    },
+    "changes": [
+      {
+        "raw": "abojialiya",
+        "target": "保加利亚",
+        "kind": "swap",
+        "form": "full",
+        "gain": true
+      }
+    ],
+    "ordinary_changed": [
+      "sj",
+      "ts"
+    ]
+  },
+  "0/1": {
+    "counts": {
+      "all": {
+        "n": 830,
+        "original": 311,
+        "repack": 311,
+        "gain": 0,
+        "loss": 0
+      },
+      "clean": {
+        "n": 277,
+        "original": 154,
+        "repack": 154,
+        "gain": 0,
+        "loss": 0
+      },
+      "full/clean": {
+        "n": 64,
+        "original": 54,
+        "repack": 54,
+        "gain": 0,
+        "loss": 0
+      },
+      "swap": {
+        "n": 275,
+        "original": 68,
+        "repack": 68,
+        "gain": 0,
+        "loss": 0
+      },
+      "full/swap": {
+        "n": 64,
+        "original": 36,
+        "repack": 36,
+        "gain": 0,
+        "loss": 0
+      },
+      "neighbor": {
+        "n": 278,
+        "original": 89,
+        "repack": 89,
+        "gain": 0,
+        "loss": 0
+      },
+      "full/neighbor": {
+        "n": 64,
+        "original": 46,
+        "repack": 46,
+        "gain": 0,
+        "loss": 0
+      },
+      "initials/neighbor": {
+        "n": 64,
+        "original": 3,
+        "repack": 3,
+        "gain": 0,
+        "loss": 0
+      },
+      "mixed_even/clean": {
+        "n": 64,
+        "original": 34,
+        "repack": 34,
+        "gain": 0,
+        "loss": 0
+      },
+      "mixed_even/swap": {
+        "n": 64,
+        "original": 13,
+        "repack": 13,
+        "gain": 0,
+        "loss": 0
+      },
+      "mixed_even/neighbor": {
+        "n": 63,
+        "original": 10,
+        "repack": 10,
+        "gain": 0,
+        "loss": 0
+      },
+      "mixed_odd/clean": {
+        "n": 64,
+        "original": 36,
+        "repack": 36,
+        "gain": 0,
+        "loss": 0
+      },
+      "mixed_odd/swap": {
+        "n": 64,
+        "original": 18,
+        "repack": 18,
+        "gain": 0,
+        "loss": 0
+      },
+      "mixed_odd/neighbor": {
+        "n": 63,
+        "original": 27,
+        "repack": 27,
+        "gain": 0,
+        "loss": 0
+      },
+      "initials/clean": {
+        "n": 61,
+        "original": 18,
+        "repack": 18,
+        "gain": 0,
+        "loss": 0
+      },
+      "initials/swap": {
+        "n": 59,
+        "original": 0,
+        "repack": 0,
+        "gain": 0,
+        "loss": 0
+      },
+      "digraph_initials/clean": {
+        "n": 24,
+        "original": 12,
+        "repack": 12,
+        "gain": 0,
+        "loss": 0
+      },
+      "digraph_initials/swap": {
+        "n": 24,
+        "original": 1,
+        "repack": 1,
+        "gain": 0,
+        "loss": 0
+      },
+      "digraph_initials/neighbor": {
+        "n": 24,
+        "original": 3,
+        "repack": 3,
+        "gain": 0,
+        "loss": 0
+      }
+    },
+    "changes": [],
+    "ordinary_changed": [
+      "sj",
+      "ts"
+    ]
+  },
+  "1/0": {
+    "counts": {
+      "all": {
+        "n": 830,
+        "original": 313,
+        "repack": 313,
+        "gain": 0,
+        "loss": 0
+      },
+      "clean": {
+        "n": 277,
+        "original": 154,
+        "repack": 154,
+        "gain": 0,
+        "loss": 0
+      },
+      "full/clean": {
+        "n": 64,
+        "original": 54,
+        "repack": 54,
+        "gain": 0,
+        "loss": 0
+      },
+      "swap": {
+        "n": 275,
+        "original": 70,
+        "repack": 70,
+        "gain": 0,
+        "loss": 0
+      },
+      "full/swap": {
+        "n": 64,
+        "original": 36,
+        "repack": 36,
+        "gain": 0,
+        "loss": 0
+      },
+      "neighbor": {
+        "n": 278,
+        "original": 89,
+        "repack": 89,
+        "gain": 0,
+        "loss": 0
+      },
+      "full/neighbor": {
+        "n": 64,
+        "original": 46,
+        "repack": 46,
+        "gain": 0,
+        "loss": 0
+      },
+      "initials/neighbor": {
+        "n": 64,
+        "original": 3,
+        "repack": 3,
+        "gain": 0,
+        "loss": 0
+      },
+      "mixed_even/clean": {
+        "n": 64,
+        "original": 34,
+        "repack": 34,
+        "gain": 0,
+        "loss": 0
+      },
+      "mixed_even/swap": {
+        "n": 64,
+        "original": 13,
+        "repack": 13,
+        "gain": 0,
+        "loss": 0
+      },
+      "mixed_even/neighbor": {
+        "n": 63,
+        "original": 10,
+        "repack": 10,
+        "gain": 0,
+        "loss": 0
+      },
+      "mixed_odd/clean": {
+        "n": 64,
+        "original": 36,
+        "repack": 36,
+        "gain": 0,
+        "loss": 0
+      },
+      "mixed_odd/swap": {
+        "n": 64,
+        "original": 20,
+        "repack": 20,
+        "gain": 0,
+        "loss": 0
+      },
+      "mixed_odd/neighbor": {
+        "n": 63,
+        "original": 27,
+        "repack": 27,
+        "gain": 0,
+        "loss": 0
+      },
+      "initials/clean": {
+        "n": 61,
+        "original": 18,
+        "repack": 18,
+        "gain": 0,
+        "loss": 0
+      },
+      "initials/swap": {
+        "n": 59,
+        "original": 0,
+        "repack": 0,
+        "gain": 0,
+        "loss": 0
+      },
+      "digraph_initials/clean": {
+        "n": 24,
+        "original": 12,
+        "repack": 12,
+        "gain": 0,
+        "loss": 0
+      },
+      "digraph_initials/swap": {
+        "n": 24,
+        "original": 1,
+        "repack": 1,
+        "gain": 0,
+        "loss": 0
+      },
+      "digraph_initials/neighbor": {
+        "n": 24,
+        "original": 3,
+        "repack": 3,
+        "gain": 0,
+        "loss": 0
+      }
+    },
+    "changes": [],
+    "ordinary_changed": [
+      "sj",
+      "ts"
+    ]
+  },
+  "1/1": {
+    "counts": {
+      "all": {
+        "n": 830,
+        "original": 313,
+        "repack": 313,
+        "gain": 0,
+        "loss": 0
+      },
+      "clean": {
+        "n": 277,
+        "original": 154,
+        "repack": 154,
+        "gain": 0,
+        "loss": 0
+      },
+      "full/clean": {
+        "n": 64,
+        "original": 54,
+        "repack": 54,
+        "gain": 0,
+        "loss": 0
+      },
+      "swap": {
+        "n": 275,
+        "original": 70,
+        "repack": 70,
+        "gain": 0,
+        "loss": 0
+      },
+      "full/swap": {
+        "n": 64,
+        "original": 36,
+        "repack": 36,
+        "gain": 0,
+        "loss": 0
+      },
+      "neighbor": {
+        "n": 278,
+        "original": 89,
+        "repack": 89,
+        "gain": 0,
+        "loss": 0
+      },
+      "full/neighbor": {
+        "n": 64,
+        "original": 46,
+        "repack": 46,
+        "gain": 0,
+        "loss": 0
+      },
+      "initials/neighbor": {
+        "n": 64,
+        "original": 3,
+        "repack": 3,
+        "gain": 0,
+        "loss": 0
+      },
+      "mixed_even/clean": {
+        "n": 64,
+        "original": 34,
+        "repack": 34,
+        "gain": 0,
+        "loss": 0
+      },
+      "mixed_even/swap": {
+        "n": 64,
+        "original": 13,
+        "repack": 13,
+        "gain": 0,
+        "loss": 0
+      },
+      "mixed_even/neighbor": {
+        "n": 63,
+        "original": 10,
+        "repack": 10,
+        "gain": 0,
+        "loss": 0
+      },
+      "mixed_odd/clean": {
+        "n": 64,
+        "original": 36,
+        "repack": 36,
+        "gain": 0,
+        "loss": 0
+      },
+      "mixed_odd/swap": {
+        "n": 64,
+        "original": 20,
+        "repack": 20,
+        "gain": 0,
+        "loss": 0
+      },
+      "mixed_odd/neighbor": {
+        "n": 63,
+        "original": 27,
+        "repack": 27,
+        "gain": 0,
+        "loss": 0
+      },
+      "initials/clean": {
+        "n": 61,
+        "original": 18,
+        "repack": 18,
+        "gain": 0,
+        "loss": 0
+      },
+      "initials/swap": {
+        "n": 59,
+        "original": 0,
+        "repack": 0,
+        "gain": 0,
+        "loss": 0
+      },
+      "digraph_initials/clean": {
+        "n": 24,
+        "original": 12,
+        "repack": 12,
+        "gain": 0,
+        "loss": 0
+      },
+      "digraph_initials/swap": {
+        "n": 24,
+        "original": 1,
+        "repack": 1,
+        "gain": 0,
+        "loss": 0
+      },
+      "digraph_initials/neighbor": {
+        "n": 24,
+        "original": 3,
+        "repack": 3,
+        "gain": 0,
+        "loss": 0
+      }
+    },
+    "changes": [],
+    "ordinary_changed": [
+      "sj",
+      "ts"
+    ]
+  }
+}

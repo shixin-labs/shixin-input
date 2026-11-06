@@ -1,0 +1,149 @@
+{
+  "note": "Sequential captures of reused tuning inputs; prior mirror comparison, not a fresh paired ordinary baseline.",
+  "groups": {
+    "clean": {
+      "labels": 277,
+      "mirror_top13": 173,
+      "canonical_top13": 174,
+      "losses": 0,
+      "gains": 1
+    },
+    "typo": {
+      "labels": 553,
+      "mirror_top13": 99,
+      "canonical_top13": 83,
+      "losses": 18,
+      "gains": 2
+    }
+  },
+  "losses": [
+    {
+      "raw": "urysuix",
+      "target": "如影随形",
+      "kind": "typo",
+      "syllables": 4
+    },
+    {
+      "raw": "rhysuix",
+      "target": "如影随形",
+      "kind": "typo",
+      "syllables": 4
+    },
+    {
+      "raw": "ctbz",
+      "target": "先天不足",
+      "kind": "typo",
+      "syllables": 4
+    },
+    {
+      "raw": "ipngxinggongshe",
+      "target": "平行公设",
+      "kind": "typo",
+      "syllables": 4
+    },
+    {
+      "raw": "ipngxgongs",
+      "target": "平行公设",
+      "kind": "typo",
+      "syllables": 4
+    },
+    {
+      "raw": "guatianlixoa",
+      "target": "瓜田李下",
+      "kind": "typo",
+      "syllables": 4
+    },
+    {
+      "raw": "guaylix",
+      "target": "瓜田李下",
+      "kind": "typo",
+      "syllables": 4
+    },
+    {
+      "raw": "rjlinwaishi",
+      "target": "儒林外史",
+      "kind": "typo",
+      "syllables": 4
+    },
+    {
+      "raw": "rylwais",
+      "target": "儒林外史",
+      "kind": "typo",
+      "syllables": 4
+    },
+    {
+      "raw": "abojialiya",
+      "target": "保加利亚",
+      "kind": "typo",
+      "syllables": 4
+    },
+    {
+      "raw": "baojjaliya",
+      "target": "保加利亚",
+      "kind": "typo",
+      "syllables": 4
+    },
+    {
+      "raw": "qidzhif",
+      "target": "齐人之福",
+      "kind": "typo",
+      "syllables": 4
+    },
+    {
+      "raw": "shikbiann",
+      "target": "世界变暖",
+      "kind": "typo",
+      "syllables": 4
+    },
+    {
+      "raw": "dashjqiaoshi",
+      "target": "大石桥市",
+      "kind": "typo",
+      "syllables": 4
+    },
+    {
+      "raw": "jiejiaokiezao",
+      "target": "戒骄戒躁",
+      "kind": "typo",
+      "syllables": 4
+    },
+    {
+      "raw": "keluodkyayu",
+      "target": "克罗地亚语",
+      "kind": "typo",
+      "syllables": 5
+    },
+    {
+      "raw": "shadqger",
+      "target": "傻大个儿",
+      "kind": "typo",
+      "syllables": 4
+    },
+    {
+      "raw": "baochouxuecyi",
+      "target": "报仇雪耻",
+      "kind": "typo",
+      "syllables": 4
+    }
+  ],
+  "gains": [
+    {
+      "raw": "cnjw",
+      "target": "纯净物",
+      "kind": "typo",
+      "syllables": 3
+    },
+    {
+      "raw": "jzhmsh",
+      "target": "竞争模式",
+      "kind": "clean",
+      "syllables": 4
+    },
+    {
+      "raw": "ddegn",
+      "target": "吊灯",
+      "kind": "typo",
+      "syllables": 2
+    }
+  ]
+}

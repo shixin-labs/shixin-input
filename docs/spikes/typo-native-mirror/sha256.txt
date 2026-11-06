@@ -1,0 +1,16 @@
+b4d01eff38c15a1a522790530cd2dffabdade0e1e5d4c2ca04434c68ba36561d  spikes/typo-recovery/native-graph/librime.patch
+63e2754cdd2c582746dab64ea6883ebb92badeb51f0cb221e7f4ee787338d259  spikes/typo-recovery/native-graph/mirror_cache.h
+781d1a4914fcc9225f20d09737fe9ff06178be4ce372cafb4a0134e1d2294a86  spikes/typo-recovery/native-graph/initial_cache.h
+b83bc03e3c7cab0420dccf8930018d630a4e6ddb1f968c386ff572a36afdd519  spikes/typo-recovery/native-graph/cache_stages_test.cc
+0e47588f00fe1e9814e81c804581b872a3ee64e6d7ab2352cea128fc17f3929d  spikes/typo-recovery/native-graph/mirror_native_test.cc
+b16a721c57f3d81e1f5f9b5fce9fb9741f3c71f5ff0ef2b68c85252e921aa091  spikes/typo-recovery/prepare-mirror/main.go
+c89e77e07ae46029276642a78fced4146349eb1fb3e5394080275dcda6cb18d5  spikes/typo-recovery/prepare-mirror/main_test.go
+9dd922181bbb96bf7ca81630cfbfabdb4a125464e26b8c3c76ee87f2ca0fcfee  tools/menu-capture/typo_spike_test.go
+4696f4ee1d16446298a7e418f53aea11c9ec1baa286c230e66aadc346610abe7  build/typo-recovery/native-graph/out/lib/librime.1.17.0.dylib
+c93970644984298b79228b20223307f9188f3f3e6fa8ccfc325dbce326d5ca46  build/typo-recovery/native-graph/asan/lib/librime.1.17.0.dylib
+66576df2af4826e8252d93af83576dfa6fe7ae7ea09b6e39ef40c3e073c0abce  build/typo-recovery/native-graph/mirror-generation-v1/build/rime_ice_warm.schema.yaml
+c72cf853efcfa4370bd003d7bbd4e327dc9b5e46687ea24a4e32be4f412fef17  build/typo-recovery/native-graph/verified-mirror-v1/rime_ice.table.bin
+b863f7c6989ba87cb3361ff6c3277edceb767b7fcbfff0ea84a17ed3cd13a908  build/typo-recovery/native-graph/verified-mirror-v1/rime_ice.prism.bin
+6e53a35f093750fe8e6d521f3355c8d67dc4b1de61e22af6f7ef2d1c27d80b3c  build/typo-recovery/native-graph/verified-mirror-v1/rime_ice.table.bin.initial3
+8b687c18dd89ee1365d774802a6654809685a8889d001ca00d6e1751dd5c8b52  build/typo-recovery/native-graph/verified-mirror-v1/rime_ice.table.bin.mirror3
+42c2a9efb72cd9a642ce7ac4d965982a97ff12a3fd4a8b0e824c5c3822dc46cc  build/typo-recovery/native-graph/verified-mirror-v1/manifest.json

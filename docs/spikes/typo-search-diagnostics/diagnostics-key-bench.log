@@ -1,0 +1,8 @@
+goos: darwin
+goarch: arm64
+pkg: shixin/internal/engine
+cpu: Apple M4
+BenchmarkKey-10                      	    4634	     22666 ns/op	        22.67 µs/key	       0 B/op	       0 allocs/op
+BenchmarkKeyEnglishPunctuation-10    	    5185	     22119 ns/op	        22.12 µs/key	       0 B/op	       0 allocs/op
+PASS
+ok  	shixin/internal/engine	2.278s

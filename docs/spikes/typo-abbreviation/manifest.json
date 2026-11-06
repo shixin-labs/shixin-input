@@ -1,0 +1,15 @@
+{
+  "hashes": {
+    "contexts.jsonl": "eb21f67eff5939642209d446f5124549b10e04178794ca3016118edcf548b074",
+    "menus.jsonl": "aa212942ba4b5fc04a61712e97293a056610251e3b7462407c157be03a9de85d",
+    "model": "c6c2d5bb1eac4b7a7cffc60bfb8e794af26c3d5b6700d8d9b09296b13d1669e8",
+    "preparation.json": "3e5cbb340567a2faeadf9312e6bc56585ed9f9cd8529d44b81bfbd315f73b7a6",
+    "selected.jsonl": "901c7464732a143f517d58ce12d755aed28e350aaa6748b62fc41fc43c0b5566"
+  },
+  "limitations": "existing retrieval only; no typo expansion, no error penalty, no user learning; no live deadline; source contexts reused by target; subset selected independently of context",
+  "movable_candidate_occurrences": 16762,
+  "pool": "diagnostic AI: up to 50 for every form, partial entries frozen; window AI: contiguous full-span prefix, cap 50 without a/e/i/o/u/v else 20, tail unchanged; neither reproduces native type/weight ABI",
+  "priors": "same approximate source log1p frequencies as prior experiment, not native weights",
+  "rows": 1062,
+  "unknown_prior_occurrences": 282
+}

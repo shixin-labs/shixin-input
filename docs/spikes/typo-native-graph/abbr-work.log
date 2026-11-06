@@ -1,0 +1,29 @@
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+Note: Google Test filter = SpikePrism.InspectAnchoredLookupWork
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from SpikePrism
+[ RUN      ] SpikePrism.InspectAnchoredLookupWork
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I20261104 04:45:19.092667 0x1f219a1c0 dictionary.cc:385] loading dictionary 'rime_ice'.
+I20261104 04:45:19.093751 0x1f219a1c0 table.cc:270] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.table.bin
+I20261104 04:45:19.097720 0x1f219a1c0 prism.cc:83] loading prism file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.prism.bin
+I20261104 04:45:19.098044 0x1f219a1c0 prism.cc:121] found double array image of size 2304.
+BUILD left=32443 exhausted=0
+LOOKUP start=0 work=171784 nodes=1551 chunks=1927 groups=3 exhausted=0
+WORD 0 你就会 -9.18419
+WORD 0 那句话 -9.75841
+WORD 0 那家伙 -10.124
+WORD 0 你会 -10.7027
+WORD 0 农机化 -10.7881
+WORD 0 你回 -10.7997
+WORD 0 你还 -10.9149
+WORD 0 你好 -11.0034
+LOOKUP start=1 work=13502 nodes=96 chunks=1525 groups=2 exhausted=0
+LOOKUP start=2 work=325 nodes=1 chunks=108 groups=1 exhausted=0
+[       OK ] SpikePrism.InspectAnchoredLookupWork (72 ms)
+[----------] 1 test from SpikePrism (72 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (72 ms total)
+[  PASSED  ] 1 test.

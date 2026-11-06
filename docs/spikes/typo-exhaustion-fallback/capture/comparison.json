@@ -1,0 +1,5 @@
+{
+  "codes": 10,
+  "identical_preedit_candidates_spans_comments_paging": true,
+  "scope": "zero-work fallback, thirteen-candidate capture; native test separately forces partial-chunk exhaustion"
+}

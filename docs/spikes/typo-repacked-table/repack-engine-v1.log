@@ -1,0 +1,33 @@
+=== RUN   TestTypoNativeSpikeEditing
+2026-11-04 10:46:31.134 engine ready in 103ms: librime 1.17.0, modules [default shixin], schemas [rime_ice_warm], 7 policies
+=== RUN   TestTypoNativeSpikeEditing/full_nihso
+=== RUN   TestTypoNativeSpikeEditing/full_nihoa
+=== RUN   TestTypoNativeSpikeEditing/full_njh
+=== RUN   TestTypoNativeSpikeEditing/full_xgr
+=== RUN   TestTypoNativeSpikeEditing/full_zhr
+=== RUN   TestTypoNativeSpikeEditing/full_changshicuowj
+=== RUN   TestTypoNativeSpikeEditing/native_symbols
+=== RUN   TestTypoNativeSpikeEditing/backspace
+=== RUN   TestTypoNativeSpikeEditing/literal_return
+=== RUN   TestTypoNativeSpikeEditing/partial
+    typo_spike_test.go:176: partial commit="" preedit="你好zhong guo"
+--- PASS: TestTypoNativeSpikeEditing (0.42s)
+    --- PASS: TestTypoNativeSpikeEditing/full_nihso (0.00s)
+    --- PASS: TestTypoNativeSpikeEditing/full_nihoa (0.00s)
+    --- PASS: TestTypoNativeSpikeEditing/full_njh (0.00s)
+    --- PASS: TestTypoNativeSpikeEditing/full_xgr (0.00s)
+    --- PASS: TestTypoNativeSpikeEditing/full_zhr (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/full_changshicuowj (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/native_symbols (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/backspace (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/literal_return (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/partial (0.05s)
+=== RUN   TestTypoNativeSpikeLatency
+2026-11-04 10:46:31.474 engine ready in 67ms: librime 1.17.0, modules [default shixin], schemas [rime_ice_warm], 7 policies
+    typo_spike_test.go:273: variant=protected engine_key_time=p50 56µs p99 704µs max 1.096ms (n=2100) p99.9=1.096ms
+--- PASS: TestTypoNativeSpikeLatency (0.33s)
+=== RUN   TestTypoNativeSpikeResidentMemory
+2026-11-04 10:46:31.804 engine ready in 69ms: librime 1.17.0, modules [default shixin], schemas [rime_ice_warm], 7 policies
+    typo_spike_test.go:341: variant=protected compositions=1350 sampled_rss_bytes=[45580288 58949632 58949632 58966016 58982400 58982400 58998784 59015168 59015168 59031552 59031552]
+--- PASS: TestTypoNativeSpikeResidentMemory (1.40s)
+PASS

@@ -1,0 +1,50 @@
+[
+  {
+    "variant": "offset",
+    "attempt": 0,
+    "ranks": {
+      "cnjw": 0,
+      "ddegn": 0
+    }
+  },
+  {
+    "variant": "mirror",
+    "attempt": 0,
+    "ranks": {
+      "cnjw": 0,
+      "ddegn": 0
+    }
+  },
+  {
+    "variant": "offset",
+    "attempt": 1,
+    "ranks": {
+      "cnjw": 7,
+      "ddegn": 11
+    }
+  },
+  {
+    "variant": "mirror",
+    "attempt": 1,
+    "ranks": {
+      "cnjw": 7,
+      "ddegn": 11
+    }
+  },
+  {
+    "variant": "offset",
+    "attempt": 2,
+    "ranks": {
+      "cnjw": 7,
+      "ddegn": 11
+    }
+  },
+  {
+    "variant": "mirror",
+    "attempt": 2,
+    "ranks": {
+      "cnjw": 7,
+      "ddegn": 11
+    }
+  }
+]

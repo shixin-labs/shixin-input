@@ -1,0 +1,22 @@
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from SpikeCacheStages
+[ RUN      ] SpikeCacheStages.FirstAndRepeatedQueries
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I20261104 08:41:44.141243 0x1f219a1c0 dictionary.cc:401] loading dictionary 'rime_ice'.
+I20261104 08:41:44.141557 0x1f219a1c0 table.cc:288] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.table.bin
+I20261104 08:41:44.144936 0x1f219a1c0 prism.cc:83] loading prism file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.prism.bin
+I20261104 08:41:44.145788 0x1f219a1c0 prism.cc:121] found double array image of size 2304.
+CACHE_STAGES raw=xgr attempt=0 graph_us=289 lookup_us=3850 graph_spellings=317 graph_work=341 lookup_work=144 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=1
+CACHE_STAGES raw=xgr attempt=1 graph_us=40 lookup_us=5 graph_spellings=317 graph_work=341 lookup_work=144 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=1
+CACHE_STAGES raw=xgr attempt=2 graph_us=31 lookup_us=3 graph_spellings=317 graph_work=341 lookup_work=144 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=1
+CACHE_STAGES raw=xgr attempt=3 graph_us=28 lookup_us=3 graph_spellings=317 graph_work=341 lookup_work=144 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=1
+CACHE_STAGES raw=xgr attempt=4 graph_us=23 lookup_us=3 graph_spellings=317 graph_work=341 lookup_work=144 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=1
+CACHE_STAGES raw=xgr attempt=5 graph_us=22 lookup_us=2 graph_spellings=317 graph_work=341 lookup_work=144 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=1
+[       OK ] SpikeCacheStages.FirstAndRepeatedQueries (15 ms)
+[----------] 1 test from SpikeCacheStages (15 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (15 ms total)
+[  PASSED  ] 1 test.

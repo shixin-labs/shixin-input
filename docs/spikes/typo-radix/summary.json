@@ -1,0 +1,26 @@
+{
+  "plain_retained_bytes": 81247270,
+  "radix_retained_bytes": 72867522,
+  "saved_bytes": 8379748,
+  "saved_percent": 10.313882546453561,
+  "plain_lookup_ns": {
+    "queries": 2616,
+    "p50": 51375,
+    "p95": 115834,
+    "p99": 154125,
+    "p999": 199000,
+    "max": 239917,
+    "allocations": 0,
+    "exhausted": 1134
+  },
+  "radix_lookup_ns": {
+    "queries": 2616,
+    "p50": 56917,
+    "p95": 126250,
+    "p99": 165792,
+    "p999": 215958,
+    "max": 253834,
+    "allocations": 0,
+    "exhausted": 1134
+  }
+}

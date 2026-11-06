@@ -1,0 +1,19 @@
+words=785119 nodes=3546925 node_bytes=383067900 warm_states=206389
+        0.39 real         0.19 user         0.08 sys
+           820232192  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+               52417  page reclaims
+                  19  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                  18  voluntary context switches
+                 239  involuntary context switches
+          3730960734  instructions retired
+          1105109864  cycles elapsed
+           838943680  peak memory footprint

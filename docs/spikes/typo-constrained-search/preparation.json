@@ -1,0 +1,23 @@
+{
+  "dictionary_rows_accepted": 888041,
+  "dictionary_rows_skipped": 985468,
+  "index_policy": "explicit segmented rime-ice readings only; Han-only text; <=32 full-spelling letters, syllables <=8; no gold insertion, no Tencent reading inference",
+  "queries_including_prefixes": 2616,
+  "rows": 830,
+  "search_policy": "same packed index and caps; early score-bound and next-initial impossibility rejection; lookahead edge checks charged to the shared 8192 work cap",
+  "source_hashes": {
+    "8105": "1f9a42b91dea6982baee2551981780271aeffd78876662b9c9f324e56b37b120",
+    "base": "0418d5103d8e40c8fff4b686a873ad03e9836cd0419ecae0b7e1e2526312dba0",
+    "contexts.jsonl": "eb21f67eff5939642209d446f5124549b10e04178794ca3016118edcf548b074",
+    "ext": "8e49a0294c0139e63c815cc33a2d438cc144eb7889297d30cec899a368697c06",
+    "menus.jsonl": "aa212942ba4b5fc04a61712e97293a056610251e3b7462407c157be03a9de85d",
+    "others": "c7475d773e619f61b88d47fa8ec789aba02aa0d1c98edaed309e53487b048b32",
+    "profile.id": "ba78f07d5bf71a223be701c569728911fe92432c9de4215dd81dd2eac971928c",
+    "selected.jsonl": "901c7464732a143f517d58ce12d755aed28e350aaa6748b62fc41fc43c0b5566",
+    "syllable-lexicon.tsv": "fd5e8795de20f2c7d218de5bf78824c0d23077c67cff889a8afcdb7f8b339f29",
+    "tencent": "352239dc875343cd49a04d7e79a9b73c5c95ad54e7fe1f8608b30c855a942904"
+  },
+  "unique_reading_text_pairs": 887781,
+  "parent": "abbr-recovery-v1",
+  "single_pass_policy": "score original menu once; insert channel-ordered verified hypotheses after its first five entries; no AI scoring of hypotheses"
+}

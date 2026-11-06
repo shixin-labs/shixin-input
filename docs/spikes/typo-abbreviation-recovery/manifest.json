@@ -1,0 +1,18 @@
+{
+  "guard": "post-scoring diagnostic preserves original-AI first five; no second inference hold proposed",
+  "hashes": {
+    "contexts.jsonl": "eb21f67eff5939642209d446f5124549b10e04178794ca3016118edcf548b074",
+    "menus.jsonl": "aa212942ba4b5fc04a61712e97293a056610251e3b7462407c157be03a9de85d",
+    "model": "c6c2d5bb1eac4b7a7cffc60bfb8e794af26c3d5b6700d8d9b09296b13d1669e8",
+    "preparation.json": "0133c9e4c3afdd18884bb5af8866250a34c88bcf1f4cb5588f2fa3c51d47048f",
+    "search.jsonl": "61dcd9b26fe93d802bca8ba31132f497856bb56fbab304b121ad590e32ac1868",
+    "selected.jsonl": "901c7464732a143f517d58ce12d755aed28e350aaa6748b62fc41fc43c0b5566",
+    "verification/menus.jsonl": "d58e3bb8f6e5901f9b44f8c84071d6f9975bdd1daba75a0e6a11527b66ae4e21"
+  },
+  "limitations": "explicit lexicon only; fixed four zero/four typo quotas; approximate prior; synthetic reused test families; no integrated latency, deployment or model training",
+  "merge": "ordinary first five, up to eight unique verified hypotheses, remaining ordinary candidates to cap50",
+  "penalty": "same fixed 2*cost/10 as earlier; zero for baseline and zero-edit abbreviation paths",
+  "pool": "both control and augmented arms use up to 50, with partials frozen; not native 20/mixed export",
+  "rows": 1062,
+  "verification": "proposal text must appear as verified whole-input candidate in canonical-code scratch capture; raw-code graph alignment and learning remain unimplemented"
+}

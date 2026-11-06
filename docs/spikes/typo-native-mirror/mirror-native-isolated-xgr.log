@@ -1,0 +1,16 @@
+=== RUN   TestTypoNativeSpikeEditing
+2026-11-04 09:12:06.486 engine ready in 159ms: librime 1.17.0, modules [default shixin], schemas [rime_ice_warm], 7 policies
+=== RUN   TestTypoNativeSpikeEditing/full_xgr
+--- PASS: TestTypoNativeSpikeEditing (0.21s)
+    --- PASS: TestTypoNativeSpikeEditing/full_xgr (0.01s)
+=== RUN   TestTypoNativeSpikeEditing
+2026-11-04 09:12:06.582 engine ready in 68ms: librime 1.17.0, modules [default shixin], schemas [rime_ice_warm], 7 policies
+=== RUN   TestTypoNativeSpikeEditing/full_xgr
+--- PASS: TestTypoNativeSpikeEditing (0.09s)
+    --- PASS: TestTypoNativeSpikeEditing/full_xgr (0.00s)
+=== RUN   TestTypoNativeSpikeEditing
+2026-11-04 09:12:06.667 engine ready in 68ms: librime 1.17.0, modules [default shixin], schemas [rime_ice_warm], 7 policies
+=== RUN   TestTypoNativeSpikeEditing/full_xgr
+--- PASS: TestTypoNativeSpikeEditing (0.09s)
+    --- PASS: TestTypoNativeSpikeEditing/full_xgr (0.00s)
+PASS

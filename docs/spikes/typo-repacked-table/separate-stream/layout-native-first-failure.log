@@ -1,0 +1,27 @@
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from SeparateStream
+[ RUN      ] SeparateStream.RealDictionaryOrdinaryPagesAndExplicitCommit
+mode=0 nihao repeat=0 ordinary=29 corrections=8
+mode=0 nihao repeat=1 ordinary=29 corrections=8
+mode=0 nihoa repeat=0 ordinary=31 corrections=8
+mode=0 nihoa repeat=1 ordinary=31 corrections=8
+mode=0 niaho repeat=0 ordinary=29 corrections=0
+mode=0 niaho repeat=1 ordinary=29 corrections=0
+spikes/typo-recovery/native-graph/separate_stream_test.cc:183: Failure
+Expected: (found) != (recovered.end()), actual: 8-byte object <00-00 00-00 00-00 00-00> vs 8-byte object <00-00 00-00 00-00 00-00>
+Google Test trace:
+spikes/typo-recovery/native-graph/separate_stream_test.cc:90: niaho
+spikes/typo-recovery/native-graph/separate_stream_test.cc:82: mode=0
+
+[  FAILED  ] SeparateStream.RealDictionaryOrdinaryPagesAndExplicitCommit (119 ms)
+[----------] 1 test from SeparateStream (119 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (119 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] SeparateStream.RealDictionaryOrdinaryPagesAndExplicitCommit
+
+ 1 FAILED TEST

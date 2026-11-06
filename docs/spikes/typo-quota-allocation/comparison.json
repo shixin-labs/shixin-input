@@ -1,0 +1,2570 @@
+{
+  "hashes": {
+    "dp-1": "700f829791127282987d8d718aceea9e34937016d0683620a0938c02fe6790e3",
+    "dp-4": "a70750363b0bd58768ef6a61815c055fc09bc1b8c5b34e7b152ab3acb5c5d9b1",
+    "search-0": "f37471ca5ae3950c5006d90b1163ac1b5b537c1d119190487f7682b01c5b8568",
+    "search-1": "b690f0559ba342b7e0979262d54c72190eaf955bcbda899a65a02c56561af8fe",
+    "search-2": "a18c3b18de47d143550cd84075e7315e10368ab34ddee8870c8781df9cc3551d",
+    "search-3": "359b7c51a1e04b9d2d40cd10d2dcb750ba93d8d5244939a4dd712605c114901d",
+    "search-4": "52dc9d34e261ae0d150699216a97f2fc4b72921832b48ad1d5259c7986d94279",
+    "search-5": "2bed1302cf5b0ce0e81e164254f3b23c2b1bc1592f39d2a1bdde0e2de5449f71",
+    "search-6": "eba800505fb7f4f3d5bc0a9a5e34a61d0b6c9101410c67293bb5d330c1d2f066",
+    "search-7": "c598e0b8290a6576280a5234900b83f508dab741ceb55516148cbfe077a96a9e",
+    "search-8": "e15a567aa9851c56feff2f08eb0430ad6ea87ce405bce73d7e7b6fdbae652d20"
+  },
+  "limitations": "search + native baseline union only, before canonical verification, final cap50 and inference; fixed four-word-per-reading packed image; repeatedly examined families; DP charges binary probes and alignment visits against 8192 work units, unlike legacy edge counter",
+  "runs": {
+    "dp-1": {
+      "metrics": {
+        "dev": {
+          "rows": 375,
+          "exhausted": 221,
+          "search_hits": 106,
+          "baseline_hits": 133,
+          "union_hits": 195
+        },
+        "dev/digraph_initials/clean": {
+          "rows": 11,
+          "exhausted": 11,
+          "search_hits": 0,
+          "baseline_hits": 8,
+          "union_hits": 8
+        },
+        "dev/digraph_initials/neighbor": {
+          "rows": 11,
+          "exhausted": 11,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "dev/digraph_initials/swap": {
+          "rows": 11,
+          "exhausted": 10,
+          "search_hits": 1,
+          "baseline_hits": 0,
+          "union_hits": 1
+        },
+        "dev/full/clean": {
+          "rows": 29,
+          "exhausted": 11,
+          "search_hits": 15,
+          "baseline_hits": 27,
+          "union_hits": 27
+        },
+        "dev/full/neighbor": {
+          "rows": 29,
+          "exhausted": 11,
+          "search_hits": 17,
+          "baseline_hits": 0,
+          "union_hits": 17
+        },
+        "dev/full/swap": {
+          "rows": 29,
+          "exhausted": 9,
+          "search_hits": 19,
+          "baseline_hits": 8,
+          "union_hits": 20
+        },
+        "dev/initials/clean": {
+          "rows": 27,
+          "exhausted": 21,
+          "search_hits": 1,
+          "baseline_hits": 18,
+          "union_hits": 18
+        },
+        "dev/initials/neighbor": {
+          "rows": 29,
+          "exhausted": 18,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "dev/initials/swap": {
+          "rows": 26,
+          "exhausted": 22,
+          "search_hits": 1,
+          "baseline_hits": 0,
+          "union_hits": 1
+        },
+        "dev/mixed_even/clean": {
+          "rows": 29,
+          "exhausted": 25,
+          "search_hits": 4,
+          "baseline_hits": 27,
+          "union_hits": 27
+        },
+        "dev/mixed_even/neighbor": {
+          "rows": 29,
+          "exhausted": 22,
+          "search_hits": 5,
+          "baseline_hits": 0,
+          "union_hits": 5
+        },
+        "dev/mixed_even/swap": {
+          "rows": 29,
+          "exhausted": 18,
+          "search_hits": 8,
+          "baseline_hits": 10,
+          "union_hits": 16
+        },
+        "dev/mixed_odd/clean": {
+          "rows": 29,
+          "exhausted": 10,
+          "search_hits": 10,
+          "baseline_hits": 27,
+          "union_hits": 27
+        },
+        "dev/mixed_odd/neighbor": {
+          "rows": 28,
+          "exhausted": 13,
+          "search_hits": 10,
+          "baseline_hits": 0,
+          "union_hits": 10
+        },
+        "dev/mixed_odd/swap": {
+          "rows": 29,
+          "exhausted": 9,
+          "search_hits": 15,
+          "baseline_hits": 8,
+          "union_hits": 18
+        },
+        "test": {
+          "rows": 455,
+          "exhausted": 220,
+          "search_hits": 99,
+          "baseline_hits": 116,
+          "union_hits": 184
+        },
+        "test/digraph_initials/clean": {
+          "rows": 13,
+          "exhausted": 12,
+          "search_hits": 0,
+          "baseline_hits": 9,
+          "union_hits": 9
+        },
+        "test/digraph_initials/neighbor": {
+          "rows": 13,
+          "exhausted": 10,
+          "search_hits": 1,
+          "baseline_hits": 0,
+          "union_hits": 1
+        },
+        "test/digraph_initials/swap": {
+          "rows": 13,
+          "exhausted": 12,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "test/full/clean": {
+          "rows": 35,
+          "exhausted": 9,
+          "search_hits": 15,
+          "baseline_hits": 26,
+          "union_hits": 27
+        },
+        "test/full/neighbor": {
+          "rows": 35,
+          "exhausted": 10,
+          "search_hits": 19,
+          "baseline_hits": 0,
+          "union_hits": 19
+        },
+        "test/full/swap": {
+          "rows": 35,
+          "exhausted": 9,
+          "search_hits": 19,
+          "baseline_hits": 7,
+          "union_hits": 21
+        },
+        "test/initials/clean": {
+          "rows": 34,
+          "exhausted": 22,
+          "search_hits": 0,
+          "baseline_hits": 16,
+          "union_hits": 16
+        },
+        "test/initials/neighbor": {
+          "rows": 35,
+          "exhausted": 17,
+          "search_hits": 3,
+          "baseline_hits": 0,
+          "union_hits": 3
+        },
+        "test/initials/swap": {
+          "rows": 33,
+          "exhausted": 20,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "test/mixed_even/clean": {
+          "rows": 35,
+          "exhausted": 23,
+          "search_hits": 2,
+          "baseline_hits": 23,
+          "union_hits": 23
+        },
+        "test/mixed_even/neighbor": {
+          "rows": 34,
+          "exhausted": 22,
+          "search_hits": 5,
+          "baseline_hits": 0,
+          "union_hits": 5
+        },
+        "test/mixed_even/swap": {
+          "rows": 35,
+          "exhausted": 24,
+          "search_hits": 3,
+          "baseline_hits": 6,
+          "union_hits": 9
+        },
+        "test/mixed_odd/clean": {
+          "rows": 35,
+          "exhausted": 9,
+          "search_hits": 8,
+          "baseline_hits": 22,
+          "union_hits": 24
+        },
+        "test/mixed_odd/neighbor": {
+          "rows": 35,
+          "exhausted": 11,
+          "search_hits": 11,
+          "baseline_hits": 0,
+          "union_hits": 11
+        },
+        "test/mixed_odd/swap": {
+          "rows": 35,
+          "exhausted": 10,
+          "search_hits": 13,
+          "baseline_hits": 7,
+          "union_hits": 16
+        }
+      },
+      "p99_ns": 166791,
+      "prefix_exhausted": 1238,
+      "prefix_queries": 2616,
+      "search_new_allocations": 0
+    },
+    "dp-4": {
+      "metrics": {
+        "dev": {
+          "rows": 375,
+          "exhausted": 217,
+          "search_hits": 106,
+          "baseline_hits": 133,
+          "union_hits": 192
+        },
+        "dev/digraph_initials/clean": {
+          "rows": 11,
+          "exhausted": 11,
+          "search_hits": 0,
+          "baseline_hits": 8,
+          "union_hits": 8
+        },
+        "dev/digraph_initials/neighbor": {
+          "rows": 11,
+          "exhausted": 11,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "dev/digraph_initials/swap": {
+          "rows": 11,
+          "exhausted": 10,
+          "search_hits": 1,
+          "baseline_hits": 0,
+          "union_hits": 1
+        },
+        "dev/full/clean": {
+          "rows": 29,
+          "exhausted": 11,
+          "search_hits": 17,
+          "baseline_hits": 27,
+          "union_hits": 27
+        },
+        "dev/full/neighbor": {
+          "rows": 29,
+          "exhausted": 11,
+          "search_hits": 17,
+          "baseline_hits": 0,
+          "union_hits": 17
+        },
+        "dev/full/swap": {
+          "rows": 29,
+          "exhausted": 8,
+          "search_hits": 20,
+          "baseline_hits": 8,
+          "union_hits": 21
+        },
+        "dev/initials/clean": {
+          "rows": 27,
+          "exhausted": 20,
+          "search_hits": 1,
+          "baseline_hits": 18,
+          "union_hits": 18
+        },
+        "dev/initials/neighbor": {
+          "rows": 29,
+          "exhausted": 16,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "dev/initials/swap": {
+          "rows": 26,
+          "exhausted": 22,
+          "search_hits": 1,
+          "baseline_hits": 0,
+          "union_hits": 1
+        },
+        "dev/mixed_even/clean": {
+          "rows": 29,
+          "exhausted": 25,
+          "search_hits": 4,
+          "baseline_hits": 27,
+          "union_hits": 27
+        },
+        "dev/mixed_even/neighbor": {
+          "rows": 29,
+          "exhausted": 22,
+          "search_hits": 4,
+          "baseline_hits": 0,
+          "union_hits": 4
+        },
+        "dev/mixed_even/swap": {
+          "rows": 29,
+          "exhausted": 18,
+          "search_hits": 7,
+          "baseline_hits": 10,
+          "union_hits": 16
+        },
+        "dev/mixed_odd/clean": {
+          "rows": 29,
+          "exhausted": 10,
+          "search_hits": 12,
+          "baseline_hits": 27,
+          "union_hits": 27
+        },
+        "dev/mixed_odd/neighbor": {
+          "rows": 28,
+          "exhausted": 13,
+          "search_hits": 9,
+          "baseline_hits": 0,
+          "union_hits": 9
+        },
+        "dev/mixed_odd/swap": {
+          "rows": 29,
+          "exhausted": 9,
+          "search_hits": 13,
+          "baseline_hits": 8,
+          "union_hits": 16
+        },
+        "test": {
+          "rows": 455,
+          "exhausted": 213,
+          "search_hits": 105,
+          "baseline_hits": 116,
+          "union_hits": 181
+        },
+        "test/digraph_initials/clean": {
+          "rows": 13,
+          "exhausted": 12,
+          "search_hits": 1,
+          "baseline_hits": 9,
+          "union_hits": 9
+        },
+        "test/digraph_initials/neighbor": {
+          "rows": 13,
+          "exhausted": 10,
+          "search_hits": 1,
+          "baseline_hits": 0,
+          "union_hits": 1
+        },
+        "test/digraph_initials/swap": {
+          "rows": 13,
+          "exhausted": 12,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "test/full/clean": {
+          "rows": 35,
+          "exhausted": 9,
+          "search_hits": 20,
+          "baseline_hits": 26,
+          "union_hits": 27
+        },
+        "test/full/neighbor": {
+          "rows": 35,
+          "exhausted": 10,
+          "search_hits": 19,
+          "baseline_hits": 0,
+          "union_hits": 19
+        },
+        "test/full/swap": {
+          "rows": 35,
+          "exhausted": 9,
+          "search_hits": 19,
+          "baseline_hits": 7,
+          "union_hits": 21
+        },
+        "test/initials/clean": {
+          "rows": 34,
+          "exhausted": 22,
+          "search_hits": 1,
+          "baseline_hits": 16,
+          "union_hits": 16
+        },
+        "test/initials/neighbor": {
+          "rows": 35,
+          "exhausted": 16,
+          "search_hits": 2,
+          "baseline_hits": 0,
+          "union_hits": 2
+        },
+        "test/initials/swap": {
+          "rows": 33,
+          "exhausted": 19,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "test/mixed_even/clean": {
+          "rows": 35,
+          "exhausted": 23,
+          "search_hits": 3,
+          "baseline_hits": 23,
+          "union_hits": 23
+        },
+        "test/mixed_even/neighbor": {
+          "rows": 34,
+          "exhausted": 22,
+          "search_hits": 4,
+          "baseline_hits": 0,
+          "union_hits": 4
+        },
+        "test/mixed_even/swap": {
+          "rows": 35,
+          "exhausted": 21,
+          "search_hits": 2,
+          "baseline_hits": 6,
+          "union_hits": 8
+        },
+        "test/mixed_odd/clean": {
+          "rows": 35,
+          "exhausted": 8,
+          "search_hits": 12,
+          "baseline_hits": 22,
+          "union_hits": 25
+        },
+        "test/mixed_odd/neighbor": {
+          "rows": 35,
+          "exhausted": 11,
+          "search_hits": 10,
+          "baseline_hits": 0,
+          "union_hits": 10
+        },
+        "test/mixed_odd/swap": {
+          "rows": 35,
+          "exhausted": 9,
+          "search_hits": 11,
+          "baseline_hits": 7,
+          "union_hits": 16
+        }
+      },
+      "p99_ns": 158125,
+      "prefix_exhausted": 1204,
+      "prefix_queries": 2616,
+      "search_new_allocations": 0
+    },
+    "search-0": {
+      "metrics": {
+        "dev": {
+          "rows": 375,
+          "exhausted": 91,
+          "search_hits": 131,
+          "baseline_hits": 133,
+          "union_hits": 244
+        },
+        "dev/digraph_initials/clean": {
+          "rows": 11,
+          "exhausted": 6,
+          "search_hits": 0,
+          "baseline_hits": 8,
+          "union_hits": 8
+        },
+        "dev/digraph_initials/neighbor": {
+          "rows": 11,
+          "exhausted": 6,
+          "search_hits": 1,
+          "baseline_hits": 0,
+          "union_hits": 1
+        },
+        "dev/digraph_initials/swap": {
+          "rows": 11,
+          "exhausted": 6,
+          "search_hits": 3,
+          "baseline_hits": 0,
+          "union_hits": 3
+        },
+        "dev/full/clean": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 1,
+          "baseline_hits": 27,
+          "union_hits": 28
+        },
+        "dev/full/neighbor": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 26,
+          "baseline_hits": 0,
+          "union_hits": 26
+        },
+        "dev/full/swap": {
+          "rows": 29,
+          "exhausted": 1,
+          "search_hits": 26,
+          "baseline_hits": 8,
+          "union_hits": 26
+        },
+        "dev/initials/clean": {
+          "rows": 27,
+          "exhausted": 14,
+          "search_hits": 0,
+          "baseline_hits": 18,
+          "union_hits": 18
+        },
+        "dev/initials/neighbor": {
+          "rows": 29,
+          "exhausted": 9,
+          "search_hits": 1,
+          "baseline_hits": 0,
+          "union_hits": 1
+        },
+        "dev/initials/swap": {
+          "rows": 26,
+          "exhausted": 16,
+          "search_hits": 3,
+          "baseline_hits": 0,
+          "union_hits": 3
+        },
+        "dev/mixed_even/clean": {
+          "rows": 29,
+          "exhausted": 10,
+          "search_hits": 2,
+          "baseline_hits": 27,
+          "union_hits": 28
+        },
+        "dev/mixed_even/neighbor": {
+          "rows": 29,
+          "exhausted": 7,
+          "search_hits": 14,
+          "baseline_hits": 0,
+          "union_hits": 14
+        },
+        "dev/mixed_even/swap": {
+          "rows": 29,
+          "exhausted": 11,
+          "search_hits": 14,
+          "baseline_hits": 10,
+          "union_hits": 21
+        },
+        "dev/mixed_odd/clean": {
+          "rows": 29,
+          "exhausted": 2,
+          "search_hits": 1,
+          "baseline_hits": 27,
+          "union_hits": 27
+        },
+        "dev/mixed_odd/neighbor": {
+          "rows": 28,
+          "exhausted": 3,
+          "search_hits": 19,
+          "baseline_hits": 0,
+          "union_hits": 19
+        },
+        "dev/mixed_odd/swap": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 20,
+          "baseline_hits": 8,
+          "union_hits": 21
+        },
+        "test": {
+          "rows": 455,
+          "exhausted": 95,
+          "search_hits": 119,
+          "baseline_hits": 116,
+          "union_hits": 218
+        },
+        "test/digraph_initials/clean": {
+          "rows": 13,
+          "exhausted": 8,
+          "search_hits": 0,
+          "baseline_hits": 9,
+          "union_hits": 9
+        },
+        "test/digraph_initials/neighbor": {
+          "rows": 13,
+          "exhausted": 8,
+          "search_hits": 1,
+          "baseline_hits": 0,
+          "union_hits": 1
+        },
+        "test/digraph_initials/swap": {
+          "rows": 13,
+          "exhausted": 8,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "test/full/clean": {
+          "rows": 35,
+          "exhausted": 2,
+          "search_hits": 1,
+          "baseline_hits": 26,
+          "union_hits": 27
+        },
+        "test/full/neighbor": {
+          "rows": 35,
+          "exhausted": 3,
+          "search_hits": 23,
+          "baseline_hits": 0,
+          "union_hits": 23
+        },
+        "test/full/swap": {
+          "rows": 35,
+          "exhausted": 2,
+          "search_hits": 24,
+          "baseline_hits": 7,
+          "union_hits": 24
+        },
+        "test/initials/clean": {
+          "rows": 34,
+          "exhausted": 11,
+          "search_hits": 0,
+          "baseline_hits": 16,
+          "union_hits": 16
+        },
+        "test/initials/neighbor": {
+          "rows": 35,
+          "exhausted": 11,
+          "search_hits": 4,
+          "baseline_hits": 0,
+          "union_hits": 4
+        },
+        "test/initials/swap": {
+          "rows": 33,
+          "exhausted": 11,
+          "search_hits": 4,
+          "baseline_hits": 0,
+          "union_hits": 4
+        },
+        "test/mixed_even/clean": {
+          "rows": 35,
+          "exhausted": 11,
+          "search_hits": 3,
+          "baseline_hits": 23,
+          "union_hits": 24
+        },
+        "test/mixed_even/neighbor": {
+          "rows": 34,
+          "exhausted": 8,
+          "search_hits": 9,
+          "baseline_hits": 0,
+          "union_hits": 9
+        },
+        "test/mixed_even/swap": {
+          "rows": 35,
+          "exhausted": 8,
+          "search_hits": 12,
+          "baseline_hits": 6,
+          "union_hits": 16
+        },
+        "test/mixed_odd/clean": {
+          "rows": 35,
+          "exhausted": 2,
+          "search_hits": 2,
+          "baseline_hits": 22,
+          "union_hits": 22
+        },
+        "test/mixed_odd/neighbor": {
+          "rows": 35,
+          "exhausted": 1,
+          "search_hits": 16,
+          "baseline_hits": 0,
+          "union_hits": 16
+        },
+        "test/mixed_odd/swap": {
+          "rows": 35,
+          "exhausted": 1,
+          "search_hits": 20,
+          "baseline_hits": 7,
+          "union_hits": 23
+        }
+      },
+      "p99_ns": 225292,
+      "prefix_exhausted": 421,
+      "prefix_queries": 2616,
+      "search_new_allocations": 0
+    },
+    "search-1": {
+      "metrics": {
+        "dev": {
+          "rows": 375,
+          "exhausted": 90,
+          "search_hits": 181,
+          "baseline_hits": 133,
+          "union_hits": 244
+        },
+        "dev/digraph_initials/clean": {
+          "rows": 11,
+          "exhausted": 6,
+          "search_hits": 2,
+          "baseline_hits": 8,
+          "union_hits": 8
+        },
+        "dev/digraph_initials/neighbor": {
+          "rows": 11,
+          "exhausted": 5,
+          "search_hits": 1,
+          "baseline_hits": 0,
+          "union_hits": 1
+        },
+        "dev/digraph_initials/swap": {
+          "rows": 11,
+          "exhausted": 6,
+          "search_hits": 3,
+          "baseline_hits": 0,
+          "union_hits": 3
+        },
+        "dev/full/clean": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 23,
+          "baseline_hits": 27,
+          "union_hits": 28
+        },
+        "dev/full/neighbor": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 26,
+          "baseline_hits": 0,
+          "union_hits": 26
+        },
+        "dev/full/swap": {
+          "rows": 29,
+          "exhausted": 1,
+          "search_hits": 26,
+          "baseline_hits": 8,
+          "union_hits": 26
+        },
+        "dev/initials/clean": {
+          "rows": 27,
+          "exhausted": 14,
+          "search_hits": 3,
+          "baseline_hits": 18,
+          "union_hits": 18
+        },
+        "dev/initials/neighbor": {
+          "rows": 29,
+          "exhausted": 9,
+          "search_hits": 1,
+          "baseline_hits": 0,
+          "union_hits": 1
+        },
+        "dev/initials/swap": {
+          "rows": 26,
+          "exhausted": 16,
+          "search_hits": 3,
+          "baseline_hits": 0,
+          "union_hits": 3
+        },
+        "dev/mixed_even/clean": {
+          "rows": 29,
+          "exhausted": 10,
+          "search_hits": 11,
+          "baseline_hits": 27,
+          "union_hits": 28
+        },
+        "dev/mixed_even/neighbor": {
+          "rows": 29,
+          "exhausted": 7,
+          "search_hits": 14,
+          "baseline_hits": 0,
+          "union_hits": 14
+        },
+        "dev/mixed_even/swap": {
+          "rows": 29,
+          "exhausted": 11,
+          "search_hits": 14,
+          "baseline_hits": 10,
+          "union_hits": 21
+        },
+        "dev/mixed_odd/clean": {
+          "rows": 29,
+          "exhausted": 2,
+          "search_hits": 15,
+          "baseline_hits": 27,
+          "union_hits": 27
+        },
+        "dev/mixed_odd/neighbor": {
+          "rows": 28,
+          "exhausted": 3,
+          "search_hits": 19,
+          "baseline_hits": 0,
+          "union_hits": 19
+        },
+        "dev/mixed_odd/swap": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 20,
+          "baseline_hits": 8,
+          "union_hits": 21
+        },
+        "test": {
+          "rows": 455,
+          "exhausted": 95,
+          "search_hits": 153,
+          "baseline_hits": 116,
+          "union_hits": 219
+        },
+        "test/digraph_initials/clean": {
+          "rows": 13,
+          "exhausted": 8,
+          "search_hits": 0,
+          "baseline_hits": 9,
+          "union_hits": 9
+        },
+        "test/digraph_initials/neighbor": {
+          "rows": 13,
+          "exhausted": 8,
+          "search_hits": 1,
+          "baseline_hits": 0,
+          "union_hits": 1
+        },
+        "test/digraph_initials/swap": {
+          "rows": 13,
+          "exhausted": 8,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "test/full/clean": {
+          "rows": 35,
+          "exhausted": 2,
+          "search_hits": 20,
+          "baseline_hits": 26,
+          "union_hits": 27
+        },
+        "test/full/neighbor": {
+          "rows": 35,
+          "exhausted": 3,
+          "search_hits": 23,
+          "baseline_hits": 0,
+          "union_hits": 23
+        },
+        "test/full/swap": {
+          "rows": 35,
+          "exhausted": 2,
+          "search_hits": 24,
+          "baseline_hits": 7,
+          "union_hits": 24
+        },
+        "test/initials/clean": {
+          "rows": 34,
+          "exhausted": 11,
+          "search_hits": 2,
+          "baseline_hits": 16,
+          "union_hits": 16
+        },
+        "test/initials/neighbor": {
+          "rows": 35,
+          "exhausted": 11,
+          "search_hits": 4,
+          "baseline_hits": 0,
+          "union_hits": 4
+        },
+        "test/initials/swap": {
+          "rows": 33,
+          "exhausted": 11,
+          "search_hits": 4,
+          "baseline_hits": 0,
+          "union_hits": 4
+        },
+        "test/mixed_even/clean": {
+          "rows": 35,
+          "exhausted": 11,
+          "search_hits": 7,
+          "baseline_hits": 23,
+          "union_hits": 24
+        },
+        "test/mixed_even/neighbor": {
+          "rows": 34,
+          "exhausted": 8,
+          "search_hits": 9,
+          "baseline_hits": 0,
+          "union_hits": 9
+        },
+        "test/mixed_even/swap": {
+          "rows": 35,
+          "exhausted": 8,
+          "search_hits": 12,
+          "baseline_hits": 6,
+          "union_hits": 16
+        },
+        "test/mixed_odd/clean": {
+          "rows": 35,
+          "exhausted": 2,
+          "search_hits": 12,
+          "baseline_hits": 22,
+          "union_hits": 24
+        },
+        "test/mixed_odd/neighbor": {
+          "rows": 35,
+          "exhausted": 1,
+          "search_hits": 16,
+          "baseline_hits": 0,
+          "union_hits": 16
+        },
+        "test/mixed_odd/swap": {
+          "rows": 35,
+          "exhausted": 1,
+          "search_hits": 19,
+          "baseline_hits": 7,
+          "union_hits": 22
+        }
+      },
+      "p99_ns": 184750,
+      "prefix_exhausted": 419,
+      "prefix_queries": 2616,
+      "search_new_allocations": 0
+    },
+    "search-2": {
+      "metrics": {
+        "dev": {
+          "rows": 375,
+          "exhausted": 91,
+          "search_hits": 188,
+          "baseline_hits": 133,
+          "union_hits": 241
+        },
+        "dev/digraph_initials/clean": {
+          "rows": 11,
+          "exhausted": 6,
+          "search_hits": 3,
+          "baseline_hits": 8,
+          "union_hits": 8
+        },
+        "dev/digraph_initials/neighbor": {
+          "rows": 11,
+          "exhausted": 5,
+          "search_hits": 1,
+          "baseline_hits": 0,
+          "union_hits": 1
+        },
+        "dev/digraph_initials/swap": {
+          "rows": 11,
+          "exhausted": 6,
+          "search_hits": 3,
+          "baseline_hits": 0,
+          "union_hits": 3
+        },
+        "dev/full/clean": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 27,
+          "baseline_hits": 27,
+          "union_hits": 28
+        },
+        "dev/full/neighbor": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 26,
+          "baseline_hits": 0,
+          "union_hits": 26
+        },
+        "dev/full/swap": {
+          "rows": 29,
+          "exhausted": 1,
+          "search_hits": 26,
+          "baseline_hits": 8,
+          "union_hits": 26
+        },
+        "dev/initials/clean": {
+          "rows": 27,
+          "exhausted": 16,
+          "search_hits": 4,
+          "baseline_hits": 18,
+          "union_hits": 18
+        },
+        "dev/initials/neighbor": {
+          "rows": 29,
+          "exhausted": 9,
+          "search_hits": 1,
+          "baseline_hits": 0,
+          "union_hits": 1
+        },
+        "dev/initials/swap": {
+          "rows": 26,
+          "exhausted": 15,
+          "search_hits": 4,
+          "baseline_hits": 0,
+          "union_hits": 4
+        },
+        "dev/mixed_even/clean": {
+          "rows": 29,
+          "exhausted": 10,
+          "search_hits": 13,
+          "baseline_hits": 27,
+          "union_hits": 28
+        },
+        "dev/mixed_even/neighbor": {
+          "rows": 29,
+          "exhausted": 7,
+          "search_hits": 14,
+          "baseline_hits": 0,
+          "union_hits": 14
+        },
+        "dev/mixed_even/swap": {
+          "rows": 29,
+          "exhausted": 11,
+          "search_hits": 13,
+          "baseline_hits": 10,
+          "union_hits": 20
+        },
+        "dev/mixed_odd/clean": {
+          "rows": 29,
+          "exhausted": 2,
+          "search_hits": 17,
+          "baseline_hits": 27,
+          "union_hits": 27
+        },
+        "dev/mixed_odd/neighbor": {
+          "rows": 28,
+          "exhausted": 3,
+          "search_hits": 17,
+          "baseline_hits": 0,
+          "union_hits": 17
+        },
+        "dev/mixed_odd/swap": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 19,
+          "baseline_hits": 8,
+          "union_hits": 20
+        },
+        "test": {
+          "rows": 455,
+          "exhausted": 94,
+          "search_hits": 157,
+          "baseline_hits": 116,
+          "union_hits": 217
+        },
+        "test/digraph_initials/clean": {
+          "rows": 13,
+          "exhausted": 8,
+          "search_hits": 1,
+          "baseline_hits": 9,
+          "union_hits": 9
+        },
+        "test/digraph_initials/neighbor": {
+          "rows": 13,
+          "exhausted": 8,
+          "search_hits": 1,
+          "baseline_hits": 0,
+          "union_hits": 1
+        },
+        "test/digraph_initials/swap": {
+          "rows": 13,
+          "exhausted": 8,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "test/full/clean": {
+          "rows": 35,
+          "exhausted": 2,
+          "search_hits": 23,
+          "baseline_hits": 26,
+          "union_hits": 27
+        },
+        "test/full/neighbor": {
+          "rows": 35,
+          "exhausted": 3,
+          "search_hits": 23,
+          "baseline_hits": 0,
+          "union_hits": 23
+        },
+        "test/full/swap": {
+          "rows": 35,
+          "exhausted": 2,
+          "search_hits": 24,
+          "baseline_hits": 7,
+          "union_hits": 24
+        },
+        "test/initials/clean": {
+          "rows": 34,
+          "exhausted": 10,
+          "search_hits": 3,
+          "baseline_hits": 16,
+          "union_hits": 16
+        },
+        "test/initials/neighbor": {
+          "rows": 35,
+          "exhausted": 11,
+          "search_hits": 4,
+          "baseline_hits": 0,
+          "union_hits": 4
+        },
+        "test/initials/swap": {
+          "rows": 33,
+          "exhausted": 11,
+          "search_hits": 4,
+          "baseline_hits": 0,
+          "union_hits": 4
+        },
+        "test/mixed_even/clean": {
+          "rows": 35,
+          "exhausted": 11,
+          "search_hits": 9,
+          "baseline_hits": 23,
+          "union_hits": 24
+        },
+        "test/mixed_even/neighbor": {
+          "rows": 34,
+          "exhausted": 8,
+          "search_hits": 8,
+          "baseline_hits": 0,
+          "union_hits": 8
+        },
+        "test/mixed_even/swap": {
+          "rows": 35,
+          "exhausted": 8,
+          "search_hits": 10,
+          "baseline_hits": 6,
+          "union_hits": 14
+        },
+        "test/mixed_odd/clean": {
+          "rows": 35,
+          "exhausted": 2,
+          "search_hits": 13,
+          "baseline_hits": 22,
+          "union_hits": 25
+        },
+        "test/mixed_odd/neighbor": {
+          "rows": 35,
+          "exhausted": 1,
+          "search_hits": 16,
+          "baseline_hits": 0,
+          "union_hits": 16
+        },
+        "test/mixed_odd/swap": {
+          "rows": 35,
+          "exhausted": 1,
+          "search_hits": 18,
+          "baseline_hits": 7,
+          "union_hits": 22
+        }
+      },
+      "p99_ns": 189042,
+      "prefix_exhausted": 412,
+      "prefix_queries": 2616,
+      "search_new_allocations": 0
+    },
+    "search-3": {
+      "metrics": {
+        "dev": {
+          "rows": 375,
+          "exhausted": 89,
+          "search_hits": 187,
+          "baseline_hits": 133,
+          "union_hits": 238
+        },
+        "dev/digraph_initials/clean": {
+          "rows": 11,
+          "exhausted": 6,
+          "search_hits": 3,
+          "baseline_hits": 8,
+          "union_hits": 8
+        },
+        "dev/digraph_initials/neighbor": {
+          "rows": 11,
+          "exhausted": 5,
+          "search_hits": 1,
+          "baseline_hits": 0,
+          "union_hits": 1
+        },
+        "dev/digraph_initials/swap": {
+          "rows": 11,
+          "exhausted": 6,
+          "search_hits": 3,
+          "baseline_hits": 0,
+          "union_hits": 3
+        },
+        "dev/full/clean": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 28,
+          "baseline_hits": 27,
+          "union_hits": 28
+        },
+        "dev/full/neighbor": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 26,
+          "baseline_hits": 0,
+          "union_hits": 26
+        },
+        "dev/full/swap": {
+          "rows": 29,
+          "exhausted": 1,
+          "search_hits": 26,
+          "baseline_hits": 8,
+          "union_hits": 26
+        },
+        "dev/initials/clean": {
+          "rows": 27,
+          "exhausted": 16,
+          "search_hits": 4,
+          "baseline_hits": 18,
+          "union_hits": 18
+        },
+        "dev/initials/neighbor": {
+          "rows": 29,
+          "exhausted": 9,
+          "search_hits": 1,
+          "baseline_hits": 0,
+          "union_hits": 1
+        },
+        "dev/initials/swap": {
+          "rows": 26,
+          "exhausted": 14,
+          "search_hits": 4,
+          "baseline_hits": 0,
+          "union_hits": 4
+        },
+        "dev/mixed_even/clean": {
+          "rows": 29,
+          "exhausted": 10,
+          "search_hits": 14,
+          "baseline_hits": 27,
+          "union_hits": 28
+        },
+        "dev/mixed_even/neighbor": {
+          "rows": 29,
+          "exhausted": 6,
+          "search_hits": 12,
+          "baseline_hits": 0,
+          "union_hits": 12
+        },
+        "dev/mixed_even/swap": {
+          "rows": 29,
+          "exhausted": 11,
+          "search_hits": 12,
+          "baseline_hits": 10,
+          "union_hits": 20
+        },
+        "dev/mixed_odd/clean": {
+          "rows": 29,
+          "exhausted": 2,
+          "search_hits": 18,
+          "baseline_hits": 27,
+          "union_hits": 27
+        },
+        "dev/mixed_odd/neighbor": {
+          "rows": 28,
+          "exhausted": 3,
+          "search_hits": 16,
+          "baseline_hits": 0,
+          "union_hits": 16
+        },
+        "dev/mixed_odd/swap": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 19,
+          "baseline_hits": 8,
+          "union_hits": 20
+        },
+        "test": {
+          "rows": 455,
+          "exhausted": 93,
+          "search_hits": 160,
+          "baseline_hits": 116,
+          "union_hits": 215
+        },
+        "test/digraph_initials/clean": {
+          "rows": 13,
+          "exhausted": 8,
+          "search_hits": 2,
+          "baseline_hits": 9,
+          "union_hits": 9
+        },
+        "test/digraph_initials/neighbor": {
+          "rows": 13,
+          "exhausted": 8,
+          "search_hits": 1,
+          "baseline_hits": 0,
+          "union_hits": 1
+        },
+        "test/digraph_initials/swap": {
+          "rows": 13,
+          "exhausted": 8,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "test/full/clean": {
+          "rows": 35,
+          "exhausted": 2,
+          "search_hits": 24,
+          "baseline_hits": 26,
+          "union_hits": 27
+        },
+        "test/full/neighbor": {
+          "rows": 35,
+          "exhausted": 3,
+          "search_hits": 23,
+          "baseline_hits": 0,
+          "union_hits": 23
+        },
+        "test/full/swap": {
+          "rows": 35,
+          "exhausted": 2,
+          "search_hits": 24,
+          "baseline_hits": 7,
+          "union_hits": 24
+        },
+        "test/initials/clean": {
+          "rows": 34,
+          "exhausted": 10,
+          "search_hits": 4,
+          "baseline_hits": 16,
+          "union_hits": 16
+        },
+        "test/initials/neighbor": {
+          "rows": 35,
+          "exhausted": 11,
+          "search_hits": 4,
+          "baseline_hits": 0,
+          "union_hits": 4
+        },
+        "test/initials/swap": {
+          "rows": 33,
+          "exhausted": 11,
+          "search_hits": 4,
+          "baseline_hits": 0,
+          "union_hits": 4
+        },
+        "test/mixed_even/clean": {
+          "rows": 35,
+          "exhausted": 11,
+          "search_hits": 8,
+          "baseline_hits": 23,
+          "union_hits": 23
+        },
+        "test/mixed_even/neighbor": {
+          "rows": 34,
+          "exhausted": 8,
+          "search_hits": 8,
+          "baseline_hits": 0,
+          "union_hits": 8
+        },
+        "test/mixed_even/swap": {
+          "rows": 35,
+          "exhausted": 7,
+          "search_hits": 10,
+          "baseline_hits": 6,
+          "union_hits": 14
+        },
+        "test/mixed_odd/clean": {
+          "rows": 35,
+          "exhausted": 2,
+          "search_hits": 16,
+          "baseline_hits": 22,
+          "union_hits": 25
+        },
+        "test/mixed_odd/neighbor": {
+          "rows": 35,
+          "exhausted": 1,
+          "search_hits": 15,
+          "baseline_hits": 0,
+          "union_hits": 15
+        },
+        "test/mixed_odd/swap": {
+          "rows": 35,
+          "exhausted": 1,
+          "search_hits": 17,
+          "baseline_hits": 7,
+          "union_hits": 22
+        }
+      },
+      "p99_ns": 184250,
+      "prefix_exhausted": 407,
+      "prefix_queries": 2616,
+      "search_new_allocations": 0
+    },
+    "search-4": {
+      "metrics": {
+        "dev": {
+          "rows": 375,
+          "exhausted": 88,
+          "search_hits": 183,
+          "baseline_hits": 133,
+          "union_hits": 235
+        },
+        "dev/digraph_initials/clean": {
+          "rows": 11,
+          "exhausted": 6,
+          "search_hits": 3,
+          "baseline_hits": 8,
+          "union_hits": 8
+        },
+        "dev/digraph_initials/neighbor": {
+          "rows": 11,
+          "exhausted": 5,
+          "search_hits": 1,
+          "baseline_hits": 0,
+          "union_hits": 1
+        },
+        "dev/digraph_initials/swap": {
+          "rows": 11,
+          "exhausted": 6,
+          "search_hits": 3,
+          "baseline_hits": 0,
+          "union_hits": 3
+        },
+        "dev/full/clean": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 28,
+          "baseline_hits": 27,
+          "union_hits": 28
+        },
+        "dev/full/neighbor": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 26,
+          "baseline_hits": 0,
+          "union_hits": 26
+        },
+        "dev/full/swap": {
+          "rows": 29,
+          "exhausted": 1,
+          "search_hits": 26,
+          "baseline_hits": 8,
+          "union_hits": 26
+        },
+        "dev/initials/clean": {
+          "rows": 27,
+          "exhausted": 15,
+          "search_hits": 4,
+          "baseline_hits": 18,
+          "union_hits": 18
+        },
+        "dev/initials/neighbor": {
+          "rows": 29,
+          "exhausted": 9,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "dev/initials/swap": {
+          "rows": 26,
+          "exhausted": 14,
+          "search_hits": 4,
+          "baseline_hits": 0,
+          "union_hits": 4
+        },
+        "dev/mixed_even/clean": {
+          "rows": 29,
+          "exhausted": 10,
+          "search_hits": 13,
+          "baseline_hits": 27,
+          "union_hits": 27
+        },
+        "dev/mixed_even/neighbor": {
+          "rows": 29,
+          "exhausted": 6,
+          "search_hits": 12,
+          "baseline_hits": 0,
+          "union_hits": 12
+        },
+        "dev/mixed_even/swap": {
+          "rows": 29,
+          "exhausted": 11,
+          "search_hits": 11,
+          "baseline_hits": 10,
+          "union_hits": 20
+        },
+        "dev/mixed_odd/clean": {
+          "rows": 29,
+          "exhausted": 2,
+          "search_hits": 18,
+          "baseline_hits": 27,
+          "union_hits": 27
+        },
+        "dev/mixed_odd/neighbor": {
+          "rows": 28,
+          "exhausted": 3,
+          "search_hits": 16,
+          "baseline_hits": 0,
+          "union_hits": 16
+        },
+        "dev/mixed_odd/swap": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 18,
+          "baseline_hits": 8,
+          "union_hits": 19
+        },
+        "test": {
+          "rows": 455,
+          "exhausted": 93,
+          "search_hits": 159,
+          "baseline_hits": 116,
+          "union_hits": 213
+        },
+        "test/digraph_initials/clean": {
+          "rows": 13,
+          "exhausted": 8,
+          "search_hits": 2,
+          "baseline_hits": 9,
+          "union_hits": 9
+        },
+        "test/digraph_initials/neighbor": {
+          "rows": 13,
+          "exhausted": 8,
+          "search_hits": 1,
+          "baseline_hits": 0,
+          "union_hits": 1
+        },
+        "test/digraph_initials/swap": {
+          "rows": 13,
+          "exhausted": 8,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "test/full/clean": {
+          "rows": 35,
+          "exhausted": 2,
+          "search_hits": 25,
+          "baseline_hits": 26,
+          "union_hits": 27
+        },
+        "test/full/neighbor": {
+          "rows": 35,
+          "exhausted": 3,
+          "search_hits": 23,
+          "baseline_hits": 0,
+          "union_hits": 23
+        },
+        "test/full/swap": {
+          "rows": 35,
+          "exhausted": 2,
+          "search_hits": 24,
+          "baseline_hits": 7,
+          "union_hits": 24
+        },
+        "test/initials/clean": {
+          "rows": 34,
+          "exhausted": 10,
+          "search_hits": 4,
+          "baseline_hits": 16,
+          "union_hits": 16
+        },
+        "test/initials/neighbor": {
+          "rows": 35,
+          "exhausted": 11,
+          "search_hits": 3,
+          "baseline_hits": 0,
+          "union_hits": 3
+        },
+        "test/initials/swap": {
+          "rows": 33,
+          "exhausted": 11,
+          "search_hits": 4,
+          "baseline_hits": 0,
+          "union_hits": 4
+        },
+        "test/mixed_even/clean": {
+          "rows": 35,
+          "exhausted": 11,
+          "search_hits": 9,
+          "baseline_hits": 23,
+          "union_hits": 23
+        },
+        "test/mixed_even/neighbor": {
+          "rows": 34,
+          "exhausted": 8,
+          "search_hits": 8,
+          "baseline_hits": 0,
+          "union_hits": 8
+        },
+        "test/mixed_even/swap": {
+          "rows": 35,
+          "exhausted": 7,
+          "search_hits": 9,
+          "baseline_hits": 6,
+          "union_hits": 14
+        },
+        "test/mixed_odd/clean": {
+          "rows": 35,
+          "exhausted": 2,
+          "search_hits": 16,
+          "baseline_hits": 22,
+          "union_hits": 25
+        },
+        "test/mixed_odd/neighbor": {
+          "rows": 35,
+          "exhausted": 1,
+          "search_hits": 15,
+          "baseline_hits": 0,
+          "union_hits": 15
+        },
+        "test/mixed_odd/swap": {
+          "rows": 35,
+          "exhausted": 1,
+          "search_hits": 16,
+          "baseline_hits": 7,
+          "union_hits": 21
+        }
+      },
+      "p99_ns": 185959,
+      "prefix_exhausted": 397,
+      "prefix_queries": 2616,
+      "search_new_allocations": 0
+    },
+    "search-5": {
+      "metrics": {
+        "dev": {
+          "rows": 375,
+          "exhausted": 86,
+          "search_hits": 182,
+          "baseline_hits": 133,
+          "union_hits": 231
+        },
+        "dev/digraph_initials/clean": {
+          "rows": 11,
+          "exhausted": 6,
+          "search_hits": 3,
+          "baseline_hits": 8,
+          "union_hits": 8
+        },
+        "dev/digraph_initials/neighbor": {
+          "rows": 11,
+          "exhausted": 5,
+          "search_hits": 1,
+          "baseline_hits": 0,
+          "union_hits": 1
+        },
+        "dev/digraph_initials/swap": {
+          "rows": 11,
+          "exhausted": 6,
+          "search_hits": 3,
+          "baseline_hits": 0,
+          "union_hits": 3
+        },
+        "dev/full/clean": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 28,
+          "baseline_hits": 27,
+          "union_hits": 28
+        },
+        "dev/full/neighbor": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 25,
+          "baseline_hits": 0,
+          "union_hits": 25
+        },
+        "dev/full/swap": {
+          "rows": 29,
+          "exhausted": 1,
+          "search_hits": 26,
+          "baseline_hits": 8,
+          "union_hits": 26
+        },
+        "dev/initials/clean": {
+          "rows": 27,
+          "exhausted": 13,
+          "search_hits": 4,
+          "baseline_hits": 18,
+          "union_hits": 18
+        },
+        "dev/initials/neighbor": {
+          "rows": 29,
+          "exhausted": 9,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "dev/initials/swap": {
+          "rows": 26,
+          "exhausted": 14,
+          "search_hits": 4,
+          "baseline_hits": 0,
+          "union_hits": 4
+        },
+        "dev/mixed_even/clean": {
+          "rows": 29,
+          "exhausted": 10,
+          "search_hits": 14,
+          "baseline_hits": 27,
+          "union_hits": 27
+        },
+        "dev/mixed_even/neighbor": {
+          "rows": 29,
+          "exhausted": 6,
+          "search_hits": 11,
+          "baseline_hits": 0,
+          "union_hits": 11
+        },
+        "dev/mixed_even/swap": {
+          "rows": 29,
+          "exhausted": 11,
+          "search_hits": 10,
+          "baseline_hits": 10,
+          "union_hits": 19
+        },
+        "dev/mixed_odd/clean": {
+          "rows": 29,
+          "exhausted": 2,
+          "search_hits": 20,
+          "baseline_hits": 27,
+          "union_hits": 27
+        },
+        "dev/mixed_odd/neighbor": {
+          "rows": 28,
+          "exhausted": 3,
+          "search_hits": 15,
+          "baseline_hits": 0,
+          "union_hits": 15
+        },
+        "dev/mixed_odd/swap": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 18,
+          "baseline_hits": 8,
+          "union_hits": 19
+        },
+        "test": {
+          "rows": 455,
+          "exhausted": 93,
+          "search_hits": 157,
+          "baseline_hits": 116,
+          "union_hits": 209
+        },
+        "test/digraph_initials/clean": {
+          "rows": 13,
+          "exhausted": 8,
+          "search_hits": 2,
+          "baseline_hits": 9,
+          "union_hits": 9
+        },
+        "test/digraph_initials/neighbor": {
+          "rows": 13,
+          "exhausted": 8,
+          "search_hits": 1,
+          "baseline_hits": 0,
+          "union_hits": 1
+        },
+        "test/digraph_initials/swap": {
+          "rows": 13,
+          "exhausted": 8,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "test/full/clean": {
+          "rows": 35,
+          "exhausted": 2,
+          "search_hits": 25,
+          "baseline_hits": 26,
+          "union_hits": 27
+        },
+        "test/full/neighbor": {
+          "rows": 35,
+          "exhausted": 3,
+          "search_hits": 21,
+          "baseline_hits": 0,
+          "union_hits": 21
+        },
+        "test/full/swap": {
+          "rows": 35,
+          "exhausted": 2,
+          "search_hits": 23,
+          "baseline_hits": 7,
+          "union_hits": 24
+        },
+        "test/initials/clean": {
+          "rows": 34,
+          "exhausted": 10,
+          "search_hits": 5,
+          "baseline_hits": 16,
+          "union_hits": 16
+        },
+        "test/initials/neighbor": {
+          "rows": 35,
+          "exhausted": 11,
+          "search_hits": 3,
+          "baseline_hits": 0,
+          "union_hits": 3
+        },
+        "test/initials/swap": {
+          "rows": 33,
+          "exhausted": 11,
+          "search_hits": 3,
+          "baseline_hits": 0,
+          "union_hits": 3
+        },
+        "test/mixed_even/clean": {
+          "rows": 35,
+          "exhausted": 11,
+          "search_hits": 10,
+          "baseline_hits": 23,
+          "union_hits": 23
+        },
+        "test/mixed_even/neighbor": {
+          "rows": 34,
+          "exhausted": 8,
+          "search_hits": 7,
+          "baseline_hits": 0,
+          "union_hits": 7
+        },
+        "test/mixed_even/swap": {
+          "rows": 35,
+          "exhausted": 7,
+          "search_hits": 9,
+          "baseline_hits": 6,
+          "union_hits": 14
+        },
+        "test/mixed_odd/clean": {
+          "rows": 35,
+          "exhausted": 2,
+          "search_hits": 17,
+          "baseline_hits": 22,
+          "union_hits": 25
+        },
+        "test/mixed_odd/neighbor": {
+          "rows": 35,
+          "exhausted": 1,
+          "search_hits": 15,
+          "baseline_hits": 0,
+          "union_hits": 15
+        },
+        "test/mixed_odd/swap": {
+          "rows": 35,
+          "exhausted": 1,
+          "search_hits": 16,
+          "baseline_hits": 7,
+          "union_hits": 21
+        }
+      },
+      "p99_ns": 181666,
+      "prefix_exhausted": 388,
+      "prefix_queries": 2616,
+      "search_new_allocations": 0
+    },
+    "search-6": {
+      "metrics": {
+        "dev": {
+          "rows": 375,
+          "exhausted": 78,
+          "search_hits": 176,
+          "baseline_hits": 133,
+          "union_hits": 224
+        },
+        "dev/digraph_initials/clean": {
+          "rows": 11,
+          "exhausted": 5,
+          "search_hits": 3,
+          "baseline_hits": 8,
+          "union_hits": 8
+        },
+        "dev/digraph_initials/neighbor": {
+          "rows": 11,
+          "exhausted": 5,
+          "search_hits": 1,
+          "baseline_hits": 0,
+          "union_hits": 1
+        },
+        "dev/digraph_initials/swap": {
+          "rows": 11,
+          "exhausted": 6,
+          "search_hits": 2,
+          "baseline_hits": 0,
+          "union_hits": 2
+        },
+        "dev/full/clean": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 28,
+          "baseline_hits": 27,
+          "union_hits": 28
+        },
+        "dev/full/neighbor": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 24,
+          "baseline_hits": 0,
+          "union_hits": 24
+        },
+        "dev/full/swap": {
+          "rows": 29,
+          "exhausted": 1,
+          "search_hits": 24,
+          "baseline_hits": 8,
+          "union_hits": 25
+        },
+        "dev/initials/clean": {
+          "rows": 27,
+          "exhausted": 11,
+          "search_hits": 5,
+          "baseline_hits": 18,
+          "union_hits": 18
+        },
+        "dev/initials/neighbor": {
+          "rows": 29,
+          "exhausted": 6,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "dev/initials/swap": {
+          "rows": 26,
+          "exhausted": 13,
+          "search_hits": 2,
+          "baseline_hits": 0,
+          "union_hits": 2
+        },
+        "dev/mixed_even/clean": {
+          "rows": 29,
+          "exhausted": 10,
+          "search_hits": 15,
+          "baseline_hits": 27,
+          "union_hits": 27
+        },
+        "dev/mixed_even/neighbor": {
+          "rows": 29,
+          "exhausted": 6,
+          "search_hits": 10,
+          "baseline_hits": 0,
+          "union_hits": 10
+        },
+        "dev/mixed_even/swap": {
+          "rows": 29,
+          "exhausted": 10,
+          "search_hits": 10,
+          "baseline_hits": 10,
+          "union_hits": 19
+        },
+        "dev/mixed_odd/clean": {
+          "rows": 29,
+          "exhausted": 2,
+          "search_hits": 20,
+          "baseline_hits": 27,
+          "union_hits": 27
+        },
+        "dev/mixed_odd/neighbor": {
+          "rows": 28,
+          "exhausted": 3,
+          "search_hits": 15,
+          "baseline_hits": 0,
+          "union_hits": 15
+        },
+        "dev/mixed_odd/swap": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 17,
+          "baseline_hits": 8,
+          "union_hits": 18
+        },
+        "test": {
+          "rows": 455,
+          "exhausted": 92,
+          "search_hits": 151,
+          "baseline_hits": 116,
+          "union_hits": 202
+        },
+        "test/digraph_initials/clean": {
+          "rows": 13,
+          "exhausted": 8,
+          "search_hits": 2,
+          "baseline_hits": 9,
+          "union_hits": 9
+        },
+        "test/digraph_initials/neighbor": {
+          "rows": 13,
+          "exhausted": 8,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "test/digraph_initials/swap": {
+          "rows": 13,
+          "exhausted": 8,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "test/full/clean": {
+          "rows": 35,
+          "exhausted": 2,
+          "search_hits": 25,
+          "baseline_hits": 26,
+          "union_hits": 27
+        },
+        "test/full/neighbor": {
+          "rows": 35,
+          "exhausted": 2,
+          "search_hits": 21,
+          "baseline_hits": 0,
+          "union_hits": 21
+        },
+        "test/full/swap": {
+          "rows": 35,
+          "exhausted": 2,
+          "search_hits": 20,
+          "baseline_hits": 7,
+          "union_hits": 22
+        },
+        "test/initials/clean": {
+          "rows": 34,
+          "exhausted": 10,
+          "search_hits": 5,
+          "baseline_hits": 16,
+          "union_hits": 16
+        },
+        "test/initials/neighbor": {
+          "rows": 35,
+          "exhausted": 11,
+          "search_hits": 3,
+          "baseline_hits": 0,
+          "union_hits": 3
+        },
+        "test/initials/swap": {
+          "rows": 33,
+          "exhausted": 11,
+          "search_hits": 2,
+          "baseline_hits": 0,
+          "union_hits": 2
+        },
+        "test/mixed_even/clean": {
+          "rows": 35,
+          "exhausted": 11,
+          "search_hits": 10,
+          "baseline_hits": 23,
+          "union_hits": 23
+        },
+        "test/mixed_even/neighbor": {
+          "rows": 34,
+          "exhausted": 8,
+          "search_hits": 7,
+          "baseline_hits": 0,
+          "union_hits": 7
+        },
+        "test/mixed_even/swap": {
+          "rows": 35,
+          "exhausted": 7,
+          "search_hits": 9,
+          "baseline_hits": 6,
+          "union_hits": 14
+        },
+        "test/mixed_odd/clean": {
+          "rows": 35,
+          "exhausted": 2,
+          "search_hits": 20,
+          "baseline_hits": 22,
+          "union_hits": 25
+        },
+        "test/mixed_odd/neighbor": {
+          "rows": 35,
+          "exhausted": 1,
+          "search_hits": 13,
+          "baseline_hits": 0,
+          "union_hits": 13
+        },
+        "test/mixed_odd/swap": {
+          "rows": 35,
+          "exhausted": 1,
+          "search_hits": 14,
+          "baseline_hits": 7,
+          "union_hits": 20
+        }
+      },
+      "p99_ns": 183708,
+      "prefix_exhausted": 376,
+      "prefix_queries": 2616,
+      "search_new_allocations": 0
+    },
+    "search-7": {
+      "metrics": {
+        "dev": {
+          "rows": 375,
+          "exhausted": 71,
+          "search_hits": 165,
+          "baseline_hits": 133,
+          "union_hits": 212
+        },
+        "dev/digraph_initials/clean": {
+          "rows": 11,
+          "exhausted": 4,
+          "search_hits": 3,
+          "baseline_hits": 8,
+          "union_hits": 8
+        },
+        "dev/digraph_initials/neighbor": {
+          "rows": 11,
+          "exhausted": 5,
+          "search_hits": 1,
+          "baseline_hits": 0,
+          "union_hits": 1
+        },
+        "dev/digraph_initials/swap": {
+          "rows": 11,
+          "exhausted": 5,
+          "search_hits": 2,
+          "baseline_hits": 0,
+          "union_hits": 2
+        },
+        "dev/full/clean": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 28,
+          "baseline_hits": 27,
+          "union_hits": 28
+        },
+        "dev/full/neighbor": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 21,
+          "baseline_hits": 0,
+          "union_hits": 21
+        },
+        "dev/full/swap": {
+          "rows": 29,
+          "exhausted": 1,
+          "search_hits": 19,
+          "baseline_hits": 8,
+          "union_hits": 22
+        },
+        "dev/initials/clean": {
+          "rows": 27,
+          "exhausted": 11,
+          "search_hits": 5,
+          "baseline_hits": 18,
+          "union_hits": 18
+        },
+        "dev/initials/neighbor": {
+          "rows": 29,
+          "exhausted": 6,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "dev/initials/swap": {
+          "rows": 26,
+          "exhausted": 11,
+          "search_hits": 1,
+          "baseline_hits": 0,
+          "union_hits": 1
+        },
+        "dev/mixed_even/clean": {
+          "rows": 29,
+          "exhausted": 10,
+          "search_hits": 15,
+          "baseline_hits": 27,
+          "union_hits": 27
+        },
+        "dev/mixed_even/neighbor": {
+          "rows": 29,
+          "exhausted": 5,
+          "search_hits": 9,
+          "baseline_hits": 0,
+          "union_hits": 9
+        },
+        "dev/mixed_even/swap": {
+          "rows": 29,
+          "exhausted": 8,
+          "search_hits": 9,
+          "baseline_hits": 10,
+          "union_hits": 17
+        },
+        "dev/mixed_odd/clean": {
+          "rows": 29,
+          "exhausted": 2,
+          "search_hits": 22,
+          "baseline_hits": 27,
+          "union_hits": 27
+        },
+        "dev/mixed_odd/neighbor": {
+          "rows": 28,
+          "exhausted": 3,
+          "search_hits": 14,
+          "baseline_hits": 0,
+          "union_hits": 14
+        },
+        "dev/mixed_odd/swap": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 16,
+          "baseline_hits": 8,
+          "union_hits": 17
+        },
+        "test": {
+          "rows": 455,
+          "exhausted": 88,
+          "search_hits": 146,
+          "baseline_hits": 116,
+          "union_hits": 195
+        },
+        "test/digraph_initials/clean": {
+          "rows": 13,
+          "exhausted": 8,
+          "search_hits": 2,
+          "baseline_hits": 9,
+          "union_hits": 9
+        },
+        "test/digraph_initials/neighbor": {
+          "rows": 13,
+          "exhausted": 8,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "test/digraph_initials/swap": {
+          "rows": 13,
+          "exhausted": 8,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "test/full/clean": {
+          "rows": 35,
+          "exhausted": 2,
+          "search_hits": 25,
+          "baseline_hits": 26,
+          "union_hits": 27
+        },
+        "test/full/neighbor": {
+          "rows": 35,
+          "exhausted": 1,
+          "search_hits": 19,
+          "baseline_hits": 0,
+          "union_hits": 19
+        },
+        "test/full/swap": {
+          "rows": 35,
+          "exhausted": 1,
+          "search_hits": 19,
+          "baseline_hits": 7,
+          "union_hits": 21
+        },
+        "test/initials/clean": {
+          "rows": 34,
+          "exhausted": 10,
+          "search_hits": 5,
+          "baseline_hits": 16,
+          "union_hits": 16
+        },
+        "test/initials/neighbor": {
+          "rows": 35,
+          "exhausted": 10,
+          "search_hits": 2,
+          "baseline_hits": 0,
+          "union_hits": 2
+        },
+        "test/initials/swap": {
+          "rows": 33,
+          "exhausted": 11,
+          "search_hits": 2,
+          "baseline_hits": 0,
+          "union_hits": 2
+        },
+        "test/mixed_even/clean": {
+          "rows": 35,
+          "exhausted": 11,
+          "search_hits": 11,
+          "baseline_hits": 23,
+          "union_hits": 23
+        },
+        "test/mixed_even/neighbor": {
+          "rows": 34,
+          "exhausted": 8,
+          "search_hits": 7,
+          "baseline_hits": 0,
+          "union_hits": 7
+        },
+        "test/mixed_even/swap": {
+          "rows": 35,
+          "exhausted": 6,
+          "search_hits": 9,
+          "baseline_hits": 6,
+          "union_hits": 14
+        },
+        "test/mixed_odd/clean": {
+          "rows": 35,
+          "exhausted": 2,
+          "search_hits": 21,
+          "baseline_hits": 22,
+          "union_hits": 25
+        },
+        "test/mixed_odd/neighbor": {
+          "rows": 35,
+          "exhausted": 1,
+          "search_hits": 11,
+          "baseline_hits": 0,
+          "union_hits": 11
+        },
+        "test/mixed_odd/swap": {
+          "rows": 35,
+          "exhausted": 1,
+          "search_hits": 13,
+          "baseline_hits": 7,
+          "union_hits": 19
+        }
+      },
+      "p99_ns": 178000,
+      "prefix_exhausted": 351,
+      "prefix_queries": 2616,
+      "search_new_allocations": 0
+    },
+    "search-8": {
+      "metrics": {
+        "dev": {
+          "rows": 375,
+          "exhausted": 0,
+          "search_hits": 92,
+          "baseline_hits": 133,
+          "union_hits": 133
+        },
+        "dev/digraph_initials/clean": {
+          "rows": 11,
+          "exhausted": 0,
+          "search_hits": 7,
+          "baseline_hits": 8,
+          "union_hits": 8
+        },
+        "dev/digraph_initials/neighbor": {
+          "rows": 11,
+          "exhausted": 0,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "dev/digraph_initials/swap": {
+          "rows": 11,
+          "exhausted": 0,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "dev/full/clean": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 27,
+          "baseline_hits": 27,
+          "union_hits": 27
+        },
+        "dev/full/neighbor": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "dev/full/swap": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 0,
+          "baseline_hits": 8,
+          "union_hits": 8
+        },
+        "dev/initials/clean": {
+          "rows": 27,
+          "exhausted": 0,
+          "search_hits": 11,
+          "baseline_hits": 18,
+          "union_hits": 18
+        },
+        "dev/initials/neighbor": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "dev/initials/swap": {
+          "rows": 26,
+          "exhausted": 0,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "dev/mixed_even/clean": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 23,
+          "baseline_hits": 27,
+          "union_hits": 27
+        },
+        "dev/mixed_even/neighbor": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "dev/mixed_even/swap": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 0,
+          "baseline_hits": 10,
+          "union_hits": 10
+        },
+        "dev/mixed_odd/clean": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 23,
+          "baseline_hits": 27,
+          "union_hits": 27
+        },
+        "dev/mixed_odd/neighbor": {
+          "rows": 28,
+          "exhausted": 0,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "dev/mixed_odd/swap": {
+          "rows": 29,
+          "exhausted": 0,
+          "search_hits": 1,
+          "baseline_hits": 8,
+          "union_hits": 8
+        },
+        "test": {
+          "rows": 455,
+          "exhausted": 0,
+          "search_hits": 85,
+          "baseline_hits": 116,
+          "union_hits": 120
+        },
+        "test/digraph_initials/clean": {
+          "rows": 13,
+          "exhausted": 0,
+          "search_hits": 7,
+          "baseline_hits": 9,
+          "union_hits": 9
+        },
+        "test/digraph_initials/neighbor": {
+          "rows": 13,
+          "exhausted": 0,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "test/digraph_initials/swap": {
+          "rows": 13,
+          "exhausted": 0,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "test/full/clean": {
+          "rows": 35,
+          "exhausted": 0,
+          "search_hits": 26,
+          "baseline_hits": 26,
+          "union_hits": 26
+        },
+        "test/full/neighbor": {
+          "rows": 35,
+          "exhausted": 0,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "test/full/swap": {
+          "rows": 35,
+          "exhausted": 0,
+          "search_hits": 0,
+          "baseline_hits": 7,
+          "union_hits": 7
+        },
+        "test/initials/clean": {
+          "rows": 34,
+          "exhausted": 0,
+          "search_hits": 10,
+          "baseline_hits": 16,
+          "union_hits": 16
+        },
+        "test/initials/neighbor": {
+          "rows": 35,
+          "exhausted": 0,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "test/initials/swap": {
+          "rows": 33,
+          "exhausted": 0,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "test/mixed_even/clean": {
+          "rows": 35,
+          "exhausted": 0,
+          "search_hits": 18,
+          "baseline_hits": 23,
+          "union_hits": 23
+        },
+        "test/mixed_even/neighbor": {
+          "rows": 34,
+          "exhausted": 0,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "test/mixed_even/swap": {
+          "rows": 35,
+          "exhausted": 0,
+          "search_hits": 0,
+          "baseline_hits": 6,
+          "union_hits": 6
+        },
+        "test/mixed_odd/clean": {
+          "rows": 35,
+          "exhausted": 0,
+          "search_hits": 23,
+          "baseline_hits": 22,
+          "union_hits": 26
+        },
+        "test/mixed_odd/neighbor": {
+          "rows": 35,
+          "exhausted": 0,
+          "search_hits": 0,
+          "baseline_hits": 0,
+          "union_hits": 0
+        },
+        "test/mixed_odd/swap": {
+          "rows": 35,
+          "exhausted": 0,
+          "search_hits": 1,
+          "baseline_hits": 7,
+          "union_hits": 7
+        }
+      },
+      "p99_ns": 166042,
+      "prefix_exhausted": 0,
+      "prefix_queries": 2616,
+      "search_new_allocations": 0
+    }
+  }
+}

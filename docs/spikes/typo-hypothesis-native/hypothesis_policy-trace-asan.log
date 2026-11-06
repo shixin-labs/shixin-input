@@ -1,0 +1,28 @@
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+[==========] Running 5 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 4 tests from HypothesisPolicy
+[ RUN      ] HypothesisPolicy.ModelValidation
+[       OK ] HypothesisPolicy.ModelValidation (0 ms)
+[ RUN      ] HypothesisPolicy.RealModelAndInputClasses
+nihso plan: nihao nihwo nihsi nisho niheo ninso niuso jihso
+niaho plan: nihao niano niaoh nisho niabo nizho jiaho naiho
+ni'hso plan: ni'hao ni'hwo ni'hsi ni'sho ni'heo ji'hso ni'hsl ni'yso
+xgr plan: xge sgr xyr zgr dgr xrg gxr xgd xbr xfr cgr xhr xgf xtr xgt
+zhongguo plan: zhonghuo zhonggou zhonggui zhongtuo zgongguo zyongguo zhonggul zhongbuo
+zhonggr plan: zhongge zhongyr zhongrg zhonggd zhongbr zhongfr zhonghr zhonggf
+[       OK ] HypothesisPolicy.RealModelAndInputClasses (1 ms)
+[ RUN      ] HypothesisPolicy.ExactInitialBucketHasNoNeighborExpansion
+[       OK ] HypothesisPolicy.ExactInitialBucketHasNoNeighborExpansion (0 ms)
+[ RUN      ] HypothesisPolicy.BoundedMalformedModelAndInputStress
+[       OK ] HypothesisPolicy.BoundedMalformedModelAndInputStress (22 ms)
+[----------] 4 tests from HypothesisPolicy (25 ms total)
+
+[----------] 1 test from HypothesisPool
+[ RUN      ] HypothesisPool.PerSpellingCapFairnessAndDiscard
+[       OK ] HypothesisPool.PerSpellingCapFairnessAndDiscard (0 ms)
+[----------] 1 test from HypothesisPool (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 5 tests from 2 test suites ran. (25 ms total)
+[  PASSED  ] 5 tests.

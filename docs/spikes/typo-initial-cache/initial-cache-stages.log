@@ -1,0 +1,66 @@
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from SpikeCacheStages
+[ RUN      ] SpikeCacheStages.FirstAndRepeatedQueries
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I20261104 08:39:10.328374 0x1f219a1c0 dictionary.cc:401] loading dictionary 'rime_ice'.
+I20261104 08:39:10.328671 0x1f219a1c0 table.cc:288] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.table.bin
+I20261104 08:39:10.332016 0x1f219a1c0 prism.cc:83] loading prism file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.prism.bin
+I20261104 08:39:10.332867 0x1f219a1c0 prism.cc:121] found double array image of size 2304.
+CACHE_STAGES raw=xgr attempt=0 graph_us=251 lookup_us=3750 graph_spellings=317 graph_work=341 lookup_work=160 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=1
+CACHE_STAGES raw=xgr attempt=1 graph_us=44 lookup_us=7 graph_spellings=317 graph_work=341 lookup_work=160 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=1
+CACHE_STAGES raw=xgr attempt=2 graph_us=37 lookup_us=4 graph_spellings=317 graph_work=341 lookup_work=160 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=1
+CACHE_STAGES raw=xgr attempt=3 graph_us=28 lookup_us=3 graph_spellings=317 graph_work=341 lookup_work=160 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=1
+CACHE_STAGES raw=xgr attempt=4 graph_us=24 lookup_us=2 graph_spellings=317 graph_work=341 lookup_work=160 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=1
+CACHE_STAGES raw=xgr attempt=5 graph_us=27 lookup_us=3 graph_spellings=317 graph_work=341 lookup_work=160 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=1
+[       OK ] SpikeCacheStages.FirstAndRepeatedQueries (14 ms)
+[----------] 1 test from SpikeCacheStages (14 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (14 ms total)
+[  PASSED  ] 1 test.
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from SpikeCacheStages
+[ RUN      ] SpikeCacheStages.FirstAndRepeatedQueries
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I20261104 08:39:10.348177 0x1f219a1c0 dictionary.cc:401] loading dictionary 'rime_ice'.
+I20261104 08:39:10.348478 0x1f219a1c0 table.cc:288] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.table.bin
+I20261104 08:39:10.348539 0x1f219a1c0 prism.cc:83] loading prism file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.prism.bin
+I20261104 08:39:10.348567 0x1f219a1c0 prism.cc:121] found double array image of size 2304.
+CACHE_STAGES raw=zhr attempt=0 graph_us=70 lookup_us=2177 graph_spellings=309 graph_work=336 lookup_work=146 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=1
+CACHE_STAGES raw=zhr attempt=1 graph_us=48 lookup_us=5 graph_spellings=309 graph_work=336 lookup_work=146 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=1
+CACHE_STAGES raw=zhr attempt=2 graph_us=35 lookup_us=4 graph_spellings=309 graph_work=336 lookup_work=146 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=1
+CACHE_STAGES raw=zhr attempt=3 graph_us=28 lookup_us=3 graph_spellings=309 graph_work=336 lookup_work=146 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=1
+CACHE_STAGES raw=zhr attempt=4 graph_us=25 lookup_us=3 graph_spellings=309 graph_work=336 lookup_work=146 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=1
+CACHE_STAGES raw=zhr attempt=5 graph_us=25 lookup_us=3 graph_spellings=309 graph_work=336 lookup_work=146 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=1
+[       OK ] SpikeCacheStages.FirstAndRepeatedQueries (7 ms)
+[----------] 1 test from SpikeCacheStages (7 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (7 ms total)
+[  PASSED  ] 1 test.
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from SpikeCacheStages
+[ RUN      ] SpikeCacheStages.FirstAndRepeatedQueries
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I20261104 08:39:10.360420 0x1f219a1c0 dictionary.cc:401] loading dictionary 'rime_ice'.
+I20261104 08:39:10.360647 0x1f219a1c0 table.cc:288] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.table.bin
+I20261104 08:39:10.360696 0x1f219a1c0 prism.cc:83] loading prism file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.prism.bin
+I20261104 08:39:10.360720 0x1f219a1c0 prism.cc:121] found double array image of size 2304.
+CACHE_STAGES raw=njh attempt=0 graph_us=64 lookup_us=1230 graph_spellings=296 graph_work=319 lookup_work=129 graph_complete=1 graph_exhausted=0 lookup_exhausted=1 groups=0
+CACHE_STAGES raw=njh attempt=1 graph_us=44 lookup_us=1110 graph_spellings=296 graph_work=319 lookup_work=160 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=1
+CACHE_STAGES raw=njh attempt=2 graph_us=37 lookup_us=5 graph_spellings=296 graph_work=319 lookup_work=160 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=1
+CACHE_STAGES raw=njh attempt=3 graph_us=30 lookup_us=3 graph_spellings=296 graph_work=319 lookup_work=160 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=1
+CACHE_STAGES raw=njh attempt=4 graph_us=25 lookup_us=3 graph_spellings=296 graph_work=319 lookup_work=160 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=1
+CACHE_STAGES raw=njh attempt=5 graph_us=24 lookup_us=3 graph_spellings=296 graph_work=319 lookup_work=160 graph_complete=1 graph_exhausted=0 lookup_exhausted=0 groups=1
+[       OK ] SpikeCacheStages.FirstAndRepeatedQueries (7 ms)
+[----------] 1 test from SpikeCacheStages (7 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (7 ms total)
+[  PASSED  ] 1 test.

@@ -1,0 +1,73 @@
+Excerpt of build/typo-recovery/native-graph/memory-attribution/selective-policy/protected-before.txt
+Original SHA256: 9298a8086596b6af01c7477ce6777238c003eb05244eefa8034a71dfe6c4c5f5
+
+Process:         shixin-engine [95866]
+Path:            /Users/USER/*/shixin-engine
+Load Address:    0x102030000
+Identifier:      shixin-engine
+Version:         ???
+Code Type:       ARM64
+Platform:        macOS
+Parent Process:  menu-capture.test [95665]
+Target Type:     live task
+
+Date/Time:       2026-11-04 13:22:27.939 -0800
+Launch Time:     2026-11-04 13:22:27.659 -0800
+OS Version:      macOS 26.7.1 (25G241)
+Report Version:  7
+Analysis Tool:   /usr/bin/vmmap
+
+Physical footprint:         32.6M
+Physical footprint (peak):  32.6M
+Idle exit:                  untracked
+----
+
+Virtual Memory Map of process 95866 (shixin-engine)
+Output report format:  2.4  -- 64-bit process
+VM page size:  16384 bytes
+Collected with PhysFootprint mode enabled
+
+mapped file                 130388000-133d64000    [ 57.9M  1776K     0K     0K] r--/r-x SM=PRV          /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/native-graph/verified-mirror-v1/rime_ice.table.bin
+
+==== Summary for process 95866
+ReadOnly portion of Libraries: Total=869.3M resident=141.2M(16%) swapped_out_or_unallocated=728.2M(84%)
+Writable regions: Total=270.0M written=26.8M(10%) resident=31.3M(12%) swapped_out=0K(0%) unallocated=238.8M(88%)
+
+                                VIRTUAL RESIDENT    DIRTY  SWAPPED VOLATILE   NONVOL    EMPTY   REGION 
+REGION TYPE                        SIZE     SIZE     SIZE     SIZE     SIZE     SIZE     SIZE    COUNT (non-coalesced) 
+===========                     ======= ========    =====  ======= ========   ======    =====  ======= 
+Kernel Alloc Once                   32K      16K      16K       0K       0K       0K       0K        1 
+MALLOC guard page                 3728K       0K       0K       0K       0K       0K       0K        4 
+MALLOC metadata                    784K     400K     400K       0K       0K       0K       0K        4 
+MALLOC_NANO metadata                32K      16K      16K       0K       0K       0K       0K        1         see MALLOC ZONE table below
+MALLOC_SMALL                      36.0M    21.3M    21.3M       0K       0K       0K       0K        9         see MALLOC ZONE table below
+MALLOC_SMALL (empty)              4096K     496K     496K       0K       0K       0K       0K        1         see MALLOC ZONE table below
+MALLOC_TINY                       4096K     176K     176K       0K       0K       0K       0K        1         see MALLOC ZONE table below
+Memory Tag 22                     64.0M      16K      16K       0K       0K       0K       0K        1 
+STACK GUARD                       56.2M       0K       0K       0K       0K       0K       0K       10 
+Stack                             80.3M     224K     224K       0K       0K       0K       0K       10 
+VM_ALLOCATE                        1.2G    8128K    8128K       0K       0K       0K       0K       60 
+__AUTH                            1321K     594K       0K       0K       0K       0K       0K      149 
+__AUTH_CONST                      17.7M    7140K       0K       0K       0K       0K       0K      340 
+__CTF                               824      824       0K       0K       0K       0K       0K        1 
+__DATA                            36.8M    2528K     490K       0K       0K       0K       0K      299 
+__DATA_CONST                      16.9M    7424K     556K       0K       0K       0K       0K      340 
+__DATA_DIRTY                      1320K     745K     351K       0K       0K       0K       0K      284 
+__FONT_DATA                        2352     2352       0K       0K       0K       0K       0K        1 
+__LINKEDIT                       574.2M    18.2M       0K       0K       0K       0K       0K        3 
+__OBJC_RO                         79.2M    44.6M       0K       0K       0K       0K       0K        1 
+__OBJC_RW                         2600K    1208K      40K       0K       0K       0K       0K        1 
+__TEXT                           295.1M   122.9M       0K       0K       0K       0K       0K      349 
+__TPRO_CONST                       128K      48K      48K       0K       0K       0K       0K        2 
+mapped file                       62.5M    2004K       4K       0K       0K       0K       0K        5 
+page table in kernel               497K     497K     497K       0K       0K       0K       0K        1 
+shared memory                       48K      48K      48K       0K       0K       0K       0K        2 
+unused but dirty shlib __DATA       79K      79K      79K       0K       0K       0K       0K       41 
+===========                     ======= ========    =====  ======= ========   ======    =====  ======= 
+TOTAL                              2.5G   238.1M    32.6M       0K       0K       0K       0K     1921 
+
+                                 VIRTUAL   RESIDENT      DIRTY    SWAPPED ALLOCATION      BYTES DIRTY+SWAP          REGION
+MALLOC ZONE                         SIZE       SIZE       SIZE       SIZE      COUNT  ALLOCATED  FRAG SIZE  % FRAG   COUNT
+===========                      =======  =========  =========  =========  =========  =========  =========  ======  ======
+DefaultMallocZone_0x104b5c000      44.8M      22.3M      22.3M         0K     139952      13.4M      9167K     41%      14
+

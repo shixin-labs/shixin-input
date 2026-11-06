@@ -1,0 +1,33 @@
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+Note: Google Test filter = MirrorCache.FreshImageOnly
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from MirrorCache
+[ RUN      ] MirrorCache.FreshImageOnly
+FRESH_MIRROR raw=xgr ns=1584 text=中国人 allocations=0
+FRESH_MIRROR raw=zhr ns=1208 text=中国人 allocations=0
+FRESH_MIRROR retained_capacity_bytes=3322506
+[       OK ] MirrorCache.FreshImageOnly (7 ms)
+[----------] 1 test from MirrorCache (7 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (7 ms total)
+[  PASSED  ] 1 test.
+        0.01 real         0.00 user         0.00 sys
+             8880128  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+                1574  page reclaims
+                   4  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                   0  voluntary context switches
+                   4  involuntary context switches
+           218866347  instructions retired
+            54330551  cycles elapsed
+             8798688  peak memory footprint

@@ -1,0 +1,18 @@
+=== RUN   TestTypoNativeSpikeEditing
+2026-11-04 04:06:10.654 engine ready in 217ms: librime 1.17.0, modules [default shixin], schemas [rime_ice_warm], 7 policies
+=== RUN   TestTypoNativeSpikeEditing/full_nihso
+=== RUN   TestTypoNativeSpikeEditing/full_changshicuowj
+    typo_spike_test.go:90: corrected "尝试错误" unavailable: [尝试错误就: 尝试错误: 常识错误: 尝试: 常识: 常是: 长诗: 常事: 常使: 长石: 长逝: 唱诗: 常食: 长航时: 长时: 长: 常: 场: 唱: 厂: 尝: 昌: 畅: 肠: 偿: 敞: 怅: 车行: 倡: 娼: 嫦: 猖: 裳: 此行: 昶: 长航: 徜: 出航: 氅: 串行: 蟾宫: 伥: 菖: 苌: 禅功: 缠裹: 馋鬼: 产果: 阊: 蟾光:]
+=== RUN   TestTypoNativeSpikeEditing/backspace
+=== RUN   TestTypoNativeSpikeEditing/literal_return
+=== RUN   TestTypoNativeSpikeEditing/partial
+    typo_spike_test.go:124: corrected "你好" unavailable: [你受中国: 你手中: 你受: 你: 尼: 泥: 逆: 拟: 腻: 倪: 霓: 匿: 妮: 溺: 昵: 睨: 旎: 怩: 猊: 鲵: 伲: 坭: 铌: 麑: 薿: 鿭: 呢: 𨺙: 𫐐: 𫠜:]
+--- FAIL: TestTypoNativeSpikeEditing (0.37s)
+    --- PASS: TestTypoNativeSpikeEditing/full_nihso (0.00s)
+    --- FAIL: TestTypoNativeSpikeEditing/full_changshicuowj (0.03s)
+    --- PASS: TestTypoNativeSpikeEditing/backspace (0.00s)
+    --- PASS: TestTypoNativeSpikeEditing/literal_return (0.00s)
+    --- FAIL: TestTypoNativeSpikeEditing/partial (0.05s)
+FAIL
+FAIL	shixin/tools/menu-capture	1.426s
+FAIL

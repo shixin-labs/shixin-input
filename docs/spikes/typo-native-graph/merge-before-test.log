@@ -1,0 +1,22 @@
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+[==========] Running 2 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 2 tests from ProtectedMerge
+[ RUN      ] ProtectedMerge.BroadStageSurvivesSpecificFullSpanQuota
+spikes/typo-recovery/native-graph/merge_test.cc:55: Failure
+Value of: found
+  Actual: false
+Expected: true
+
+[  FAILED  ] ProtectedMerge.BroadStageSurvivesSpecificFullSpanQuota (0 ms)
+[ RUN      ] ProtectedMerge.DuplicateScanCannotStarveBroadStage
+[       OK ] ProtectedMerge.DuplicateScanCannotStarveBroadStage (0 ms)
+[----------] 2 tests from ProtectedMerge (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 2 tests from 1 test suite ran. (0 ms total)
+[  PASSED  ] 1 test.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ProtectedMerge.BroadStageSurvivesSpecificFullSpanQuota
+
+ 1 FAILED TEST

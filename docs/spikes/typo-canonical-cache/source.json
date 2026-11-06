@@ -1,0 +1,8 @@
+{
+  "excluded_other_lengths": 21,
+  "note": "Reused synthetic tuning families. Retention under the labeled canonical reading is not spelling-search recall or ranking accuracy.",
+  "sha256": "901c7464732a143f517d58ce12d755aed28e350aaa6748b62fc41fc43c0b5566",
+  "source": "build/typo-recovery/constrained-v1/selected.jsonl",
+  "two_or_three_syllable_pairs": 43,
+  "unique_reading_text_pairs": 64
+}

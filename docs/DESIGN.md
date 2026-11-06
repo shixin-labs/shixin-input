@@ -14,7 +14,8 @@ app, and type. Nobody should have to edit YAML. **Typing must never stall.**
 client model, engine, hot swap, UI, budgets, native extensions) ·
 [4. Key flow](#4-key-flow-per-platform) · [5. Components](#5-components) ·
 [6. Settings app](#6-settings-app) ·
-[7. Features](#7-features-sogou-parity-map) (auto spacing, 智能排序) ·
+[7. Features](#7-features-sogou-parity-map) (auto spacing, 智能排序,
+proposed typo-tolerant pinyin) ·
 [8. Engine behavior](#8-engine-behavior) ·
 [9. Testing](#9-testing-and-performance-gates) ·
 [10. Milestones](#10-milestones) · [11. Risks](#11-risks) ·
@@ -2451,6 +2452,112 @@ under the user, so none ever does. Instead:
    corpus with a shippable license. A smaller student would keep ERNIE's
    word-level tokenizer.
 5. **Windows and Linux** (Vulkan/CUDA) with M3/M4.
+
+### 7.3 Typo-tolerant pinyin (proposed)
+
+The [first-version decision brief](typo-v1-decision.md) consolidates the current
+recommendation and proposed acceptance gates. No implementation milestone is
+approved by this document; the following links retain the experiment history.
+
+The [per-spelling cap experiment](spikes/typo-hypothesis-caps.md) tests the user's
+proposal of ten candidates per correction with more corrected spellings. Sixteen
+spellings improve abbreviated/mixed coverage. The [opt-in native implementation](spikes/typo-hypothesis-native.md)
+now applies this policy under a shared budget, with passing sampled total-engine
+latency and selection/learning checks. The user accepted its measured 12.9 MiB
+incremental sampled RSS. Coverage improves overall with individual losses still
+recorded for review. Shipping defaults and the AI export budget remain unchanged.
+
+[Typo-tolerant pinyin](typo-tolerant-pinyin.md) proposes bounded native
+spelling recovery for transpositions, adjacent-key substitutions and missing
+or repeated letters, initially for full pinyin. It preserves raw input and
+native candidate selection/learning, with conservative exact-input precedence.
+It is a design, not an implemented feature or a change to current defaults.
+The [first offline recovery experiment](spikes/typo-recovery.md) found useful
+swap/neighbor recovery but clean first-page regressions from inserting corrections
+after #1; the proposed policy now protects the entire exact first page.
+The [ERNIE retest](spikes/typo-rerank.md) recovered those displaced targets on
+a small useful-context subset, but empty/stale context still regressed. It
+supports reusing the current scorer as a baseline, with safe timeout fallback.
+Clean initials and mixed full/abbreviated input are protected zero-typo paths;
+intentional omissions must not incur deletion penalties. The design includes
+a separate abbreviation corpus and bounded-search evaluation before enabling
+typo expansion on those paths. The [abbreviation baseline](spikes/typo-abbreviation.md)
+measures existing retrieval and ERNIE: context helps available candidates, but
+clean initials and corrupted abbreviated forms have substantial retrieval gaps.
+It does not yet evaluate new abbreviation typo recovery.
+The subsequent [bounded recovery prototype](spikes/typo-abbreviation-recovery.md)
+recovers some mixed/initials typos but fails queue-exhaustion and clean-page
+retention gates. Its separate dictionary-scale index is not an approved product
+memory increase; native dictionary reuse and raw-span integration remain open.
+An optional [radix representation](spikes/typo-radix.md) saves 10.31% of the
+prototype's major retained buffers with identical search output, but does not
+reduce queue exhaustion or demonstrate lower startup peak RSS.
+The [packed-storage experiment](spikes/typo-packed-storage.md) reduces retained
+buffers to 51.93 MiB; a fresh process loading the prebuilt image peaks at
+54.97 MiB RSS. This excludes Rime/model memory and does not fix search or ranking
+gates. A production index would need builder validation and warmed-generation
+integration, not construction or file loading on the key path.
+
+The [constrained-search retest](spikes/typo-constrained-search.md) reduces
+exhausted examples from 400/830 to 181/830 with the same operation caps and
+packed index. Its single-pass policy scores only the ordinary menu, then
+inserts recovered candidates after its first page: zero first-page retention
+losses in 1,062 offline rows. Recovered candidates are not AI-ranked in this
+safe phase. Remaining abbreviation coverage, duplicate index memory and native
+raw-span/learning integration still prevent shipping.
+The subsequent [native graph spike](spikes/typo-native-graph.md) exercises real
+selection without the duplicate word index. It identifies and fixes visible-page
+counting and distinct-span deduplication in a scratch library. Its unbounded
+lookup fails latency. Staging specific repairs before broad initial corrections
+plus depth-first completed-entry collection now passes nine bounded editing
+fixtures and a diagnostic latency trace. A tenth, `zhr → 中国人`, still fails;
+a paired 830-example capture improves typo recall but loses eleven clean targets
+from the thirteen-candidate window. Prefix-weight and simple beam alternatives
+regress an earlier fixture and are rejected. Broader coverage, memory/allocation,
+learning and AI gates remain open. This is not an approved product implementation.
+
+A subsequent [subtree-bound diagnostic](spikes/typo-subtree-bounds.md) recovers the
+two abbreviation fixtures with fixed search storage and matches an exhaustive
+reference over all three-letter codes for one adjacent-key substitution. This
+isolated result is not native integration, other abbreviation lengths, swaps,
+clean-input safety or process-memory validation. Exhaustion should fall back for
+the current update, without changing the user's persistent feature setting.
+
+The [initial-cache follow-up](spikes/typo-initial-cache.md) integrates an offline
+1.25 MiB cache of native three-initial readings instead of scanning the table at
+startup. Sampled one-context RSS is about 54 MiB versus 51 MiB ordinary. All ten
+editing fixtures pass warm, but cold runs still miss recovery. Exhaustive lookup
+and per-update ordinary fallback pass; these do not establish broad accuracy or
+allocation/session-pool bounds. This supersedes the isolated-integration status
+above, without changing the proposed product status.
+
+The [compact-mirror experiment](spikes/typo-compact-mirror.md) preserves all
+77,447 selected native readings/texts in 3.17 MiB of retained payload. Standalone
+queries after loading avoid native table access, including in a fresh process.
+This is not integrated engine latency or a solution to all cold misses; verified
+generation binding, native candidate/learning integration and session-pool memory
+remain prerequisites. The candidate set and unresolved clean-input losses are unchanged.
+
+The [native-mirror follow-up](spikes/typo-native-mirror.md) now passes all ten
+focused editing cases on the first run and repeats, with verified private artifact
+copies and cached native text. Sampled RSS is 55.78 MiB versus 50.14 MiB ordinary;
+the final warmed latency trace passes. This is an isolated integration experiment,
+not product activation, broad clean-input safety or a completed model decision.
+
+The mirror corpus retest finds 99/553 typo targets within thirteen candidates,
+versus 43/553 ordinary, and retains eleven clean later-page displacements.
+[Separate correction suggestions](spikes/typo-separate-corrections.md) are the next
+presentation experiment: preserve ordinary paging and expose explicit bounded
+choices separately. Two extra slots expose 50 additional typo targets beyond the
+ordinary thirteen in a counterfactual, not a fixed-size ranking or UI result.
+Native selection, keyboard behavior, versioned protocol and learning remain gates.
+
+The model decision remains experimental: compare a weighted error channel,
+the existing ERNIE scorer plus that channel, and jointly trained correction
+and ranking models. A joint scorer could replace the current reranker;
+unconstrained Chinese generation needs additional alignment and learning
+validation. Base recovery requires no model download. All variants retain
+§3's budgets and at most the existing single §7.2 AI hold.
 
 ## 8. Engine behavior
 

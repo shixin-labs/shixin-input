@@ -1,0 +1,4 @@
+=== RUN   TestTypoCorrectionCorpusSpike
+    typo_corpus_spike_test.go:125: captured 731 public codes, two traces each; ordinary first five plus full-span separate corrections
+--- PASS: TestTypoCorrectionCorpusSpike (3.75s)
+PASS

@@ -1,0 +1,14 @@
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from SpikeCacheAccess
+[ RUN      ] SpikeCacheAccess.NativeReadingValidationAndText
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I20261104 08:53:47.400995 0x1f219a1c0 table.cc:288] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.table.bin
+MIRROR_SIZE records=77447 unique_texts=77340 text_pool_bytes=773454 index_bytes=70308 native_entry_bytes=8 projected_payload_28byte_records=3012278 projected_payload_32byte_records=3322066 verified_native_readings=77447
+[       OK ] SpikeCacheAccess.NativeReadingValidationAndText (421 ms)
+[----------] 1 test from SpikeCacheAccess (421 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (421 ms total)
+[  PASSED  ] 1 test.

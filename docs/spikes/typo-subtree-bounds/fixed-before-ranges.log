@@ -1,0 +1,23 @@
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from SubtreeBounds
+[ RUN      ] SubtreeBounds.ThreeInitialNeighborDiagnostic
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I20261104 06:52:39.110203 0x1f219a1c0 table.cc:264] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.table.bin
+BOUNDS syllables=440 two_prefixes=91335 three_prefixes=957664 three_entries=461449 float_bytes=367100 preprocessing_us=148946
+FIXED_WORKSPACE_BYTES 66212
+QUERY xgr states=245 probes=36705 peak_states=1897 first_us=500 warm_p50_us=128.792 warm_max_us=234.958 cap32768_complete=0/50 top=中国人,这个人,效果图,三个人,整个人,吸引人,德国人,四个人,
+QUERY zhr states=183 probes=27072 peak_states=2092 first_us=177 warm_p50_us=87 warm_max_us=95.292 cap32768_complete=50/50 top=中国人,这个人,收货人,中获得,智慧的,在很多,整个人,受害人,
+QUERY zgt states=170 probes=25458 peak_states=2023 first_us=143 warm_p50_us=70.125 warm_max_us=85.167 cap32768_complete=50/50 top=中国人,在不同,这个人,这一天,阿根廷,效果图,整个人,在各个,
+QUERY ngr states=152 probes=24261 peak_states=1342 first_us=147 warm_p50_us=63 warm_max_us=65.375 cap32768_complete=50/50 top=每个人,年月日,被告人,美国人,几个人,你跟他,你跟她,韩国人,
+QUERY zfr states=230 probes=28322 peak_states=1809 first_us=153 warm_p50_us=70.792 warm_max_us=86.875 cap32768_complete=50/50 top=主持人,中国人,这个人,责任人,自然人,丈夫的,整个人,在个人,
+QUERY zge states=126 probes=22170 peak_states=2006 first_us=84 warm_p50_us=53.333 warm_max_us=63.25 cap32768_complete=50/50 top=中国人,总公司,子公司,这个人,在国外,在公司,中国队,珍贵的,
+QUERY zgf states=147 probes=23665 peak_states=2018 first_us=71 warm_p50_us=57.416 warm_max_us=66.209 cap32768_complete=50/50 top=中国人,中关村,这个人,中国队,这部分,珍贵的,在规定,主办方,
+QUERY zvr states=186 probes=24231 peak_states=1087 first_us=82 warm_p50_us=52.916 warm_max_us=57.875 cap32768_complete=50/50 top=主持人,中国人,这个人,整个人,在别人,在个人,正常人,张国荣,
+[       OK ] SubtreeBounds.ThreeInitialNeighborDiagnostic (212 ms)
+[----------] 1 test from SubtreeBounds (212 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (212 ms total)
+[  PASSED  ] 1 test.

@@ -13,6 +13,67 @@ usability. Documents:
   design in the same change, or discuss it first.
 - [`docs/KNOWN-ISSUES.md`](docs/KNOWN-ISSUES.md): deferred work and known
   problems. Remove an entry when you fix it.
+- [`docs/typo-v1-decision.md`](docs/typo-v1-decision.md): current review brief,
+  recommended first-version scope, measured limits and proposed acceptance gates.
+- [`docs/spikes/typo-hypothesis-caps.md`](docs/spikes/typo-hypothesis-caps.md):
+  ten native entries per corrected spelling, 2/4/8/16 spelling comparison;
+  offline coverage only, not native latency or memory validation.
+- [`docs/spikes/typo-hypothesis-native.md`](docs/spikes/typo-hypothesis-native.md):
+  opt-in native per-spelling implementation, shared budget, Release/sanitizer
+  and learning checks, paired coverage gains/losses. User accepted its measured
+  12.9 MiB incremental sampled RSS; no shipping settings/client integration yet.
+- [`docs/typo-tolerant-pinyin.md`](docs/typo-tolerant-pinyin.md): proposed
+  full-pinyin typo recovery, joint correction/ranking model evaluation and
+  safety gates. Proposed; implementations remain isolated experiments.
+- [`docs/spikes/typo-native-bridge.md`](docs/spikes/typo-native-bridge.md):
+  current scratch native/purego correction interface and outstanding product gates.
+- [`docs/spikes/typo-learning-persistence.md`](docs/spikes/typo-learning-persistence.md):
+  private correction learning/export checks and remaining coverage gaps.
+- [`docs/spikes/typo-alternate-boundaries.md`](docs/spikes/typo-alternate-boundaries.md):
+  alternate swap-boundary recovery, validation and measured RSS tradeoff.
+- [`docs/spikes/typo-memory-attribution.md`](docs/spikes/typo-memory-attribution.md):
+  dictionary/heap attribution and paired corpus capture; rejected abbreviation restriction.
+  The [complete-table layout follow-up](docs/spikes/typo-repacked-table.md#re-evaluation-with-separate-corrections-and-alternate-boundaries)
+  preserves tested coverage but does not improve measured memory.
+- [`docs/spikes/typo-search-diagnostics.md`](docs/spikes/typo-search-diagnostics.md):
+  bounded first-stop/phase diagnostics; observed deadline expiry during chunk sorting.
+- [`docs/spikes/typo-data-preparation.md`](docs/spikes/typo-data-preparation.md):
+  internet data sources, downloaded snapshots and the synthetic typo corpus.
+- [`docs/spikes/typo-recovery.md`](docs/spikes/typo-recovery.md): first offline
+  recovery measurements, clean-page regression and remaining integration work.
+- [`docs/spikes/typo-rerank.md`](docs/spikes/typo-rerank.md): existing ERNIE
+  retest with useful, empty and stale context; offline prior approximations.
+- [`docs/spikes/typo-abbreviation.md`](docs/spikes/typo-abbreviation.md):
+  initials/mixed-input data, native retrieval and ERNIE baseline measurements.
+- [`docs/spikes/typo-abbreviation-recovery.md`](docs/spikes/typo-abbreviation-recovery.md):
+  bounded syllable-search prototype, native verification and failed coverage/safety gates.
+- [`docs/spikes/typo-radix.md`](docs/spikes/typo-radix.md): radix compression's
+  measured memory/latency tradeoff and unchanged search behavior.
+- [`docs/spikes/typo-packed-storage.md`](docs/spikes/typo-packed-storage.md):
+  packed records, pooled strings and fresh-process loading of a prebuilt index.
+- [`docs/spikes/typo-constrained-search.md`](docs/spikes/typo-constrained-search.md):
+  bounded prefix pruning and a single-pass merge preserving the ordinary first page.
+- [`docs/spikes/typo-failure-audit.md`](docs/spikes/typo-failure-audit.md):
+  remaining recovery misses separated into reading coverage, exhaustion and quotas.
+- [`docs/spikes/typo-quota-allocation.md`](docs/spikes/typo-quota-allocation.md):
+  eight-slot allocation experiments and a rejected combined-alignment search.
+- [`docs/spikes/typo-native-graph.md`](docs/spikes/typo-native-graph.md):
+  scratch native graph integration and historical coverage/clean-menu failures.
+- [`docs/spikes/typo-subtree-bounds.md`](docs/spikes/typo-subtree-bounds.md):
+  isolated fixed-memory search with exhaustive three-initial neighbor validation.
+- [`docs/spikes/typo-initial-cache.md`](docs/spikes/typo-initial-cache.md):
+  offline native reading cache, reduced sampled RSS, exhaustive lookup validation
+  and per-update exhaustion fallback. Warm editing passes; cold misses and broader
+  coverage, clean-input, allocation, learning and AI gates remain open.
+- [`docs/spikes/typo-compact-mirror.md`](docs/spikes/typo-compact-mirror.md):
+  standalone native-entry/text cache with verified round trips and dictionary-free
+  queries; generation validation and engine integration remain pending.
+- [`docs/spikes/typo-native-mirror.md`](docs/spikes/typo-native-mirror.md):
+  verified private snapshots and scratch native mirror integration; focused
+  first-run editing passes, with broader corpus and product gates still open.
+- [`docs/spikes/typo-separate-corrections.md`](docs/spikes/typo-separate-corrections.md):
+  counterfactual availability and proposed independent correction list; normal
+  paging/selection and compatibility requirements, not an implemented UI.
 - [`docs/sogou-comparison.md`](docs/sogou-comparison.md): Sogou's Mac
   settings compared with Shixin's.
 - [`docs/macos-input-menu-recovery.md`](docs/macos-input-menu-recovery.md):
@@ -101,6 +162,7 @@ M1 (macOS MVP) is done; M2 (DESIGN §10) is in progress. Built so far:
 | `scripts` | Data fetch, native builds, bundling, packaging, CI, the test VM |
 | `tools/vm-input` | Test-only native keyboard/clipboard helper for the VM; not bundled |
 | `tools/menu-capture` | Offline menu capture from public codes: runs `shixin-engine -capture` on a validated warm-only generation with its own scratch user dir and socket. It never promotes or opens a live user dictionary; its output is evaluation and training data, not typing logs |
+| `tools/typo-data` | Offline CC-CEDICT typo-corpus preparation and paired-text CSV audit; deterministic splits, synthetic edit labels and source/output hashes. No Rime or live user data |
 | `spikes` | Throwaway experiments; results in `docs/spikes/`. Product code must not import from it |
 
 ## Hard rule: typing never stalls
@@ -255,8 +317,31 @@ and tools that touch Rime use scratch user dirs, never the live one.
 | Prebuilt prism reuse for page size, other options and fuzzy spelling | `go test -v ./internal/generation -run TestPrebuiltReuse` |
 | Saved-generation compiler compatibility / rebuild after new defaults | `go test ./internal/generation -run TestMatchesSettings` · `go test ./cmd/shixin-engine -run TestCoordinatorRebuildsOldCompiler` |
 | Offline capture protocol tests / actual scratch-generation replay | `go test ./tools/menu-capture ./cmd/shixin-engine -run 'Test(Capture\|ReadCodes\|ChangingCandidate)'` · `SHIXIN_CAPTURE_INTEGRATION=1 go test ./tools/menu-capture -run TestCaptureRealGeneration` |
+| Offline native typo-spike corpus evaluation (captured scratch menus only; see `docs/spikes/typo-native-graph.md`) | `CGO_ENABLED=0 go run ./spikes/typo-recovery -mode native-evaluate -root build/typo-recovery/native-graph/staged-evaluation -source-run build/typo-recovery/constrained-v1` |
+
+Scratch correction ABI tests (not product activation):
+`CGO_ENABLED=0 go test ./spikes/typo-recovery/bridge` checks the byte codec;
+`CGO_ENABLED=0 SHIXIN_TYPO_SPIKE_ROOT="$PWD/build/typo-recovery" go test -tags shixin_typo_spike ./internal/rime -run '^TestTypoNativeBridgeSpike$' -count=1`
+uses the prepared scratch library and private warm sessions. See
+[`docs/spikes/typo-native-bridge.md`](docs/spikes/typo-native-bridge.md) for setup and limits.
+
+Private correction learning (sequential writer/exporter processes, scratch only):
+`CGO_ENABLED=0 SHIXIN_TYPO_SPIKE_ROOT="$PWD/build/typo-recovery" go test -tags shixin_typo_spike ./internal/rime -run '^TestTypoLearningPersistenceSpike$' -count=1`.
+See [`docs/spikes/typo-learning-persistence.md`](docs/spikes/typo-learning-persistence.md).
 
 ### Input features (against our librime)
+
+Offline typo dataset preparation (no librime):
+`go run ./tools/typo-data -input build/typo-data/raw/cc-cedict/cedict.txt.gz -output build/typo-data/cedict-v1`.
+Verify with `go run ./tools/typo-data -verify build/typo-data/cedict-v1`;
+test with `go test ./tools/typo-data`. See
+[`tools/typo-data/README.md`](tools/typo-data/README.md) for source acquisition,
+licenses and the separate CSV audit mode.
+
+Offline recovery experiment (no shipping input changes):
+`go test ./spikes/typo-recovery`; native sanitizer checks, private menu capture
+and reproduction commands are in
+[`spikes/typo-recovery/README.md`](spikes/typo-recovery/README.md).
 
 | Task | Command |
 |---|---|

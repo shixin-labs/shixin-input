@@ -1,0 +1,20 @@
+[
+  {
+    "condition": "empty",
+    "n": 830,
+    "window_over16ms": 30,
+    "active_windows": 442
+  },
+  {
+    "condition": "source_context",
+    "n": 116,
+    "window_over16ms": 0,
+    "active_windows": 81
+  },
+  {
+    "condition": "stale_context",
+    "n": 116,
+    "window_over16ms": 0,
+    "active_windows": 81
+  }
+]

@@ -1,0 +1,13 @@
+{
+  "capture_codes": 10077,
+  "exhausted": 0,
+  "form_count": 437,
+  "hypothesis_cap": 16,
+  "labels": 830,
+  "lexicon_sha256": "fd5e8795de20f2c7d218de5bf78824c0d23077c67cff889a8afcdb7f8b339f29",
+  "planner_deadline_ns": 900000,
+  "raw_codes": 731,
+  "score": "best sum log(syllable frequency/total), abbreviation penalty 2; minus edit cost/4; swap 8, neighbor 10; no gold labels used",
+  "source_sha256": "901c7464732a143f517d58ce12d755aed28e350aaa6748b62fc41fc43c0b5566",
+  "work_cap": 32768
+}

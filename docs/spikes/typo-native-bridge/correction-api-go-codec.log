@@ -1,0 +1,20 @@
+=== RUN   TestCodec
+--- PASS: TestCodec (0.00s)
+=== RUN   TestFallbackAndAllocations
+--- PASS: TestFallbackAndAllocations (0.00s)
+=== RUN   TestNativeExportFixture
+--- PASS: TestNativeExportFixture (0.00s)
+=== RUN   FuzzSnapshot
+=== RUN   FuzzSnapshot/seed#0
+=== RUN   FuzzSnapshot/seed#1
+--- PASS: FuzzSnapshot (0.00s)
+    --- PASS: FuzzSnapshot/seed#0 (0.00s)
+    --- PASS: FuzzSnapshot/seed#1 (0.00s)
+goos: darwin
+goarch: arm64
+pkg: shixin/spikes/typo-recovery/bridge
+cpu: Apple M4
+BenchmarkSnapshotDecode
+BenchmarkSnapshotDecode-10    	  938954	      1256 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	shixin/spikes/typo-recovery/bridge	1.337s

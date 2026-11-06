@@ -1,0 +1,74 @@
+=== RUN   TestTypoNativeSpikeEditing
+2026-11-04 08:45:45.552 engine ready in 178ms: librime 1.17.0, modules [default shixin], schemas [rime_ice_warm], 7 policies
+=== RUN   TestTypoNativeSpikeEditing/full_nihso
+=== RUN   TestTypoNativeSpikeEditing/full_nihoa
+=== RUN   TestTypoNativeSpikeEditing/full_njh
+    typo_spike_test.go:105: corrected "你好" unavailable: [你就会: 那句话: 那家伙: 农机化: 那就好: 农交会: 内角和: 闹饥荒: 南京话: 内交货: 你几号: 哪家好: 你计划: 拟计划: 闹剧荒: 南胶河: 南京好: 内卷化: 能激活: 能减缓: 能降火: 能教好: 能教会: 能结合: 能结婚: 能进化: 能净化: 南京红: 哪句话: 你讲话: 你将会: 你结婚: 脑计划: 年计划: 凝结核: 宁静海: 牛角号: 牛金花: 农机户: 南极海: 那家好: 女教皇: 女警花: 那就换: 农救会: 牛家黄: 你就: 那就: 扭矩: 年间:]
+=== RUN   TestTypoNativeSpikeEditing/full_xgr
+=== RUN   TestTypoNativeSpikeEditing/full_zhr
+=== RUN   TestTypoNativeSpikeEditing/full_changshicuowj
+=== RUN   TestTypoNativeSpikeEditing/native_symbols
+=== RUN   TestTypoNativeSpikeEditing/backspace
+=== RUN   TestTypoNativeSpikeEditing/literal_return
+=== RUN   TestTypoNativeSpikeEditing/partial
+    typo_spike_test.go:163: partial commit="" preedit="你好zhong guo"
+--- FAIL: TestTypoNativeSpikeEditing (0.54s)
+    --- PASS: TestTypoNativeSpikeEditing/full_nihso (0.00s)
+    --- PASS: TestTypoNativeSpikeEditing/full_nihoa (0.00s)
+    --- FAIL: TestTypoNativeSpikeEditing/full_njh (0.01s)
+    --- PASS: TestTypoNativeSpikeEditing/full_xgr (0.01s)
+    --- PASS: TestTypoNativeSpikeEditing/full_zhr (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/full_changshicuowj (0.05s)
+    --- PASS: TestTypoNativeSpikeEditing/native_symbols (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/backspace (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/literal_return (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/partial (0.06s)
+=== RUN   TestTypoNativeSpikeEditing
+2026-11-04 08:45:45.915 engine ready in 61ms: librime 1.17.0, modules [default shixin], schemas [rime_ice_warm], 7 policies
+=== RUN   TestTypoNativeSpikeEditing/full_nihso
+=== RUN   TestTypoNativeSpikeEditing/full_nihoa
+=== RUN   TestTypoNativeSpikeEditing/full_njh
+=== RUN   TestTypoNativeSpikeEditing/full_xgr
+=== RUN   TestTypoNativeSpikeEditing/full_zhr
+=== RUN   TestTypoNativeSpikeEditing/full_changshicuowj
+=== RUN   TestTypoNativeSpikeEditing/native_symbols
+=== RUN   TestTypoNativeSpikeEditing/backspace
+=== RUN   TestTypoNativeSpikeEditing/literal_return
+=== RUN   TestTypoNativeSpikeEditing/partial
+    typo_spike_test.go:163: partial commit="" preedit="你好zhong guo"
+--- PASS: TestTypoNativeSpikeEditing (0.31s)
+    --- PASS: TestTypoNativeSpikeEditing/full_nihso (0.00s)
+    --- PASS: TestTypoNativeSpikeEditing/full_nihoa (0.00s)
+    --- PASS: TestTypoNativeSpikeEditing/full_njh (0.00s)
+    --- PASS: TestTypoNativeSpikeEditing/full_xgr (0.00s)
+    --- PASS: TestTypoNativeSpikeEditing/full_zhr (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/full_changshicuowj (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/native_symbols (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/backspace (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/literal_return (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/partial (0.04s)
+=== RUN   TestTypoNativeSpikeEditing
+2026-11-04 08:45:46.221 engine ready in 59ms: librime 1.17.0, modules [default shixin], schemas [rime_ice_warm], 7 policies
+=== RUN   TestTypoNativeSpikeEditing/full_nihso
+=== RUN   TestTypoNativeSpikeEditing/full_nihoa
+=== RUN   TestTypoNativeSpikeEditing/full_njh
+=== RUN   TestTypoNativeSpikeEditing/full_xgr
+=== RUN   TestTypoNativeSpikeEditing/full_zhr
+=== RUN   TestTypoNativeSpikeEditing/full_changshicuowj
+=== RUN   TestTypoNativeSpikeEditing/native_symbols
+=== RUN   TestTypoNativeSpikeEditing/backspace
+=== RUN   TestTypoNativeSpikeEditing/literal_return
+=== RUN   TestTypoNativeSpikeEditing/partial
+    typo_spike_test.go:163: partial commit="" preedit="你好zhong guo"
+--- PASS: TestTypoNativeSpikeEditing (0.31s)
+    --- PASS: TestTypoNativeSpikeEditing/full_nihso (0.00s)
+    --- PASS: TestTypoNativeSpikeEditing/full_nihoa (0.00s)
+    --- PASS: TestTypoNativeSpikeEditing/full_njh (0.00s)
+    --- PASS: TestTypoNativeSpikeEditing/full_xgr (0.00s)
+    --- PASS: TestTypoNativeSpikeEditing/full_zhr (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/full_changshicuowj (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/native_symbols (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/backspace (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/literal_return (0.04s)
+    --- PASS: TestTypoNativeSpikeEditing/partial (0.04s)
+FAIL

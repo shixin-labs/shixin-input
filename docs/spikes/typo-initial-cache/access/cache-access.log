@@ -1,0 +1,29 @@
+Running main() from /tmp/shixin-librime.1jmv9N/src/deps/googletest/googletest/src/gtest_main.cc
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from SpikeCacheAccess
+[ RUN      ] SpikeCacheAccess.NativeReadingValidationAndText
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I20261104 08:51:55.192869 0x1f219a1c0 table.cc:288] loading table file: /Users/kyle/orca/workspaces/shixin-input/typo-tolerant-pinyin-design/build/typo-recovery/prebuilt/rime_ice.table.bin
+ACCESS raw=xgr repeat=0 entry=0 query_us=642 member_us=0 weight_us=327 text_us=1206 scans=1 text=中国人
+ACCESS raw=xgr repeat=0 entry=1 query_us=242 member_us=0 weight_us=0 text_us=1633 scans=1 text=这个人
+ACCESS raw=xgr repeat=0 entry=2 query_us=409 member_us=0 weight_us=0 text_us=1028 scans=1 text=效果图
+ACCESS raw=xgr repeat=0 entry=3 query_us=266 member_us=0 weight_us=372 text_us=7 scans=1 text=三个人
+ACCESS raw=xgr repeat=0 entry=4 query_us=323 member_us=0 weight_us=290 text_us=501 scans=1 text=整个人
+ACCESS raw=xgr repeat=0 entry=5 query_us=447 member_us=0 weight_us=147 text_us=742 scans=1 text=吸引人
+ACCESS raw=xgr repeat=0 entry=6 query_us=578 member_us=0 weight_us=51 text_us=934 scans=1 text=德国人
+ACCESS raw=xgr repeat=0 entry=7 query_us=740 member_us=0 weight_us=0 text_us=137 scans=1 text=四个人
+ACCESS raw=xgr repeat=1 entry=0 query_us=1 member_us=0 weight_us=0 text_us=1 scans=1 text=中国人
+ACCESS raw=xgr repeat=1 entry=1 query_us=0 member_us=0 weight_us=0 text_us=1 scans=1 text=这个人
+ACCESS raw=xgr repeat=1 entry=2 query_us=0 member_us=0 weight_us=0 text_us=1 scans=1 text=效果图
+ACCESS raw=xgr repeat=1 entry=3 query_us=0 member_us=0 weight_us=0 text_us=0 scans=1 text=三个人
+ACCESS raw=xgr repeat=1 entry=4 query_us=0 member_us=0 weight_us=0 text_us=0 scans=1 text=整个人
+ACCESS raw=xgr repeat=1 entry=5 query_us=0 member_us=0 weight_us=0 text_us=1 scans=1 text=吸引人
+ACCESS raw=xgr repeat=1 entry=6 query_us=0 member_us=0 weight_us=0 text_us=1 scans=1 text=德国人
+ACCESS raw=xgr repeat=1 entry=7 query_us=0 member_us=0 weight_us=0 text_us=0 scans=1 text=四个人
+[       OK ] SpikeCacheAccess.NativeReadingValidationAndText (31 ms)
+[----------] 1 test from SpikeCacheAccess (31 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (31 ms total)
+[  PASSED  ] 1 test.

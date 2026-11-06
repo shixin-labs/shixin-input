@@ -1,0 +1,8 @@
+CPU: Apple M4
+OS: macOS 26.7.1 (25G241)
+C++ compiler: Apple clang 21.0.0 (clang-2100.4.1.1), arm64-apple-darwin25.6.0
+Native search build: -std=c++17 -O3 -Wall -Wextra -Werror
+Native checks: -std=c++17 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer
+Go: go1.27.3 darwin/arm64, CGO_ENABLED=0 for experiment tools
+Engine: librime 1.17.0, modules default/shixin, rime_ice_warm
+Go binaries built from this worktree; native library/prebuilt dictionaries copied from local development build and fingerprinted, not rebuilt from source for this spike.

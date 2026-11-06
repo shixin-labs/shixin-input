@@ -1,0 +1,20 @@
+~llama_context:        CPU compute buffer size is   1.2845 MiB, matches expectation of   1.2845 MiB
+ggml_metal_free: deallocating
+       19.87 real         2.20 user         1.24 sys
+           808632320  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+               64604  page reclaims
+                2728  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                 728  signals received
+                 326  voluntary context switches
+               86926  involuntary context switches
+         39311762960  instructions retired
+         13023512886  cycles elapsed
+           457639496  peak memory footprint

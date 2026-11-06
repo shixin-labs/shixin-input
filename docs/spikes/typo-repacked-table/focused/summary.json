@@ -1,0 +1,98 @@
+[
+  {
+    "run": "menus-0.jsonl",
+    "code": "cnjw",
+    "complete": true,
+    "matches": []
+  },
+  {
+    "run": "menus-0.jsonl",
+    "code": "ddegn",
+    "complete": true,
+    "matches": [
+      {
+        "text": "吊灯",
+        "comment": "",
+        "page": 1,
+        "index": 1,
+        "rank": 7,
+        "full_span": true,
+        "span_start": 0,
+        "span_end": 5,
+        "span_verification": "whole_input_commit"
+      }
+    ]
+  },
+  {
+    "run": "menus-1.jsonl",
+    "code": "cnjw",
+    "complete": true,
+    "matches": [
+      {
+        "text": "纯净物",
+        "comment": "纠错 → ",
+        "page": 1,
+        "index": 1,
+        "rank": 7,
+        "full_span": true,
+        "span_start": 0,
+        "span_end": 4,
+        "span_verification": "whole_input_commit"
+      }
+    ]
+  },
+  {
+    "run": "menus-1.jsonl",
+    "code": "ddegn",
+    "complete": true,
+    "matches": [
+      {
+        "text": "吊灯",
+        "comment": "",
+        "page": 1,
+        "index": 1,
+        "rank": 7,
+        "full_span": true,
+        "span_start": 0,
+        "span_end": 5,
+        "span_verification": "whole_input_commit"
+      }
+    ]
+  },
+  {
+    "run": "menus-2.jsonl",
+    "code": "cnjw",
+    "complete": true,
+    "matches": [
+      {
+        "text": "纯净物",
+        "comment": "纠错 → ",
+        "page": 1,
+        "index": 1,
+        "rank": 7,
+        "full_span": true,
+        "span_start": 0,
+        "span_end": 4,
+        "span_verification": "whole_input_commit"
+      }
+    ]
+  },
+  {
+    "run": "menus-2.jsonl",
+    "code": "ddegn",
+    "complete": true,
+    "matches": [
+      {
+        "text": "吊灯",
+        "comment": "",
+        "page": 1,
+        "index": 1,
+        "rank": 7,
+        "full_span": true,
+        "span_start": 0,
+        "span_end": 5,
+        "span_verification": "whole_input_commit"
+      }
+    ]
+  }
+]

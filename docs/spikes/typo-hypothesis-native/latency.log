@@ -1,0 +1,5 @@
+=== RUN   TestTypoNativeSpikeLatency
+2026-11-06 07:04:57.614 engine ready in 228ms: librime 1.17.0, modules [default shixin], schemas [rime_ice_warm], 7 policies
+    typo_spike_test.go:273: variant=protected engine_key_time=p50 112µs p99 1.408ms max 1.443ms (n=2280) p99.9=1.443ms
+--- PASS: TestTypoNativeSpikeLatency (1.04s)
+PASS

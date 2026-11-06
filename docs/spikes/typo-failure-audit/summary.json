@@ -1,0 +1,184 @@
+{
+  "groups": {
+    "all": {
+      "completed_labeled_path_below_output_quota": 181,
+      "completed_retained_target_missing": 1,
+      "exhausted_with_retained_labeled_target": 153,
+      "labeled_reading_absent": 153,
+      "recovered": 342
+    },
+    "dev/digraph_initials/clean": {
+      "completed_labeled_path_below_output_quota": 2,
+      "exhausted_with_retained_labeled_target": 6,
+      "recovered": 3
+    },
+    "dev/digraph_initials/neighbor": {
+      "completed_labeled_path_below_output_quota": 5,
+      "exhausted_with_retained_labeled_target": 5,
+      "recovered": 1
+    },
+    "dev/digraph_initials/swap": {
+      "completed_labeled_path_below_output_quota": 2,
+      "exhausted_with_retained_labeled_target": 6,
+      "recovered": 3
+    },
+    "dev/full/clean": {
+      "labeled_reading_absent": 1,
+      "recovered": 28
+    },
+    "dev/full/neighbor": {
+      "completed_labeled_path_below_output_quota": 1,
+      "labeled_reading_absent": 2,
+      "recovered": 26
+    },
+    "dev/full/swap": {
+      "exhausted_with_retained_labeled_target": 1,
+      "labeled_reading_absent": 2,
+      "recovered": 26
+    },
+    "dev/initials/clean": {
+      "completed_labeled_path_below_output_quota": 7,
+      "exhausted_with_retained_labeled_target": 14,
+      "labeled_reading_absent": 2,
+      "recovered": 4
+    },
+    "dev/initials/neighbor": {
+      "completed_labeled_path_below_output_quota": 18,
+      "exhausted_with_retained_labeled_target": 9,
+      "labeled_reading_absent": 2
+    },
+    "dev/initials/swap": {
+      "completed_labeled_path_below_output_quota": 7,
+      "exhausted_with_retained_labeled_target": 13,
+      "labeled_reading_absent": 2,
+      "recovered": 4
+    },
+    "dev/mixed_even/clean": {
+      "completed_labeled_path_below_output_quota": 4,
+      "exhausted_with_retained_labeled_target": 10,
+      "labeled_reading_absent": 2,
+      "recovered": 13
+    },
+    "dev/mixed_even/neighbor": {
+      "completed_labeled_path_below_output_quota": 9,
+      "exhausted_with_retained_labeled_target": 6,
+      "labeled_reading_absent": 2,
+      "recovered": 12
+    },
+    "dev/mixed_even/swap": {
+      "completed_labeled_path_below_output_quota": 5,
+      "exhausted_with_retained_labeled_target": 11,
+      "labeled_reading_absent": 2,
+      "recovered": 11
+    },
+    "dev/mixed_odd/clean": {
+      "completed_labeled_path_below_output_quota": 8,
+      "exhausted_with_retained_labeled_target": 1,
+      "labeled_reading_absent": 2,
+      "recovered": 18
+    },
+    "dev/mixed_odd/neighbor": {
+      "completed_labeled_path_below_output_quota": 8,
+      "exhausted_with_retained_labeled_target": 2,
+      "labeled_reading_absent": 2,
+      "recovered": 16
+    },
+    "dev/mixed_odd/swap": {
+      "completed_labeled_path_below_output_quota": 9,
+      "labeled_reading_absent": 2,
+      "recovered": 18
+    },
+    "test/digraph_initials/clean": {
+      "completed_labeled_path_below_output_quota": 1,
+      "exhausted_with_retained_labeled_target": 6,
+      "labeled_reading_absent": 4,
+      "recovered": 2
+    },
+    "test/digraph_initials/neighbor": {
+      "completed_labeled_path_below_output_quota": 2,
+      "exhausted_with_retained_labeled_target": 6,
+      "labeled_reading_absent": 4,
+      "recovered": 1
+    },
+    "test/digraph_initials/swap": {
+      "completed_labeled_path_below_output_quota": 3,
+      "exhausted_with_retained_labeled_target": 6,
+      "labeled_reading_absent": 4
+    },
+    "test/full/clean": {
+      "exhausted_with_retained_labeled_target": 1,
+      "labeled_reading_absent": 9,
+      "recovered": 25
+    },
+    "test/full/neighbor": {
+      "exhausted_with_retained_labeled_target": 2,
+      "labeled_reading_absent": 10,
+      "recovered": 23
+    },
+    "test/full/swap": {
+      "exhausted_with_retained_labeled_target": 1,
+      "labeled_reading_absent": 10,
+      "recovered": 24
+    },
+    "test/initials/clean": {
+      "completed_labeled_path_below_output_quota": 11,
+      "completed_retained_target_missing": 1,
+      "exhausted_with_retained_labeled_target": 8,
+      "labeled_reading_absent": 10,
+      "recovered": 4
+    },
+    "test/initials/neighbor": {
+      "completed_labeled_path_below_output_quota": 14,
+      "exhausted_with_retained_labeled_target": 8,
+      "labeled_reading_absent": 10,
+      "recovered": 3
+    },
+    "test/initials/swap": {
+      "completed_labeled_path_below_output_quota": 10,
+      "exhausted_with_retained_labeled_target": 10,
+      "labeled_reading_absent": 9,
+      "recovered": 4
+    },
+    "test/mixed_even/clean": {
+      "completed_labeled_path_below_output_quota": 7,
+      "exhausted_with_retained_labeled_target": 9,
+      "labeled_reading_absent": 10,
+      "recovered": 9
+    },
+    "test/mixed_even/neighbor": {
+      "completed_labeled_path_below_output_quota": 10,
+      "exhausted_with_retained_labeled_target": 6,
+      "labeled_reading_absent": 10,
+      "recovered": 8
+    },
+    "test/mixed_even/swap": {
+      "completed_labeled_path_below_output_quota": 11,
+      "exhausted_with_retained_labeled_target": 5,
+      "labeled_reading_absent": 10,
+      "recovered": 9
+    },
+    "test/mixed_odd/clean": {
+      "completed_labeled_path_below_output_quota": 8,
+      "exhausted_with_retained_labeled_target": 1,
+      "labeled_reading_absent": 10,
+      "recovered": 16
+    },
+    "test/mixed_odd/neighbor": {
+      "completed_labeled_path_below_output_quota": 10,
+      "labeled_reading_absent": 10,
+      "recovered": 15
+    },
+    "test/mixed_odd/swap": {
+      "completed_labeled_path_below_output_quota": 9,
+      "labeled_reading_absent": 10,
+      "recovered": 16
+    }
+  },
+  "hashes": {
+    "build/typo-recovery/abbr-recovery-v1/syllable-lexicon.tsv": "fd5e8795de20f2c7d218de5bf78824c0d23077c67cff889a8afcdb7f8b339f29",
+    "build/typo-recovery/constrained-v1/search.jsonl": "5aca101fce6ef4e58cce9274b428a97b322babd64c5cbb455d8e1754c98e34dd",
+    "build/typo-recovery/constrained-v1/selected.jsonl": "901c7464732a143f517d58ce12d755aed28e350aaa6748b62fc41fc43c0b5566"
+  },
+  "limits": "Labeled reading only; absence/quota may overlap exhaustion. Completed retained misses require output-quota or search-correctness investigation, not automatic attribution to ranking.",
+  "rows": 830
+}
