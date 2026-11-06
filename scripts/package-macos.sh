@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Packages Shixin.app for release (DESIGN §5.5) into build/dist/Shixin.dmg:
+# Packages Shixin.app for release (DESIGN §5.5) into build/dist/Shixin-$VERSION.dmg:
 # builds it with our librime, signs the app and the disk image with
 # SIGN_IDENTITY (a Developer ID Application identity; required) and, with
 # NOTARY_PROFILE (a notarytool keychain profile, from `xcrun notarytool
@@ -15,8 +15,8 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 : "${SIGN_IDENTITY:?set SIGN_IDENTITY to a Developer ID Application identity}"
 APP="$ROOT/build/macos/Shixin.app"
 DIST="$ROOT/build/dist"
-DMG="$DIST/Shixin.dmg"
 export SIGN_IDENTITY VERSION="${VERSION:-0.1.0-dev}"
+DMG="$DIST/Shixin-$VERSION.dmg"
 LIBRIME="${LIBRIME:-$ROOT/build/librime/out/lib/librime.1.dylib}"
 [ -f "$LIBRIME" ] || { echo "missing $LIBRIME; run scripts/build-librime.sh" >&2; exit 1; }
 LIBRIME="$LIBRIME" "$ROOT/scripts/bundle-macos.sh" "$APP"

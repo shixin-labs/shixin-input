@@ -178,7 +178,7 @@ try {
     $dist=Join-Path $root 'build/dist'
     if ($UnsignedPreview) { $dist=Join-Path $dist 'preview' }
     New-Item -ItemType Directory -Force $dist | Out-Null
-    $setup=Join-Path $dist "ShixinSetup-$Arch$suffix.exe"
+    $setup=Join-Path $dist "ShixinSetup-$Version-$Arch$suffix.exe"
     & go build @buildOptions -trimpath -ldflags "$flags -H windowsgui" -o $setup ./cmd/shixin-setup; Check 'build bootstrapper'
     Manifest $setup
     & go run ./tools/windows-package -exe $setup -msi $msi -version $Version -arch $Arch; Check 'attach MSI'

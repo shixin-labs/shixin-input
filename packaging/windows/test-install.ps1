@@ -21,7 +21,7 @@ if ((Test-Path $install) -or (Test-Path $arp) -or (Test-Path "HKLM:/$class") -or
 $work=Join-Path $root ("build/install-test-$Arch-"+[Guid]::NewGuid().ToString('N'))
 $payload=Join-Path $root "build/package-windows-$Arch-unsigned-preview/payload"
 $msi=Join-Path $root "build/package-windows-$Arch-unsigned-preview/Shixin.msi"
-$setup=Join-Path $root "build/dist/preview/ShixinSetup-$Arch-unsigned-preview.exe"
+$setup=Join-Path $root "build/dist/preview/ShixinSetup-$Version-$Arch-unsigned-preview.exe"
 New-Item -ItemType Directory -Force $work | Out-Null
 $savedApp=$env:APPDATA; $savedLocal=$env:LOCALAPPDATA
 $env:APPDATA=Join-Path $work 'roaming'; $env:LOCALAPPDATA=Join-Path $work 'local'

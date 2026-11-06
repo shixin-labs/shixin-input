@@ -186,7 +186,7 @@ schemas with an isolated offline builder and bundles prebuilt dictionaries,
 Rime/OpenCC data and license notices. The librime and llama.cpp builds stage
 their license notices beside their libraries, so packaging doesn't read the
 submodules. Outputs are
-`build/dist/ShixinSetup-<arch>.exe`. Publish each installer as the matching
+`build/dist/ShixinSetup-<version>-<arch>.exe`. Publish each installer as the matching
 GitHub release asset. The ARM64 installer includes native ARM64 and emulated
 x64 TSF DLLs behind one [ARM64X pure forwarder](https://learn.microsoft.com/en-us/windows/arm/arm64x-build#building-an-arm64x-pure-forwarder-dll); both public export paths are tested
 before packaging. The script builds llama.cpp with Vulkan unless `-Llama`
@@ -227,7 +227,7 @@ list after machine removal. Setup logs are in
 `%LOCALAPPDATA%\Shixin\Logs\setup-*.log`.
 
 `packaging/windows/test-msi.ps1 -Arch arm64` checks package structure without
-installing and runs with `build-windows.ps1 -Check`. `ShixinSetup-<arch>.exe
+installing and runs with `build-windows.ps1 -Check`. `ShixinSetup-<version>-<arch>.exe
 -verify` verifies a signed release without installing. Test certificates must
 be trusted only in a disposable VM. Signed public releases need a trusted
 production code-signing certificate; unsigned previews use the explicit
@@ -242,7 +242,7 @@ An unsigned preview can be built without a signing certificate:
 ```
 
 Use `-Arch amd64` on native x64 Windows. Outputs are
-`build/dist/preview/ShixinSetup-<arch>-unsigned-preview.exe` and its
+`build/dist/preview/ShixinSetup-<version>-<arch>-unsigned-preview.exe` and its
 `.sha256` checksum file. This separate build compiles the
 `shixin_unsigned_preview` tag into the installer, maintenance helper,
 front and Settings. It does not change the signed build's verification

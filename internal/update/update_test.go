@@ -206,7 +206,7 @@ func TestDownload(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if path != filepath.Join(root, "0.2.0", AssetName) {
+	if path != filepath.Join(root, "0.2.0", versionedAssetName("0.2.0")) {
 		t.Errorf("path %s", path)
 	}
 	if got, _ := os.ReadFile(path); string(got) != body {
@@ -303,5 +303,17 @@ func TestDownloadStallAndCancel(t *testing.T) {
 	}
 	if entries, _ := os.ReadDir(filepath.Join(root, "0.2.0")); len(entries) > 0 {
 		t.Errorf("left %v", entries)
+	}
+}
+
+func TestVersionedReleaseAsset(t *testing.T) {
+	body := strings.ReplaceAll(releaseJSON("v0.2.0", goodDigest, ""), AssetName, versionedAssetName("0.2.0"))
+	r, err := ParseRelease([]byte(body))
+	if err != nil || r.Version != "0.2.0" {
+		t.Fatalf("versioned release: %v, %v", r, err)
+	}
+	body = strings.ReplaceAll(body, versionedAssetName("0.2.0"), versionedAssetName("0.1.0"))
+	if _, err := ParseRelease([]byte(body)); err == nil {
+		t.Fatal("accepted asset for another version")
 	}
 }

@@ -116,7 +116,7 @@ func ParseRelease(body []byte) (*Release, error) {
 	}
 	r := &Release{Version: ver, Notes: FormatNotes(a.Body)}
 	for _, as := range a.Assets {
-		if as.Name != AssetName {
+		if as.Name != versionedAssetName(ver) && as.Name != AssetName {
 			continue
 		}
 		if as.Size <= 0 || as.URL == "" {
@@ -285,7 +285,7 @@ func Dir() (string, error) {
 	return filepath.Join(cache, "Shixin", "Updates"), nil
 }
 
-// Download fetches r's disk image into root/<version>/Shixin.dmg, after
+// Download fetches r's disk image into root/<version>/<versioned installer name>, after
 // removing everything older under root, and returns its path. It keeps the
 // file only if its size matches the release and, when GitHub gave one, its
 // SHA-256. It doesn't open or run the file.
@@ -303,7 +303,7 @@ func Download(ctx context.Context, r *Release, root, current string, progress fu
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return "", fmt.Errorf("update: %w", err)
 	}
-	path := filepath.Join(dir, AssetName)
+	path := filepath.Join(dir, versionedAssetName(r.Version))
 	if err := fetch(ctx, r, path, current, progress); err != nil {
 		os.RemoveAll(dir)
 		return "", err

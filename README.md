@@ -24,7 +24,7 @@ unsigned previews. See
 
 Requires macOS 13 or later on Apple silicon.
 
-1. Download `Shixin.dmg` from the
+1. Download `Shixin-<version>.dmg` from the
    [latest release](https://github.com/shixin-labs/shixin-input/releases/latest).
 2. Open it and double-click **Shixin** (拾新). There is nothing to drag:
    it installs itself into `~/Library/Input Methods`, or upgrades an
@@ -34,7 +34,7 @@ Requires macOS 13 or later on Apple silicon.
    Simplified → 拾新), and switch to it with Control-Space.
 
 安装：从 [Releases](https://github.com/shixin-labs/shixin-input/releases/latest)
-下载 `Shixin.dmg`，打开后双击「拾新」即可安装（无需拖到“应用程序”），再按
+下载 `Shixin-<version>.dmg`，打开后双击「拾新」即可安装（无需拖到“应用程序”），再按
 「开始使用」向导在系统设置中添加拾新。
 
 ## Install (Windows unsigned preview)
@@ -44,8 +44,8 @@ Windows 11 on ARM64. 32-bit applications are not supported.
 
 | Windows architecture | Installer |
 |---|---|
-| Intel/AMD x64 | `ShixinSetup-amd64-unsigned-preview.exe` |
-| ARM64 | `ShixinSetup-arm64-unsigned-preview.exe` |
+| Intel/AMD x64 | `ShixinSetup-0.2.0-amd64-unsigned-preview.exe` |
+| ARM64 | `ShixinSetup-0.2.0-arm64-unsigned-preview.exe` |
 
 1. Download the matching installer above and its `.sha256` file
    from [0.2.0](https://github.com/shixin-labs/shixin-input/releases/tag/v0.2.0).
@@ -122,7 +122,7 @@ LIBRIME=$PWD/build/librime/out/lib/librime.1.dylib scripts/bundle-macos.sh
 
 This produces `build/macos/Shixin.app`. Opening it installs it as above;
 opening a newer build later upgrades it in place. `scripts/package-macos.sh`
-makes the signed and notarized `Shixin.dmg` for a release (see
+makes the signed and notarized `Shixin-<version>.dmg` for a release (see
 [`AGENTS.md`](AGENTS.md)).
 
 ## Contributing
