@@ -1640,6 +1640,12 @@ setting.
   parsed from that snapshot; a length mismatch, as while Sogou rewrites it,
   fails as a whole. `.scel` files are read up to the header's group count
   (0x120); words spelled with the table's letter entries are skipped.
+  Cell-dictionary frequency is not personal usage: `.scel` words are
+  imported with zero commits. The script translator compares these unlearned
+  entries by weight with system phrases instead of granting user-word
+  priority, and exports them to AI as ordinary phrases. Selecting a word
+  learns it normally. Importing again preserves existing learned counts.
+  `SGPU`, Rime and portable backup imports retain their personal counts.
 - **Rime (Squirrel, Weasel, fcitx5-rime, ibus-rime):** only
   `rime_ice`, `luna_pinyin` and `pinyin_simp` user databases, whose codes
   are spaced full pinyin. Their LevelDB can only be read by librime, so

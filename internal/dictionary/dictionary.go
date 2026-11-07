@@ -344,12 +344,15 @@ func readSCEL(b []byte) ([]Entry, error) {
 			if extN < 2 || p+extN > len(b) {
 				return nil, bad
 			}
-			count := int(binary.LittleEndian.Uint16(b[p:]))
 			p += extN
 			if !spelled {
 				continue
 			}
-			out = append(out, Entry{Text: text, Code: code, Count: max(1, count)})
+			// A cell dictionary is published vocabulary, not personal history.
+			// Its frequency field must never become a Rime commit count. Zero
+			// keeps the word available without learned-word priority; selecting
+			// it later lets Rime learn it normally.
+			out = append(out, Entry{Text: text, Code: code, Count: 0})
 			if len(out) > MaxEntries {
 				return nil, errors.New("dictionary: too many entries")
 			}

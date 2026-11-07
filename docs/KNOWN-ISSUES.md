@@ -3,6 +3,19 @@
 Open items. Each says what's wrong, why it matters, and the intended fix.
 Delete an entry when it's fixed, and mention it in the commit.
 
+## Dictionary migration
+
+### Repairing cell dictionaries imported by older versions
+- Versions through 0.3.0 copied Sogou `.scel` frequency values into personal
+  usage counts. Large cell dictionaries could displace ordinary candidates,
+  especially for abbreviations. New imports use zero commits and do not get
+  learned-word priority.
+- Existing databases do not retain per-entry import provenance. Re-importing
+  with corrected code preserves counts, so it cannot undo the old inflation.
+  Repair requires the original source and pre-import backups to distinguish
+  vocabulary from genuine learning. A supported repair flow remains to be
+  implemented; blindly resetting all matching words would lose personal history.
+
 ## Engine lifecycle
 
 ### Cold-cache first key exceeds the engine budget in the VM

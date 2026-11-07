@@ -86,12 +86,32 @@ func TestSCELMigrationAndTruncation(t *testing.T) {
 	for _, v := range []byte{0x44, 0x45} {
 		b := scelFixture(v)
 		got, err := Read(bytes.NewReader(b))
-		if err != nil || len(got.Words) != 1 || got.Words[0] != (Entry{Text: "你好", Code: "ni hao", Count: 42}) {
+		if err != nil || len(got.Words) != 1 || got.Words[0] != (Entry{Text: "你好", Code: "ni hao", Count: 0}) {
 			t.Fatalf("SCEL %x: %v %+v", v, err, got)
 		}
 		for _, end := range []int{4, 0x1544, len(b) - 1, len(b) - 9} {
 			if _, err := Read(bytes.NewReader(b[:end])); err == nil {
 				t.Fatalf("accepted truncated SCEL at %d", end)
+			}
+		}
+	}
+}
+
+func TestSCELFrequencyIsNotPersonalHistory(t *testing.T) {
+	for _, version := range []byte{0x44, 0x45} {
+		for _, frequency := range []uint16{0, 1, 43291, 65535} {
+			b := scelFixture(version)
+			binary.LittleEndian.PutUint16(b[len(b)-10:], frequency)
+			got, err := Read(bytes.NewReader(b))
+			if err != nil || len(got.Words) != 1 || got.Words[0].Count != 0 {
+				t.Fatalf("version=%x frequency=%d: %+v %v", version, frequency, got, err)
+			}
+			var table bytes.Buffer
+			if err := WriteTable(&table, got.Words); err != nil {
+				t.Fatal(err)
+			}
+			if table.String() != "你好\tni hao\t0\n" {
+				t.Fatalf("cell import invented personal usage: %q", table.String())
 			}
 		}
 	}

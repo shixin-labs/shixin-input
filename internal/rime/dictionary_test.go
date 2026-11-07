@@ -42,4 +42,30 @@ func TestDictionaryTableRoundTrip(t *testing.T) {
 	if err != nil || len(b.Words) != 1 || b.Words[0].Count != 37 {
 		t.Fatal("duplicate import changed the learned count", err)
 	}
+	// Cell vocabulary has no personal usage. Re-import must neither promote
+	// an unlearned word nor reset learning for a word already in the database.
+	if err := os.WriteFile(source, []byte("幸会\txing hui\t0\n洪晃\thong huang\t0\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for range 2 {
+		if _, err := lib.DictionaryTable(source, true); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := lib.DictionaryTable(output, false); err != nil {
+		t.Fatal(err)
+	}
+	b, err = dictionary.ReadFile(output)
+	if err != nil || len(b.Words) != 2 {
+		t.Fatalf("cell vocabulary export: %+v %v", b, err)
+	}
+	for _, e := range b.Words {
+		want := 0
+		if e.Text == "幸会" {
+			want = 37
+		}
+		if e.Count != want {
+			t.Fatalf("%s count=%d, want %d", e.Text, e.Count, want)
+		}
+	}
 }
