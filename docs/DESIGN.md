@@ -234,9 +234,10 @@ are sent once per connection; results refer to them by ID.
     twice whenever the app's calls were slow.
   - When several results are queued, apply every commit in order, but only
     the last marked text and candidates.
-  - **First letter:** when an eaten lowercase letter starts a composition,
+  - **First key:** when an eaten printable ASCII key starts a composition,
     the client sets it as marked text inside `handleEvent:`, as Squirrel
-    does; the engine's preedit replaces it when the result arrives. Some
+    does, including uppercase letters and Shift/Caps Lock modifiers;
+    the engine's preedit replaces it when the result arrives. Some
     apps insert an eaten key themselves unless marked text exists when the
     key returns: WeChat 4.x typed "zhege" as "z 这个" (its own `z`, then
     auto spacing). Only that first letter is local; it costs no wait, round

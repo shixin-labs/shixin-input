@@ -307,12 +307,14 @@ func (c *Client) HandleKey(keysym, mods uint32) bool {
 		default:
 			c.spec = nil
 		}
-		if len(c.marked) == 0 && act.Next() == policy.Composing && mods == 0 && keysym >= 'a' && keysym <= 'z' {
+		if len(c.marked) == 0 && act.Next() == policy.Composing && mods & ^uint32(policy.ShiftMask|policy.LockMask) == 0 && keysym >= 0x20 && keysym < 0x7f {
 			// WeChat 4 types an eaten key itself unless marked text exists
 			// when the key returns, and the engine's preedit comes later. A
-			// letter starting a composition shows itself until the
+			// printable key starting a composition shows itself until the
 			// engine's preedit replaces it, as Squirrel sets marked text
-			// inside the key handler.
+			// inside the key handler. The policy already established that
+			// this key composes: uppercase and Shift/Caps Lock must not
+			// bypass this protection.
 			c.marked = append(c.marked[:0], byte(keysym))
 			c.a.Preedit(c.marked, 1)
 		} else if len(c.marked) == 0 && act.Next() != policy.Composing && mods&policy.ReleaseMask == 0 {
