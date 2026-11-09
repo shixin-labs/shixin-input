@@ -140,7 +140,13 @@ func TestSecureSpacingRestoresAfterReply(t *testing.T) {
 		t.Fatal("spacing resumed before the ordinary focus reply")
 	}
 	c.applyResult(&ipc.Result{Flags: ipc.ResultAutoSpace})
-	if !c.HandleKey('B', policy.ShiftMask) || a.reads != 1 || a.commits() != " B" {
+	// The newly focused ordinary field starts from its own first input,
+	// never from a text read that might still describe the previous field.
+	c.commit([]byte("中文"))
+	if a.reads != 0 || a.commits() != "中文" {
+		t.Fatal("first insertion after secure focus read stale text")
+	}
+	if !c.HandleKey('B', policy.ShiftMask) || a.reads != 1 || a.commits() != "中文 B" {
 		t.Fatalf("spacing did not resume: reads %d, commits %q", a.reads, a.commits())
 	}
 }

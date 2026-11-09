@@ -80,6 +80,31 @@ func TestPerAppContextFence(t *testing.T) {
 	}
 }
 
+func TestAppSwitchSpacingStartsFromNewInput(t *testing.T) {
+	a := &secureRecorder{} // stale TextBefore always answers Chinese
+	c := New(Options{PerAppContexts: true}, a)
+	defer c.timer.Stop()
+	c.conn.Store(&conn{out: make(chan outMsg, 16)})
+	c.FocusIn("previous", false)
+	oldCtx, oldSeq := c.ctx, c.seq
+	c.sp.on = true
+	c.sp.pushText([]byte("中文"))
+	c.FocusIn("slack", false)
+	// A late commit from the old app must not repopulate the new field's
+	// spacing history. A new focus acknowledgement may enable spacing,
+	// but must not make the stale reader authoritative for its first key.
+	c.push(evResult, &ipc.Result{Ctx: oldCtx, Seq: oldSeq, Flags: ipc.ResultAutoSpace, Commit: []byte("旧")})
+	c.push(evResult, &ipc.Result{Ctx: c.ctx, Seq: c.seq, Flags: ipc.ResultAutoSpace})
+	c.arrived.Store(c.seq)
+	c.Drain()
+	if a.commits() != "" || a.reads != 0 || c.sp.n != 0 {
+		t.Fatal("old app restored spacing history")
+	}
+	if c.HandleKey('a', 0) || a.commits() != "" || a.reads != 0 {
+		t.Fatalf("first key got an unwanted space: commits=%q reads=%d", a.commits(), a.reads)
+	}
+}
+
 func TestPerAppContextSecureSwitchDoesNotCommitOldText(t *testing.T) {
 	a := &recorder{}
 	c := New(Options{PerAppContexts: true}, a)

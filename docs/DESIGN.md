@@ -1772,6 +1772,14 @@ Backspace deletes several code points.
 Anything that may move the caret or change the text, other than our own
 commits and the keys we saw, clears the history.
 
+Entering an app or text field also suppresses automatic spacing on its
+first insertion: a caret read immediately after focus can still describe
+old text. The Go client starts tracking from the first committed text or
+passed printable key in that field, then resumes ordinary spacing and
+verification. This deliberately avoids adding a leading space on entry,
+even if the field already contains text. Later mouse/caret resets can
+still recover the surrounding character as described below.
+
 | Event | macOS source |
 |---|---|
 | A mouse press anywhere: in the text, another window, a menu, the Dock | `NSEvent addGlobalMonitorForEventsMatchingMask:` for left, right and other mouse-down. Presses only, never mouse moves, which fire constantly and move no caret |

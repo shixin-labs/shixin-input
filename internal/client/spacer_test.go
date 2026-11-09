@@ -88,6 +88,52 @@ func newTestSpacer(app *fakeApp) *spacer {
 	return &s
 }
 
+// Simulate a stale text read after switching into an empty Slack-like
+// editor. Clearing tracking alone is insufficient: an immediate TextBefore
+// read can recreate the obsolete boundary.
+func TestSpacingFocusRejectsStaleReader(t *testing.T) {
+	for _, first := range []string{"chinese", "english"} {
+		t.Run(first, func(t *testing.T) {
+			old := "English"
+			if first == "english" {
+				old = "中文"
+			}
+			app := &fakeApp{clock: time.Unix(1e9, 0), stale: true, prevText: []rune(old), prevCaret: len([]rune(old))}
+			s := newTestSpacer(app)
+			s.pushText([]byte(old))
+			s.muted = true
+			s.focus("slack", "other")
+			if s.n != 0 || s.muted || s.before != clUnknown {
+				t.Fatal("focus retained old history")
+			}
+			if first == "chinese" {
+				app.insert(string(s.commit([]byte("你好"))))
+			} else {
+				press(s, app, 'a', 0, "a")
+			}
+			want := "你好"
+			if first == "english" {
+				want = "a"
+			}
+			if app.String() != want || app.reads != 0 {
+				t.Fatalf("after focus: text=%q reads=%d, want %q without a stale read", app.String(), app.reads, want)
+			}
+			// Tracking and verification resume after text in this field.
+			app.stale = false
+			if first == "chinese" {
+				press(s, app, 'a', 0, "a")
+				want = "你好 a"
+			} else {
+				app.insert(string(s.commit([]byte("你好"))))
+				want = "a 你好"
+			}
+			if app.String() != want {
+				t.Fatalf("spacing did not resume: %q, want %q", app.String(), want)
+			}
+		})
+	}
+}
+
 // press types one key into s and app, as the client does for a key that
 // goes to the app: insert is what the app inserts if the key passes.
 func press(s *spacer, app *fakeApp, keysym, mods uint32, insert string) {
@@ -301,6 +347,7 @@ func TestSpacerDoesNotAllocate(t *testing.T) {
 	s := newTestSpacer(app)
 	zh, en := []byte("中文"), []byte("hello")
 	run := func() {
+		s.focus("slack", "other")
 		s.tick()
 		s.commit(zh)
 		s.tick()
@@ -318,6 +365,18 @@ func TestSpacerDoesNotAllocate(t *testing.T) {
 	runtime.GC()
 	if n := testing.AllocsPerRun(1000, run); n != 0 {
 		t.Fatalf("%v allocations", n)
+	}
+}
+
+func BenchmarkSpacingAfterFocus(b *testing.B) {
+	s := newSpacer(nil)
+	s.on = true
+	text := []byte("你好")
+	b.ReportAllocs()
+	for b.Loop() {
+		s.focus("slack", "other")
+		s.commit(text)
+		s.key('a', 0)
 	}
 }
 
