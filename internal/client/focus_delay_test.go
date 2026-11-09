@@ -72,6 +72,25 @@ func TestDelayedFocusPrintableOwnership(t *testing.T) {
 	}
 }
 
+func TestDelayedFocusCapsLockOwnership(t *testing.T) {
+	for _, mods := range []uint32{policy.LockMask, policy.LockMask | policy.ShiftMask} {
+		c, a, cn := delayedFocus(t)
+		if !c.HandleKey('R', mods) || a.preedit != "R" {
+			t.Fatalf("Caps Lock key escaped delayed focus: mods=%x marked=%q", mods, a.preedit)
+		}
+		var key outMsg
+		for len(cn.out) > 0 {
+			m := <-cn.out
+			if m.typ == ipc.TypeKey {
+				key = m
+			}
+		}
+		if key.key.Keysym != 'R' || key.key.Mods != mods || key.key.Flags&ipc.KeyNotify != 0 {
+			t.Fatalf("retained key lost its original modifiers: %+v", key)
+		}
+	}
+}
+
 func TestDelayedFocusFinalize(t *testing.T) {
 	for _, action := range []string{"focusout", "disconnect", "backspace", "shortcut"} {
 		t.Run(action, func(t *testing.T) {

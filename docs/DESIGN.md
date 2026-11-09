@@ -195,6 +195,13 @@ are sent once per connection; results refer to them by ID.
   key in between as a 中/英 tap. Keys the client passes to the app while Shift
   is held (Cmd+Shift+4) are sent as notifications so a shortcut never
   switches modes.
+- **Pending mode changes:** after a notified Shift/Control release, the
+  client stops predicting from the previous mode until the engine replies.
+  The next key uses the existing bounded unknown-state wait. If the reply
+  is late, printable ASCII keys (including Shift/Caps Lock) use the same
+  marked-text ownership as delayed focus: the engine composes them or the
+  client inserts declined characters exactly once. Secure fields and
+  shortcuts retain their pass-through rules.
 
 **How results are applied, per platform:**
 - **macOS:** `handleEvent:` returns at once. Results arrive on a reader

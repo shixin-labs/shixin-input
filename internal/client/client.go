@@ -105,7 +105,7 @@ type Client struct {
 	secure                bool
 	marked                []byte // last text actually sent to Applier.Preedit
 	clearSeq              uint32 // results before this fence belong to a finished composition
-	focusWait             uint32 // sequenced focus acknowledgement still awaited
+	focusWait             uint32 // focus or modifier-mode acknowledgement still awaited
 	ownedFirst, ownedLast uint32 // printable keys retained during delayed focus
 	contextFence          uint32 // target-context Clear reply is a fence, never a usable policy
 	dropZero              bool   // ignore old FocusIn results until the clear fence arrives
@@ -290,7 +290,15 @@ func (c *Client) HandleKey(keysym, mods uint32) bool {
 			// 3.5): it needs the ordering barrier, like PASS.
 			c.barrier()
 		}
-		c.sendKey(keysym, mods, ipc.KeyNotify, false)
+		if c.sendKey(keysym, mods, ipc.KeyNotify, false) && release &&
+			(keysym == policy.KeyShiftL || keysym == policy.KeyShiftR || keysym == policy.KeyControlL || keysym == policy.KeyControlR) {
+			// A modifier release may toggle ASCII mode. Until its reply,
+			// neither the old English nor the old Chinese policy is safe.
+			// Reuse bounded focus handling: retain following printable keys
+			// if the reply is late, then compose or repair them exactly once.
+			c.spec = nil
+			c.focusWait = c.seq
+		}
 		return c.pass(keysym, mods)
 
 	case policy.Eat:
@@ -367,11 +375,12 @@ func (c *Client) HandleKey(keysym, mods uint32) bool {
 	return c.pass(keysym, mods)
 }
 
-// retainFocusKey owns a printable key independently of the unknown mode.
+// retainFocusKey owns a printable key independently of the unknown mode
+// while a focus change or modifier release is awaiting acknowledgement.
 // The engine either handles it or the existing printable repair commits it.
 // No non-printable key is speculatively eaten.
 func (c *Client) retainFocusKey(keysym, mods uint32) bool {
-	if keysym < 0x20 || keysym >= 0x7f || mods & ^uint32(policy.ShiftMask) != 0 {
+	if keysym < 0x20 || keysym >= 0x7f || mods & ^uint32(policy.ShiftMask|policy.LockMask) != 0 {
 		return false
 	}
 	if len(c.marked) == cap(c.marked) || c.ownedFirst != 0 && c.seq-c.ownedFirst >= uint32(len(c.keys)-2) {
