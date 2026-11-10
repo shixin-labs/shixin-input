@@ -101,6 +101,7 @@ type Client struct {
 	app                   string
 	cur                   *policy.Policy // policy of the last applied state
 	spec                  *policy.Policy // assumed policy while results are pending; nil: unknown
+	ascii                 bool           // mode of each applied result, before coalescing UI status
 	composing             bool
 	secure                bool
 	marked                []byte // last text actually sent to Applier.Preedit
@@ -853,6 +854,12 @@ func (c *Client) applyResult(r *ipc.Result) {
 			}
 		}
 	}
+	ascii := r.Flags&ipc.ResultASCII != 0
+	if ascii && !c.ascii {
+		c.sp.clear()
+		c.sp.freshBoundary = true
+	}
+	c.ascii = ascii
 	c.sp.on = !c.secure && r.Flags&ipc.ResultAutoSpace != 0
 	if !c.secure && len(r.Commit) > 0 {
 		c.commit(r.Commit)

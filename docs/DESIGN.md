@@ -1747,8 +1747,12 @@ So the state lives in the client core (`internal/client`, `spacer`).
   first character form a boundary, the client inserts `" " + text` in one
   call, which makes one undo step in the app. The commit's last character
   becomes the new left class. This covers Chinese after English (`iPhone` →
-  `很好`), mixed-English candidates after Chinese, and Shift's
-  commit-the-code (`中文` + `hello` + Shift → `中文 hello`).
+  `很好`) and mixed-English candidates after Chinese. Switching from
+  Chinese to English starts a new spacing boundary before applying any
+  commit in that reply: Shift commit-the-code gives `中文hello`, and the
+  first English key after an idle switch adds no automatic space. Normal
+  spacing resumes from that new input. Each reply updates this state even
+  when multiple mode changes are drained together.
 - **A passed key:** an English letter typed in English mode is PASS; the app
   inserts it itself. If the left class is `CJK` and the key is a letter or
   a digit, the client takes that one key and inserts `" " + ch`. Every

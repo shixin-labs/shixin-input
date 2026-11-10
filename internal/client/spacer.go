@@ -70,9 +70,9 @@ type spacer struct {
 	// muted: the user deleted a space the spacer inserted, so the next
 	// character gets none.
 	muted bool
-	// A newly focused field may answer TextBefore with stale text. Start
-	// from actual input in this field before allowing reader-based spacing.
-	afterFocus bool
+	// Focus and Chinese-to-English switches start a new spacing boundary.
+	// Wait for actual input before allowing reader-based spacing.
+	freshBoundary bool
 	// before is the class left of the caret before the last insertion,
 	// to recognize an app answering from before it.
 	before class
@@ -125,7 +125,7 @@ func (s *spacer) left() class {
 // focus starts over in a new text field; app is its app.
 func (s *spacer) focus(app, prev string) {
 	s.clear()
-	s.afterFocus = true
+	s.freshBoundary = true
 	s.reset.Store(false)
 	if app != prev {
 		s.unreadable, s.strikes = false, 0
@@ -185,7 +185,7 @@ func (s *spacer) key(keysym, mods uint32) []byte {
 		s.buf = utf8.AppendRune(s.buf, rune(keysym))
 		return s.buf
 	}
-	s.afterFocus = false
+	s.freshBoundary = false
 	s.muted = false
 	s.before = s.left()
 	s.push(cl, false)
@@ -208,7 +208,7 @@ func (s *spacer) commit(text []byte) []byte {
 	if first := classOf(r); s.on && (first == clCJK || first == clLatin || first == clDigit) {
 		space = s.space(first)
 	}
-	s.afterFocus = false
+	s.freshBoundary = false
 	s.before = s.left()
 	if space {
 		s.buf = append(append(s.buf[:0], ' '), text...)
@@ -222,10 +222,10 @@ func (s *spacer) commit(text []byte) []byte {
 
 // space reports whether a space goes between the text left of the caret
 // and a character of class next. It asks the app when the history is
-// unknown (except before the first input after focus), and before every
+// unknown (except at a fresh focus/mode boundary), and before every
 // space where the app can answer.
 func (s *spacer) space(next class) bool {
-	if s.muted || s.afterFocus {
+	if s.muted || s.freshBoundary {
 		return false
 	}
 	left := s.left()
