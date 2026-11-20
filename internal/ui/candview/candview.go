@@ -164,7 +164,11 @@ func (st *State) measure(c *ui.Context, item Item, size float32, font string, ro
 	if font == "" {
 		font = c.Theme().Font
 	}
-	key := measurement{item, font, c.Locale(), size, row}
+	return st.measureText(item, size, font, c.Locale(), row)
+}
+
+func (st *State) measureText(item Item, size float32, font, locale string, row bool) extent {
+	key := measurement{item, font, locale, size, row}
 	if e, ok := st.measured[key]; ok {
 		return e
 	}
@@ -209,14 +213,18 @@ type Style struct {
 // Labels are the default select-key labels.
 var Labels = [10]string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "0"}
 
-// naturalSize uses retained font-aware measurement with Draw's sizes, gaps
+// naturalSizeWith uses retained font-aware measurement with Draw's sizes, gaps
 // and padding, excluding the shadow.
-func naturalSize(c *ui.Context, st *State, style *Style) (width, height float32) {
+func naturalSizeWith(st *State, style *Style, fallbackFont, locale string) (width, height float32) {
+	font := style.FontFamily
+	if font == "" {
+		font = fallbackFont
+	}
 	size := max(style.FontSize, 10)
 	small, pad := size*0.76, size*0.35
 	for i := range st.Items {
 		it := &st.Items[i]
-		e := st.measure(c, *it, size, style.FontFamily, true)
+		e := st.measureText(*it, size, font, locale, true)
 		w, h := e.w, e.h
 		w, h = w+2*pad, h+2*pad*0.45
 		if style.Vertical {
@@ -232,15 +240,21 @@ func naturalSize(c *ui.Context, st *State, style *Style) (width, height float32)
 		}
 	}
 	if st.Preedit != "" {
-		e := st.measure(c, Item{Text: st.Preedit}, small, style.FontFamily, false)
+		e := st.measureText(Item{Text: st.Preedit}, small, font, locale, false)
 		width, height = max(width, e.w+2*pad), height+e.h+pad*0.6
 	}
 	return width + 2*(pad+2) + 2, height + 2*(pad+1) + 2
 }
 
-// Measure returns the visible card size, bounded by the available viewport.
-func Measure(c *ui.Context, st *State, style *Style) (width, height float32) {
-	width, height = naturalSize(c, st, style)
+func naturalSize(c *ui.Context, st *State, style *Style) (width, height float32) {
+	return naturalSizeWith(st, style, c.Theme().Font, c.Locale())
+}
+
+// MeasureWith returns the visible card size, bounded by the available viewport,
+// without needing a UI frame context. fallbackFont is used when
+// style.FontFamily is empty. Measurements populate the same cache Draw reads.
+func MeasureWith(st *State, style *Style, fallbackFont, locale string) (width, height float32) {
+	width, height = naturalSizeWith(st, style, fallbackFont, locale)
 	if style.MaxWidth > 0 {
 		width = min(width, style.MaxWidth)
 	}
@@ -248,6 +262,11 @@ func Measure(c *ui.Context, st *State, style *Style) (width, height float32) {
 		height = min(height, style.MaxHeight)
 	}
 	return
+}
+
+// Measure returns the visible card size, bounded by the available viewport.
+func Measure(c *ui.Context, st *State, style *Style) (width, height float32) {
+	return MeasureWith(st, style, c.Theme().Font, c.Locale())
 }
 
 // Draw builds the panel into c: a rounded card sized to its content, at

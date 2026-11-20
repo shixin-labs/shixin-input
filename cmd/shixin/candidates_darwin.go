@@ -37,17 +37,21 @@ var cand struct {
 	pending      candidateUpdate
 	look         look     // main thread
 	fonts        []string // immutable after startup
+	defaultFont  string   // c.Theme().Font from candView
+	locale       string   // c.Locale() from candView
 	screens      []candidateScreen
 	callback     uintptr
 	args         [3]uintptr // immutable arguments for dispatch_async_f
 	queued       bool
 	framePending bool
-	// The panel's size in the last frame, to place the window before it
-	// shows: until the next frame measures the new candidates.
+	// The panel's size in the last measurement (retained for diagnostics/tests).
 	lastW, lastH float64
 	updating     int // depth of updateCandidateWindow, which can nest
-	// canvasW and canvasH are the flyout's size (candidateCanvas).
-	canvasW, canvasH int
+	// wanted is the last bounds requested via SetBounds; bounds is the actual
+	// window bounds macOS applied (matching c.Size() in candView).
+	wanted, bounds candidateBounds
+	mask           candidateSurfaceMask
+	drawnGen       uint64
 	// The last position logged in debug mode.
 	loggedX, loggedY int
 }
@@ -77,7 +81,6 @@ func newCandidateWindow(tray *mygo.Tray, s *settings.Settings) {
 	cand.screens = make([]candidateScreen, 0, 8)
 	cand.pending.init()
 	initScreenRect()
-	cand.canvasW, cand.canvasH = candWindowW, candWindowH
 	cand.flyout = mygo.NewFlyout(mygo.FlyoutOptions{
 		Tray:    tray,
 		Hidden:  true,
@@ -86,6 +89,11 @@ func newCandidateWindow(tray *mygo.Tray, s *settings.Settings) {
 		Shadow:  false,
 		Content: ui.View(candView),
 	})
+	if actual := cand.flyout.Bounds(); actual.Width > 0 && actual.Height > 0 {
+		cand.bounds = candidateBounds{X: actual.X, Y: actual.Y, W: actual.Width, H: actual.Height}
+	} else {
+		cand.bounds = candidateBounds{W: candWindowW, H: candWindowH}
+	}
 	cand.callback = purego.NewCallback(func(uintptr) uintptr {
 		updateCandidateWindow()
 		return 0
@@ -118,8 +126,22 @@ func setLook(s *settings.Settings) {
 	})
 }
 
+func candStyle(dark bool) candview.Style {
+	l := &cand.look
+	style := candview.Style{Skin: l.skin, Dark: dark, FontFamily: l.fontFamily, FontSize: l.fontSize, Vertical: l.vertical}
+	refreshCandidateScreens()
+	work := candidateRect{W: candWindowW, H: candWindowH}
+	if len(cand.screens) > 0 {
+		work = cand.screens[candidateScreenAt(cand.caret.caret, cand.screens)].work
+	}
+	style.MaxWidth, style.MaxHeight = candidateCardBounds(work, candWindowW, candWindowH, shadowPad)
+	return style
+}
+
 func candView(c *ui.Context) {
 	cand.framePending = false
+	cand.defaultFont = c.Theme().Font
+	cand.locale = c.Locale()
 	c.Root().Background(ui.Transparent).Padding(shadowPad) // room for the shadow
 	cand.pending.apply(&cand.state)
 	if len(cand.state.Items) == 0 {
@@ -128,23 +150,39 @@ func candView(c *ui.Context) {
 		}
 		return
 	}
-	l := &cand.look
-	style := candview.Style{Skin: l.skin, Dark: l.dark(c), FontFamily: l.fontFamily, FontSize: l.fontSize, Vertical: l.vertical}
-	refreshCandidateScreens()
-	work := candidateRect{W: candWindowW, H: candWindowH}
-	if len(cand.screens) > 0 {
-		work = cand.screens[candidateScreenAt(cand.caret.caret, cand.screens)].work
-	}
-	style.MaxWidth, style.MaxHeight = candidateCardBounds(work, candWindowW, candWindowH, shadowPad)
+	style := candStyle(cand.look.dark(c))
 	w, h := candview.Measure(c, &cand.state, &style)
 	cand.lastW, cand.lastH = float64(w), float64(h)
-	if debug {
-		logf("debug: candidates frame: %d items, %gx%g, shown %v, %s", len(cand.state.Items), w, h, cand.shown, windowState(cand.flyout))
-	}
+	vw, vh := c.Size()
+	// Never call SetBounds from inside a UI frame: MyGo's runFrame already
+	// captured the old viewport size, so resizing mid-frame paints an old-sized
+	// drawable into a new-sized CAMetalLayer (stretching it for a frame). If
+	// look, theme, locale or display geometry changed bounds since
+	// updateCandidateWindow, queue an update to apply the bounds after this frame.
+	sizeMismatch := false
 	if cand.shown {
-		positionCandidates(float64(w), float64(h))
+		if b, _, ok := candidateWindowBounds(cand.caret.caret, cand.screens, float64(w), float64(h), candWindowW, candWindowH, shadowPad); ok && b != cand.wanted {
+			sizeMismatch = b.W != cand.wanted.W || b.H != cand.wanted.H
+			queueCandidateUpdate()
+		}
+	}
+	if !sizeMismatch && cand.mask.revealForFrame(cand.shown, true, vw, vh) {
+		maskCandidateSurface(cand.flyout, false)
+		if debug {
+			logf("debug: candidates unmasked at %gx%g", vw, vh)
+		}
+	}
+	if debug {
+		logf("debug: candidates frame: %d items, %gx%g, view %gx%g, shown %v, masked %v, %s",
+			len(cand.state.Items), w, h, vw, vh, cand.shown, cand.mask.masked, windowState(cand.flyout))
+	}
+	if cand.mask.masked {
+		// Leave an unready/mismatched frame transparent (important before the
+		// first GPU frame creates CAMetalLayer and under software rendering).
+		return
 	}
 	candview.Draw(c, &cand.state, &style, selectCandidate)
+	cand.drawnGen++
 }
 
 func selectCandidate(i int) {
@@ -153,28 +191,26 @@ func selectCandidate(i int) {
 }
 
 var (
-	screenRect       func(uintptr, objc.SEL) candidateRect
-	selScreens       = objc.RegisterName("screens")
-	selCount         = objc.RegisterName("count")
-	selObjectAtIndex = objc.RegisterName("objectAtIndex:")
-	selFrame         = objc.RegisterName("frame")
-	selVisibleFrame  = objc.RegisterName("visibleFrame")
+	screenRect           func(uintptr, objc.SEL) candidateRect
+	selScreens           = objc.RegisterName("screens")
+	selCount             = objc.RegisterName("count")
+	selObjectAtIndex     = objc.RegisterName("objectAtIndex:")
+	selFrame             = objc.RegisterName("frame")
+	selVisibleFrame      = objc.RegisterName("visibleFrame")
+	selContentView       = objc.RegisterName("contentView")
+	selSubviews          = objc.RegisterName("subviews")
+	selLayer             = objc.RegisterName("layer")
+	selSublayers         = objc.RegisterName("sublayers")
+	selIsKindOfClass     = objc.RegisterName("isKindOfClass:")
+	selSetHidden         = objc.RegisterName("setHidden:")
+	selSetContents       = objc.RegisterName("setContents:")
+	selBegin             = objc.RegisterName("begin")
+	selCommit            = objc.RegisterName("commit")
+	selSetDisableActions = objc.RegisterName("setDisableActions:")
 )
 
-// candView has already refreshed the work areas for this frame.
-func positionCandidates(width, height float64) {
-	positionOnCandidateScreens(cand.flyout, nsRect(cand.caret.caret), width, height)
-}
-
-// positionCaretWindow shares the same screen selection and edge clamping for
-// candidates and the transient mode bubble. Main thread only.
-func positionCaretWindow(window *mygo.Window, rect nsRect, width, height float64) {
-	refreshCandidateScreens()
-	positionOnCandidateScreens(window, rect, width, height)
-}
-
-// Refresh on each view update so Dock and display arrangement changes are
-// honored. This runs on the UI frame, outside the app's key callback.
+// Refresh on each update so Dock and display arrangement changes are honored.
+// This runs on the UI callback/frame, outside the app's key callback.
 func refreshCandidateScreens() {
 	list := send(uintptr(objc.GetClass("NSScreen")), selScreens)
 	n := send(list, selCount)
@@ -185,12 +221,8 @@ func refreshCandidateScreens() {
 	}
 }
 
-func positionOnCandidateScreens(window *mygo.Window, rect nsRect, width, height float64) {
-	positionBesideBadge(window, rect, width, height, false)
-}
-
-// positionBesideBadge places window at the caret like the candidates, or
-// beside macOS's input source badge (modeBesideBadge).
+// positionBesideBadge places the transient mode bubble at the caret, or beside
+// macOS's input source badge (modeBesideBadge). Main thread only.
 func positionBesideBadge(window *mygo.Window, rect nsRect, width, height float64, beside bool) {
 	if len(cand.screens) == 0 {
 		return
@@ -201,19 +233,74 @@ func positionBesideBadge(window *mygo.Window, rect nsRect, width, height float64
 		caret = modeBesideBadge(caret, s.work, width)
 	}
 	x, y := candidatePosition(caret, s.work, width, height, cand.screens[0].frame.H, shadowPad)
-	if window == cand.flyout {
-		// SetBounds moves and sizes the native window at once. MyGo's
-		// flyout sizing (SetContentSize) re-anchors to the tray icon that
-		// main_darwin.go destroyed at startup.
-		cand.canvasW, cand.canvasH = candidateCanvas(x, y, *s, cand.screens[0].frame.H, candWindowW, candWindowH)
-		window.SetBounds(mygo.Rectangle{X: x, Y: y, Width: cand.canvasW, Height: cand.canvasH})
-	} else {
-		window.SetPosition(x, y)
+	window.SetPosition(x, y)
+}
+
+// candidateLayers returns the backing layer of MyGo's surface view and its
+// CAMetalLayer sublayer (0 when software rendering or before the first frame).
+func candidateLayers(win *mygo.Window) (surfaceLayer, metalLayer uintptr) {
+	w := windowHandle(win)
+	if w == 0 {
+		return 0, 0
 	}
-	if debug && window == cand.flyout && (x != cand.loggedX || y != cand.loggedY) {
-		cand.loggedX, cand.loggedY = x, y
-		logf("debug: candidates at %d,%d (%gx%g) for caret {%g %g %g %g} on screen %d of %d, work %+v",
-			x, y, width, height, rect.X, rect.Y, rect.W, rect.H, candidateScreenAt(candidateRect(rect), cand.screens), len(cand.screens), s.work)
+	cv := send(w, selContentView)
+	if cv == 0 {
+		return 0, 0
+	}
+	metalClass := uintptr(objc.GetClass("CAMetalLayer"))
+	subs := send(cv, selSubviews)
+	n := send(subs, selCount)
+	for i := uintptr(0); i < n; i++ {
+		v := send(subs, selObjectAtIndex, i)
+		l := send(v, selLayer)
+		if l == 0 {
+			continue
+		}
+		surfaceLayer = l
+		if metalClass == 0 {
+			continue
+		}
+		ls := send(l, selSublayers)
+		m := send(ls, selCount)
+		for j := uintptr(0); j < m; j++ {
+			sl := send(ls, selObjectAtIndex, j)
+			if byte(send(sl, selIsKindOfClass, metalClass)) != 0 {
+				return surfaceLayer, sl
+			}
+		}
+	}
+	return surfaceLayer, 0
+}
+
+// maskCandidateSurface hides or reveals the candidate window's rendered layer
+// inside a non-animated Core Animation transaction. Hiding CAMetalLayer (rather
+// than the surface view or NSWindow) keeps AppKit's display cycle, CADisplayLink
+// and occlusionState notifications intact while preventing stale or stretched
+// drawables from appearing before the target-size frame commits atomically with
+// the reveal. Tests may replace this hook.
+var maskCandidateSurface = func(win *mygo.Window, masked bool) {
+	sl, ml := candidateLayers(win)
+	tx := uintptr(objc.GetClass("CATransaction"))
+	if tx == 0 {
+		return
+	}
+	if ml != 0 {
+		var v uintptr
+		if masked {
+			v = 1
+		}
+		send(tx, selBegin)
+		send(tx, selSetDisableActions, 1)
+		send(ml, selSetHidden, v)
+		send(tx, selCommit)
+		return
+	}
+	// Software renderer fallback (PresentPixels writes surfaceLayer.contents).
+	if masked && sl != 0 {
+		send(tx, selBegin)
+		send(tx, selSetDisableActions, 1)
+		send(sl, selSetContents, 0)
+		send(tx, selCommit)
 	}
 }
 
@@ -241,9 +328,24 @@ func queueCandidateUpdate() {
 	}
 }
 
+func hideCandidateWindow() {
+	cand.caret.reset()
+	cand.framePending = false
+	cand.pending.visible, cand.pending.dirty = false, false
+	cand.state.Clear()
+	if cand.shown {
+		cand.shown = false // before the native call, which may nest an update
+		if cand.mask.beginHide() {
+			maskCandidateSurface(cand.flyout, true)
+		}
+		cand.flyout.Hide()
+	}
+}
+
 // updateCandidateWindow is a separate main-queue callback, after handleEvent
-// has returned. Frames consume only the latest display. The caret query is
-// still once per composition, and now also outside the app's key callback.
+// has returned. Frames consume only the latest display. Measuring, sizing and
+// positioning all happen here before ShowInactive or Invalidate so candView
+// never resizes the window mid-frame and stale/stretched drawables never show.
 func updateCandidateWindow() {
 	cand.queued = false
 	// The app's calls below (the caret query) can run the main run loop,
@@ -257,19 +359,12 @@ func updateCandidateWindow() {
 		if debug && (cand.shown || cand.pending.visible) {
 			logf("debug: candidates hidden: visible %v, client %v, secure %v", cand.pending.visible, imkClient != 0, secure)
 		}
-		cand.caret.reset()
-		cand.framePending = false
-		cand.pending.visible, cand.pending.dirty = false, false
-		cand.state.Clear()
-		if cand.shown {
-			cand.shown = false // before the native call, which may nest an update
-			cand.flyout.Hide()
-		}
+		hideCandidateWindow()
 		return
 	}
 	if !cand.caret.valid {
 		readCaret()
-		if !cand.pending.visible || imkClient == 0 {
+		if !cand.pending.visible || imkClient == 0 || focusedSecureInput() {
 			// An update nested in the caret query hid the candidates: don't
 			// show an emptied window.
 			if debug {
@@ -278,22 +373,60 @@ func updateCandidateWindow() {
 			return
 		}
 	}
-	if !cand.framePending {
-		cand.framePending = true
-		cand.flyout.Invalidate()
+	cand.pending.apply(&cand.state)
+	if len(cand.state.Items) == 0 {
+		hideCandidateWindow()
+		return
+	}
+	style := candStyle(false)
+	w, h := candview.MeasureWith(&cand.state, &style, cand.defaultFont, cand.locale)
+	cand.lastW, cand.lastH = float64(w), float64(h)
+	b, si, ok := candidateWindowBounds(cand.caret.caret, cand.screens, float64(w), float64(h), candWindowW, candWindowH, shadowPad)
+	beforeGen := cand.drawnGen
+	target := cand.bounds
+	if ok {
+		target = b
+	}
+	if cand.mask.prepareShowOrResize(cand.shown, cand.bounds, target) {
+		maskCandidateSurface(cand.flyout, true)
+	}
+	if ok && (!cand.shown || b != cand.wanted) {
+		// SetBounds moves and sizes the native window at once. MyGo's
+		// flyout sizing (SetContentSize) re-anchors to the tray icon that
+		// main_darwin.go destroyed at startup.
+		cand.wanted = b
+		cand.bounds = b
+		cand.flyout.SetBounds(mygo.Rectangle{X: b.X, Y: b.Y, Width: b.W, Height: b.H})
+		if actual := cand.flyout.Bounds(); actual.Width > 0 && actual.Height > 0 {
+			cand.bounds = candidateBounds{X: actual.X, Y: actual.Y, W: actual.Width, H: actual.Height}
+		}
+		if debug && (b.X != cand.loggedX || b.Y != cand.loggedY) {
+			cand.loggedX, cand.loggedY = b.X, b.Y
+			s := &cand.screens[si]
+			logf("debug: candidates at %d,%d (%gx%g, canvas %dx%d) for caret {%g %g %g %g} on screen %d of %d, work %+v",
+				b.X, b.Y, w, h, cand.bounds.W, cand.bounds.H, cand.caret.caret.X, cand.caret.caret.Y, cand.caret.caret.W, cand.caret.caret.H, si, len(cand.screens), s.work)
+		}
+		if !cand.pending.visible || imkClient == 0 || focusedSecureInput() {
+			return
+		}
+		cand.mask.syncActualSize(cand.bounds.W, cand.bounds.H)
+	} else {
+		cand.mask.syncActualSize(cand.bounds.W, cand.bounds.H)
 	}
 	if !cand.shown {
-		// Move the hidden window to this caret first: it still sits where
-		// the last composition was, often in another app, and the frame
-		// that positions it runs after it shows. The frame then fits the
-		// new candidates' size.
-		positionCaretWindow(cand.flyout, nsRect(cand.caret.caret), cand.lastW, cand.lastH)
 		cand.shown = true // before the native call, which may nest an update
 		cand.flyout.ShowInactive()
 		if debug {
 			x, y := cand.flyout.Position()
-			logf("debug: candidates shown at %d,%d, visible %v, %s", x, y, cand.flyout.IsVisible(), windowState(cand.flyout))
+			logf("debug: candidates shown at %d,%d, visible %v, masked %v, %s", x, y, cand.flyout.IsVisible(), cand.mask.masked, windowState(cand.flyout))
 		}
+		if !cand.pending.visible || imkClient == 0 || focusedSecureInput() {
+			return
+		}
+	}
+	if (cand.drawnGen == beforeGen || cand.mask.masked) && !cand.framePending {
+		cand.framePending = true
+		cand.flyout.Invalidate()
 	}
 }
 

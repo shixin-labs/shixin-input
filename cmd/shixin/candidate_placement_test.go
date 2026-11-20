@@ -247,3 +247,63 @@ func TestCandidateWindowStaysOnCaretDisplay(t *testing.T) {
 		t.Fatal("the model no longer shows the reported failure of the fixed-size canvas")
 	}
 }
+
+func TestCandidateSurfaceMaskLifecycle(t *testing.T) {
+	var m candidateSurfaceMask
+	small := candidateBounds{X: 897, Y: 1056, W: 360, H: 90}
+	big := candidateBounds{X: 100, Y: 100, W: 1400, H: 560}
+	moved := candidateBounds{X: 220, Y: 140, W: 1400, H: 560}
+
+	// Hide masks the layer so stale pixels cannot flash on the next show.
+	if !m.beginHide() || !m.masked {
+		t.Fatal("beginHide did not mask")
+	}
+
+	// First letter after Hide with canvas growth (bottom-right -> middle):
+	// must mask and refuse to reveal on an old-size or empty frame.
+	if !m.prepareShowOrResize(false, small, big) {
+		t.Fatal("showing from hidden must mask")
+	}
+	if m.revealForFrame(false, true, 1400, 560) {
+		t.Fatal("revealed while hidden")
+	}
+	if m.revealForFrame(true, false, 1400, 560) {
+		t.Fatal("revealed on an empty frame")
+	}
+	if m.revealForFrame(true, true, 360, 90) {
+		t.Fatal("revealed on an old-size frame (would stretch)")
+	}
+	if !m.revealForFrame(true, true, 1400, 560) || m.masked {
+		t.Fatal("did not reveal on target-size frame")
+	}
+	if m.revealForFrame(true, true, 1400, 560) {
+		t.Fatal("revealed twice")
+	}
+
+	// Moving an already-visible window at the same canvas size must not blink.
+	if m.prepareShowOrResize(true, big, moved) || m.masked {
+		t.Fatal("moving without resizing masked the visible window")
+	}
+
+	// Resizing a visible window (e.g. caret retry or panel growth near an edge)
+	// must mask until a frame builds at the actual size macOS gave.
+	if !m.prepareShowOrResize(true, small, big) || !m.masked {
+		t.Fatal("resizing a visible window did not mask")
+	}
+	m.syncActualSize(1024, 560)
+	if m.revealForFrame(true, true, 1400, 560) {
+		t.Fatal("revealed at requested size instead of OS-constrained actual size")
+	}
+	if !m.revealForFrame(true, true, 1024, 560) || m.masked {
+		t.Fatal("did not reveal at OS-constrained actual size")
+	}
+
+	// Same-size Hide -> Show still masks until the new composition paints.
+	m.beginHide()
+	if !m.prepareShowOrResize(false, big, moved) || !m.masked {
+		t.Fatal("same-size re-show did not mask stale previous composition")
+	}
+	if !m.revealForFrame(true, true, 1400, 560) || m.masked {
+		t.Fatal("same-size re-show did not reveal on fresh frame")
+	}
+}

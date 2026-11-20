@@ -164,3 +164,32 @@ func TestMeasurementCache(t *testing.T) {
 		}
 	}
 }
+
+func TestMeasureWithSharesCache(t *testing.T) {
+	for _, family := range []string{"", "Menlo"} {
+		st := sample()
+		style := &Style{Skin: skin.Get("shixin"), FontFamily: family, FontSize: 17}
+		var themeFont, locale string
+		var frameW, frameH float32
+		tt := ui.NewTester(func(c *ui.Context) {
+			themeFont, locale = c.Theme().Font, c.Locale()
+			frameW, frameH = Measure(c, st, style)
+			Draw(c, st, style, nil)
+		}, 1400, 1024)
+		// Prime themeFont/locale, then measure outside the frame on a fresh state.
+		st2 := sample()
+		w, h := MeasureWith(st2, style, themeFont, locale)
+		if w != frameW || h != frameH {
+			t.Fatalf("family %q: MeasureWith %v×%v != Measure %v×%v", family, w, h, frameW, frameH)
+		}
+		if n := testing.AllocsPerRun(20, func() { MeasureWith(st2, style, themeFont, locale) }); n != 0 {
+			t.Fatalf("family %q: cached MeasureWith allocates %v times", family, n)
+		}
+		entriesBefore := len(st2.measured)
+		st = st2
+		tt.Frame()
+		if len(st2.measured) != entriesBefore {
+			t.Fatalf("family %q: Draw missed MeasureWith cache (%d -> %d entries)", family, entriesBefore, len(st2.measured))
+		}
+	}
+}

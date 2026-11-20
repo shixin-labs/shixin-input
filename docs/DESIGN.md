@@ -209,10 +209,18 @@ are sent once per connection; results refer to them by ID.
   (`setMarkedText` / `insertText`), as Squirrel does for mouse selection.
   These are synchronous round trips into the app (spike 2), so:
   - Update the candidate window **before** calling the app.
-  - Query the caret rect **once per composition**, and move the hidden
-    candidate window to it (at the last measured size) before showing it.
-    Showing first left it for a frame where the last composition was,
-    often in another app. An unusable answer (NaN or infinite values, the
+  - Query the caret rect **once per composition**, measure the new
+    candidates, and move and size the candidate window **before** showing
+    or rendering it (never calling `SetBounds` from inside a UI frame:
+    MyGo's frame has already captured the old viewport size, so resizing
+    mid-frame renders an old-sized drawable into a new-sized `CAMetalLayer`).
+    On hide, before showing from hidden, and before resizing an already-shown
+    window, the front masks `CAMetalLayer` (`setHidden:YES` inside a
+    non-animated `CATransaction`, or clears `contents` in software fallback)
+    and unmasks it only inside the UI frame built at the window's actual
+    target size, so stale or stretched drawables never flash on screen while
+    AppKit/MyGo waits for `windowDidChangeOcclusionState:` or the next
+    display refresh. An unusable caret answer (NaN or infinite values, the
     zero rectangle, or a rect off every screen) keeps the last usable caret,
     or a point on the main screen before there is one, and the caret is
     queried again a frame (16 ms) later, at most six times per composition:

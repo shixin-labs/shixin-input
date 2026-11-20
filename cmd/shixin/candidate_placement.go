@@ -111,6 +111,80 @@ func candidateCanvas(x, y int, s candidateScreen, primaryHeight float64, maxW, m
 	return max(w, 1), max(h, 1)
 }
 
+// candidateBounds is a window's rectangle in MyGo's top-left global points.
+type candidateBounds struct{ X, Y, W, H int }
+
+// candidateWindowBounds computes the candidate flyout's bounds and owning
+// screen index for a panel of width×height at caret.
+func candidateWindowBounds(caret candidateRect, screens []candidateScreen, width, height float64, maxW, maxH int, margin float64) (candidateBounds, int, bool) {
+	if len(screens) == 0 {
+		return candidateBounds{}, 0, false
+	}
+	si := candidateScreenAt(caret, screens)
+	s := screens[si]
+	x, y := candidatePosition(caret, s.work, width, height, screens[0].frame.H, margin)
+	w, h := candidateCanvas(x, y, s, screens[0].frame.H, maxW, maxH)
+	return candidateBounds{X: x, Y: y, W: w, H: h}, si, true
+}
+
+// candidateSurfaceMask keeps stale or wrong-size candidate frames off screen
+// while the flyout is being shown or resized. Hiding orders the window out
+// without clearing its Metal layer (even after idle trimming, Core Animation
+// keeps showing the last drawable), and MyGo holds frames until macOS reports
+// the window non-occluded; resizing stretches that stale drawable across the
+// new bounds. Resizing an already-visible window after a transaction-synced
+// frame likewise defers redraw to the next display refresh. Masking the layer
+// before show/resize and unmasking only in the frame drawn at the target
+// bounds keeps both transitions atomic and flash-free.
+type candidateSurfaceMask struct {
+	masked bool
+	w, h   int
+}
+
+// beginHide keeps the surface masked while hidden so stale pixels cannot show
+// before the next composition's frame paints.
+func (m *candidateSurfaceMask) beginHide() bool {
+	m.masked = true
+	m.w, m.h = 0, 0
+	return true
+}
+
+// prepareShowOrResize masks when showing from hidden or changing the window's
+// canvas size, and records the target size that must paint before revealing.
+// Moving an already-visible window without resizing leaves it unmasked.
+func (m *candidateSurfaceMask) prepareShowOrResize(shown bool, cur, next candidateBounds) bool {
+	if !shown || next.W != cur.W || next.H != cur.H {
+		m.masked = true
+		m.w, m.h = next.W, next.H
+		return true
+	}
+	if m.masked {
+		m.w, m.h = next.W, next.H
+	}
+	return false
+}
+
+// syncActualSize updates the target size after SetBounds in case the OS
+// constrained the window frame.
+func (m *candidateSurfaceMask) syncActualSize(w, h int) {
+	if m.masked && w > 0 && h > 0 {
+		m.w, m.h = w, h
+	}
+}
+
+// revealForFrame reports whether this UI frame should unmask the surface: only
+// while shown with candidates and laid out at the window's target canvas size.
+func (m *candidateSurfaceMask) revealForFrame(shown, hasItems bool, viewW, viewH float32) bool {
+	if !m.masked || !shown || !hasItems {
+		return false
+	}
+	if m.w > 0 && m.h > 0 && (int(math.Round(float64(viewW))) != m.w || int(math.Round(float64(viewH))) != m.h) {
+		return false
+	}
+	m.masked = false
+	return true
+}
+
 // modeBesideBadge moves the caret so the mode bubble clears macOS's own
 // input source badge, which is centered under the caret after a switch:
 // to its right, or to its left at the work area's right edge.
