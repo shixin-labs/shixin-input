@@ -81,7 +81,7 @@ func delayedModeKeyCycle(t testing.TB) func() {
 	return func() {
 		c.cur, c.spec = ascii, ascii
 		c.marked = c.marked[:0]
-		c.focusWait, c.ownedFirst, c.ownedLast = 0, 0, 0
+		c.ownedFirst, c.ownedLast, c.ownedPrefix = 0, 0, 0
 		c.arrived.Store(c.seq)
 		c.HandleKey(policy.KeyShiftL, policy.ReleaseMask)
 		if !c.HandleKey('n', 0) {

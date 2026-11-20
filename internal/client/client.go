@@ -106,8 +106,8 @@ type Client struct {
 	secure                bool
 	marked                []byte // last text actually sent to Applier.Preedit
 	clearSeq              uint32 // results before this fence belong to a finished composition
-	focusWait             uint32 // focus or modifier-mode acknowledgement still awaited
-	ownedFirst, ownedLast uint32 // printable keys retained during delayed focus
+	ownedFirst, ownedLast uint32 // printable keys retained while state is unknown
+	ownedPrefix           int    // length of engine preedit in marked before ownedFirst
 	contextFence          uint32 // target-context Clear reply is a fence, never a usable policy
 	dropZero              bool   // ignore old FocusIn results until the clear fence arrives
 	shiftDown             bool
@@ -235,15 +235,18 @@ func (c *Client) HandleKey(keysym, mods uint32) bool {
 	// Classifying with the previous mode can pass the first spelling key to
 	// the app even though the engine has already switched to Chinese. Read
 	// pending before draining: the reader queues a result before it marks
-	// it arrived, so whatever counted as arrived here gets applied.
+	// it arrived, so whatever counted as arrived here gets applied. Re-check
+	// after draining too, since Drain itself can start a focus handshake
+	// (evConnected) or re-enter a local commit through a synchronous app call.
 	pending := c.pending()
 	c.Drain()
+	pending = pending || c.pending()
 	if mods&policy.ReleaseMask == 0 {
 		c.sp.tick()
 	}
 	p := c.cur
 	if c.ownedFirst != 0 {
-		if c.retainFocusKey(keysym, mods) {
+		if c.retainKey(keysym, mods) {
 			return true
 		}
 		c.CommitComposition()
@@ -252,25 +255,31 @@ func (c *Client) HandleKey(keysym, mods uint32) bool {
 	}
 	if pending {
 		if c.spec == nil {
-			// The last eaten key may have ended the composition: wait for
-			// the real state rather than guess.
-			c.wait(0)
-			c.Drain()
+			// The last eaten key, focus change, local commit or mode toggle
+			// may have changed the state: wait within the budget for the real
+			// state rather than guess. Always drain at least once in case a
+			// reply arrived during the initial Drain above.
+			for {
+				waited := c.wait(0)
+				c.Drain()
+				if !waited || !c.pending() || c.spec != nil {
+					break
+				}
+			}
 			if c.pending() {
-				c.stats.Timeouts++
-				if c.focusWait != 0 || c.ownedFirst != 0 {
-					if c.retainFocusKey(keysym, mods) {
+				if c.spec == nil {
+					c.stats.Timeouts++
+					if c.retainKey(keysym, mods) {
 						return true
 					}
-					if c.ownedFirst != 0 {
-						c.CommitComposition()
-					}
+					c.stats.Passed++
+					c.sp.clear() // results still to come land after this key
+					return false // degraded: pass through
 				}
-				c.stats.Passed++
-				c.sp.clear() // results still to come land after this key
-				return false // degraded: pass through
+				p = c.spec
+			} else {
+				p = c.cur
 			}
-			p = c.cur
 		} else {
 			p = c.spec
 		}
@@ -295,10 +304,9 @@ func (c *Client) HandleKey(keysym, mods uint32) bool {
 			(keysym == policy.KeyShiftL || keysym == policy.KeyShiftR || keysym == policy.KeyControlL || keysym == policy.KeyControlR) {
 			// A modifier release may toggle ASCII mode. Until its reply,
 			// neither the old English nor the old Chinese policy is safe.
-			// Reuse bounded focus handling: retain following printable keys
-			// if the reply is late, then compose or repair them exactly once.
+			// Treat the policy as unknown so following printable keys wait
+			// within the budget and stay owned if the reply is late.
 			c.spec = nil
-			c.focusWait = c.seq
 		}
 		return c.pass(keysym, mods)
 
@@ -376,11 +384,11 @@ func (c *Client) HandleKey(keysym, mods uint32) bool {
 	return c.pass(keysym, mods)
 }
 
-// retainFocusKey owns a printable key independently of the unknown mode
-// while a focus change or modifier release is awaiting acknowledgement.
-// The engine either handles it or the existing printable repair commits it.
-// No non-printable key is speculatively eaten.
-func (c *Client) retainFocusKey(keysym, mods uint32) bool {
+// retainKey owns a printable key independently of the unknown state while a
+// focus change, local commit, modifier release or composition-ending key is
+// awaiting acknowledgement. The engine either handles it or the existing
+// printable repair commits it. No non-printable key is speculatively eaten.
+func (c *Client) retainKey(keysym, mods uint32) bool {
 	if keysym < 0x20 || keysym >= 0x7f || mods & ^uint32(policy.ShiftMask|policy.LockMask) != 0 {
 		return false
 	}
@@ -392,6 +400,7 @@ func (c *Client) retainFocusKey(keysym, mods uint32) bool {
 	}
 	if c.ownedFirst == 0 {
 		c.ownedFirst = c.seq
+		c.ownedPrefix = len(c.marked)
 	}
 	c.ownedLast = c.seq
 	c.spec = nil
@@ -530,8 +539,7 @@ func (c *Client) sendSeq(m *outMsg, k sentKey) bool {
 // FocusIn tells the engine which app and kind of field has focus. The
 // local secure guard takes effect before the asynchronous reply. Main thread.
 func (c *Client) FocusIn(app string, secure bool) {
-	c.focusWait = 0
-	c.ownedFirst, c.ownedLast = 0, 0
+	c.ownedFirst, c.ownedLast, c.ownedPrefix = 0, 0, 0
 	if c.opt.PerAppContexts {
 		ctx := c.appContext(app)
 		if ctx != c.ctx {
@@ -580,7 +588,6 @@ func (c *Client) FocusIn(app string, secure bool) {
 	// to the app with a guessed policy. The composition is already empty.
 	if c.sendTracked(&outMsg{typ: ipc.TypeClear, key: ipc.Key{Ctx: c.ctx}}) {
 		c.spec = nil
-		c.focusWait = c.seq
 	}
 }
 
@@ -630,14 +637,13 @@ func (c *Client) FocusOut() {
 // late output for the old composition must not commit twice or restore it.
 func (c *Client) CommitComposition() {
 	text := c.marked[:0]
-	for _, b := range c.marked {
-		if b != ' ' || c.ownedFirst != 0 {
+	for i, b := range c.marked {
+		if b != ' ' || c.ownedFirst != 0 && i >= c.ownedPrefix {
 			text = append(text, b)
 		}
 	}
 	c.marked = c.marked[:0]
-	c.focusWait = 0
-	c.ownedFirst, c.ownedLast = 0, 0
+	c.ownedFirst, c.ownedLast, c.ownedPrefix = 0, 0, 0
 	c.composing = false
 	c.clearSeq, c.dropZero = c.seq+1, true
 	c.sendTracked(&outMsg{typ: ipc.TypeClear, key: ipc.Key{Ctx: c.ctx}})
@@ -773,11 +779,17 @@ func (c *Client) drainOnce() {
 				if last != nil {
 					c.showPreedit(&last.res)
 				}
-				c.commit(c.marked)
+				text := c.marked[:0]
+				for i, b := range c.marked {
+					if b != ' ' || i >= c.ownedPrefix {
+						text = append(text, b)
+					}
+				}
 				c.marked = c.marked[:0]
+				c.ownedFirst, c.ownedLast, c.ownedPrefix = 0, 0, 0
+				c.commit(text)
 			}
-			c.focusWait = 0
-			c.ownedFirst, c.ownedLast = 0, 0
+			c.ownedFirst, c.ownedLast, c.ownedPrefix = 0, 0, 0
 			c.connected, c.composing = false, false
 			c.sp.on = false
 			c.cur, c.spec = &policy.Passthrough, &policy.Passthrough
@@ -818,6 +830,7 @@ func (c *Client) drainOnce() {
 
 func (c *Client) showPreedit(r *ipc.Result) {
 	c.marked = append(c.marked[:0], r.Preedit...)
+	c.ownedPrefix = len(c.marked)
 	cursor := int(r.Cursor)
 	if c.ownedFirst != 0 {
 		for seq := c.ownedFirst; ; seq++ {
@@ -843,12 +856,9 @@ func (c *Client) sentKey(seq uint32) *sentKey {
 
 func (c *Client) applyResult(r *ipc.Result) {
 	if r.Seq != 0 {
-		if c.focusWait != 0 && int32(r.Seq-c.focusWait) >= 0 {
-			c.focusWait = 0
-		}
 		if c.ownedFirst != 0 && int32(r.Seq-c.ownedFirst) >= 0 {
 			if int32(r.Seq-c.ownedLast) >= 0 {
-				c.ownedFirst, c.ownedLast = 0, 0
+				c.ownedFirst, c.ownedLast, c.ownedPrefix = 0, 0, 0
 			} else {
 				c.ownedFirst = r.Seq + 1
 			}
@@ -862,8 +872,9 @@ func (c *Client) applyResult(r *ipc.Result) {
 	c.ascii = ascii
 	c.sp.on = !c.secure && r.Flags&ipc.ResultAutoSpace != 0
 	if !c.secure && len(r.Commit) > 0 {
-		c.commit(r.Commit)
 		c.marked = c.marked[:0]
+		c.ownedPrefix = 0
+		c.commit(r.Commit)
 	}
 	if r.Seq != 0 {
 		k := &c.keys[r.Seq%uint32(len(c.keys))]

@@ -266,23 +266,30 @@ are sent once per connection; results refer to them by ID.
     `handleEvent:`, as Squirrel does. On timeout the key stays eaten, is
     marked so the app doesn't type it, and the commit replaces the mark
     when it arrives.
-  - **Unknown state after focus:** `FocusIn` has no sequence number, so
-    the client follows it with a sequenced `Clear` and treats the policy
-    as unknown until that reply: the first key after an app switch waits
-    (within the budget) for the app's mode instead of passing through.
-    A key reads its pending state before draining queued results; the
-    reader queues a result before marking it arrived, so nothing counted
-    as arrived is classified against the old state.
-    If that budget expires, unmodified or Shift-only printable ASCII keys
-    remain owned by the client: it marks them locally and queues them after
-    the focus messages. This is explicit printable ownership, not a guessed
-    `EAT` policy. The engine either handles each key or the client commits
-    its literal character through the existing repair path. Further printable
-    keys join the bounded queue without waiting; partial replies preserve the
-    unacknowledged suffix. A non-printable key or shortcut finalizes the shown
-    text and fences late replies before passing through. Focus loss likewise
-    finalizes locally; disconnection preserves the outstanding marked text.
-    Secure fields bypass this path. No IPC extension or longer wait is needed.
+  - **Unknown state after focus, mode toggle, commit or local finish:**
+    `FocusIn` has no sequence number, so the client follows it with a
+    sequenced `Clear` and treats the policy as unknown (`spec == nil`) until
+    that reply; modifier releases, `CommitComposition`, candidate selection
+    and composition-ending keys likewise leave the policy unknown until the
+    engine answers. The next key reads its pending state before draining
+    queued results—and re-checks it afterwards in case `Drain` itself
+    started a focus handshake (`evConnected`) or re-entered a local
+    finish—then waits within the budget for the real state instead of
+    passing through. The reader queues a result before marking it arrived,
+    so nothing counted as arrived is classified against the old state.
+    If that budget expires while the connection is still active and the
+    state remains unknown, unmodified, Shift-only or Caps Lock printable
+    ASCII keys remain owned by the client: it marks them locally and queues
+    them after the pending messages. This is explicit printable ownership,
+    not a guessed `EAT` policy. The engine either handles each key or the
+    client commits its literal character through the existing repair path.
+    Further printable keys join the bounded queue without waiting; partial
+    replies preserve the unacknowledged suffix. A non-printable key or
+    shortcut finalizes the shown text (stripping syllable spaces only from
+    any pre-existing engine preedit) and fences late replies before passing
+    through. Focus loss likewise finalizes locally; disconnection preserves
+    the outstanding marked text. Secure fields and unavailable/disconnected
+    states bypass this path. No IPC extension or longer wait is needed.
 - **Windows:** results arrive on a DLL I/O thread (overlapped pipe), are
   posted to the app's TSF thread through a hidden message window, and are
   applied with `RequestEditSession(TF_ES_ASYNCDONTCARE | TF_ES_READWRITE)`.
