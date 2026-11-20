@@ -1,9 +1,11 @@
-# Installs real unsigned packages. Run ONLY in an elevated disposable Windows VM.
+﻿# Installs real Windows release packages (signed by default, or unsigned
+# preview with -UnsignedPreview). Run ONLY in an elevated disposable Windows VM.
 # GUI/UAC interaction and application typing remain separate manual checks.
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)][ValidateSet('amd64','arm64')][string]$Arch,
     [Parameter(Mandatory)][string]$Version,
+    [switch]$UnsignedPreview,
     [switch]$DisposableVM
 )
 $ErrorActionPreference='Stop'
@@ -19,9 +21,11 @@ $runKey='HKCU:/Software/Microsoft/Windows/CurrentVersion/Run'
 if ((Test-Path $install) -or (Test-Path $arp) -or (Test-Path "HKLM:/$class") -or (Test-Path "HKCU:/$class") -or
     ((Get-ItemProperty $runKey -Name Shixin -ErrorAction SilentlyContinue).Shixin)) { throw 'Existing Shixin state; refusing to change this machine' }
 $work=Join-Path $root ("build/install-test-$Arch-"+[Guid]::NewGuid().ToString('N'))
-$payload=Join-Path $root "build/package-windows-$Arch-unsigned-preview/payload"
-$msi=Join-Path $root "build/package-windows-$Arch-unsigned-preview/Shixin.msi"
-$setup=Join-Path $root "build/dist/preview/ShixinSetup-$Version-$Arch-unsigned-preview.exe"
+$suffix=if ($UnsignedPreview) {'-unsigned-preview'} else {''}
+$distDir=if ($UnsignedPreview) {'build/dist/preview'} else {'build/dist'}
+$payload=Join-Path $root "build/package-windows-$Arch$suffix/payload"
+$msi=Join-Path $root "build/package-windows-$Arch$suffix/Shixin.msi"
+$setup=Join-Path $root "$distDir/ShixinSetup-$Version-$Arch$suffix.exe"
 New-Item -ItemType Directory -Force $work | Out-Null
 $savedApp=$env:APPDATA; $savedLocal=$env:LOCALAPPDATA
 $env:APPDATA=Join-Path $work 'roaming'; $env:LOCALAPPDATA=Join-Path $work 'local'
@@ -46,24 +50,46 @@ function MSI([string]$Path,[string]$Log,[int[]]$Expected=@(0,3010),[switch]$Remo
     if ($p.ExitCode -notin $Expected) { throw "MSI returned $($p.ExitCode); log: $Log" }
     Write-Host "MSI $action exit $($p.ExitCode)"
 }
-function Verify([string]$ExpectedPayload) {
+$expectedThumbprint=$null
+function Verify([string]$ExpectedPayload,[switch]$CheckSigned) {
     foreach ($file in (Get-ChildItem $ExpectedPayload -Recurse -File)) {
         $relative=[IO.Path]::GetRelativePath($ExpectedPayload,$file.FullName)
         $actual=Join-Path $install $relative
         if (-not (Test-Path $actual) -or (Get-FileHash $actual).Hash -ne (Get-FileHash $file.FullName).Hash) { throw "Installed bytes differ: $relative" }
     }
     if ((Get-FileHash $settings).Hash -ne $settingsHash -or (Get-FileHash $dictionary).Hash -ne $dictionaryHash) { throw 'Installer changed user data' }
-    foreach ($file in (Get-ChildItem $install -File -Filter '*.dll' | Where-Object Name -Match '^(msvcp|vcruntime|concrt|vccorlib)')) {
-        $signature=Get-AuthenticodeSignature $file.FullName
-        if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notmatch 'O=Microsoft Corporation(?:,|$)') { throw "Invalid Microsoft signature: $($file.Name)" }
+    foreach ($file in (Get-ChildItem $install -Recurse -File | Where-Object Extension -In @('.exe','.dll'))) {
+        if ($file.Name -match '^(msvcp|vcruntime|concrt|vccorlib)') {
+            $signature=Get-AuthenticodeSignature $file.FullName
+            if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notmatch 'O=Microsoft Corporation(?:,|$)') { throw "Invalid Microsoft signature: $($file.Name)" }
+        } elseif ($CheckSigned -and -not $UnsignedPreview) {
+            $signature=Get-AuthenticodeSignature $file.FullName
+            if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Thumbprint -ne $expectedThumbprint) { throw "Invalid publisher signature: $($file.Name) ($($signature.Status))" }
+        }
     }
 }
 Push-Location $root
 try {
     $p=Start-Process $setup -ArgumentList '-verify' -Wait -PassThru -RedirectStandardOutput "$work/verify.out" -RedirectStandardError "$work/verify.err"
-    if ($p.ExitCode -ne 0 -or (Get-Content "$work/verify.out" -Raw) -notmatch ([regex]::Escape("$Version $Arch unsigned-preview (integrity only)"))) { throw 'Bootstrapper verification failed' }
+    $verifyOut=("$(Get-Content "$work/verify.out" -Raw)").Trim()
+    $wantVerify=if ($UnsignedPreview) { "$Version $Arch unsigned-preview (integrity only)" } else { "$Version $Arch" }
+    if ($p.ExitCode -ne 0 -or $verifyOut -ne $wantVerify) {
+        throw "Bootstrapper verification failed (exit $($p.ExitCode), out='$verifyOut', err='$(Get-Content "$work/verify.err" -Raw)')"
+    }
+    if (-not $UnsignedPreview) {
+        $setupSig=Get-AuthenticodeSignature $setup
+        if ($setupSig.Status -ne 'Valid') { throw "Invalid bootstrapper signature: $($setupSig.Status)" }
+        $expectedThumbprint=$setupSig.SignerCertificate.Thumbprint
+        $msiSig=Get-AuthenticodeSignature $msi
+        if ($msiSig.Status -ne 'Valid' -or $msiSig.SignerCertificate.Thumbprint -ne $expectedThumbprint) { throw "Invalid MSI signature: $($msiSig.Status)" }
+        $tampered=Join-Path $work 'tampered-setup.exe'
+        Copy-Item $setup $tampered
+        Add-Content $tampered 'x' -NoNewline -Encoding ascii
+        $tp=Start-Process $tampered -ArgumentList '-verify' -Wait -PassThru -RedirectStandardOutput "$work/tampered.out" -RedirectStandardError "$work/tampered.err"
+        if ($tp.ExitCode -eq 0) { throw 'Tampered signed bootstrapper passed -verify' }
+    }
     MSI $msi "$work/install.log"
-    Verify $payload
+    Verify $payload -CheckSigned
     $oldCode=(Get-ItemProperty $arp).ProductCode
     $profileEnabled=$true; Front @('-user-register')
     Front @('-added')
@@ -90,23 +116,30 @@ try {
     Add-Content "$upPayload/licenses/Go.txt" "`nSynthetic upgrade fixture" -Encoding utf8
     $skip=if ($Arch -eq 'arm64') {'shixin_tsf.dll'} else {''}
     & go run ./tools/windows-package -stamp-dir $upPayload -version $next -skip $skip; Check 'stamp upgrade fixture'
+    if (-not $UnsignedPreview) {
+        # Keep SetupCheck's embedded ShixinSetup.exe validly signed so
+        # CheckStopped passes Authenticode without spending signing quota.
+        Copy-Item (Join-Path $payload 'ShixinSetup.exe') (Join-Path $upPayload 'ShixinSetup.exe') -Force
+    }
     $upgrade=Join-Path $work 'upgrade.msi'
     & (Get-Process -Id $PID).Path -NoProfile -ExecutionPolicy Bypass -File "$PSScriptRoot/msi.ps1" -Payload $upPayload -Output $upgrade -Version $next -Arch $Arch
     Check 'author upgrade fixture'
-    # Any certificate table protects an existing signed installation, even
-    # when its signature is malformed or untrusted. No test trust root is added.
-    $front=Join-Path $install 'Shixin.exe'
-    $original=[IO.File]::ReadAllBytes($front)
-    try {
-        $signed=$original.Clone(); $pe=[BitConverter]::ToInt32($signed,0x3c)
-        [Array]::Copy([BitConverter]::GetBytes([uint32]$signed.Length),0,$signed,$pe+168,4)
-        [Array]::Copy([BitConverter]::GetBytes([uint32]8),0,$signed,$pe+172,4)
-        [IO.File]::WriteAllBytes($front,$signed)
-        MSI $upgrade "$work/signed-target.log" @(1603)
-        if ((Get-Content "$work/signed-target.log" -Raw) -notmatch 'CustomAction CheckStopped returned actual error code') { throw 'Preview guard was not reached' }
-        if ((Get-ItemProperty $arp).ProductCode -ne $oldCode) { throw 'Rejected upgrade changed product identity' }
-    } finally { [IO.File]::WriteAllBytes($front,$original) }
-    Verify $payload
+    if ($UnsignedPreview) {
+        # Any certificate table protects an existing signed installation, even
+        # when its signature is malformed or untrusted. No test trust root is added.
+        $front=Join-Path $install 'Shixin.exe'
+        $original=[IO.File]::ReadAllBytes($front)
+        try {
+            $signed=$original.Clone(); $pe=[BitConverter]::ToInt32($signed,0x3c)
+            [Array]::Copy([BitConverter]::GetBytes([uint32]$signed.Length),0,$signed,$pe+168,4)
+            [Array]::Copy([BitConverter]::GetBytes([uint32]8),0,$signed,$pe+172,4)
+            [IO.File]::WriteAllBytes($front,$signed)
+            MSI $upgrade "$work/signed-target.log" @(1603)
+            if ((Get-Content "$work/signed-target.log" -Raw) -notmatch 'CustomAction CheckStopped returned actual error code') { throw 'Preview guard was not reached' }
+            if ((Get-ItemProperty $arp).ProductCode -ne $oldCode) { throw 'Rejected upgrade changed product identity' }
+        } finally { [IO.File]::WriteAllBytes($front,$original) }
+        Verify $payload
+    }
     $key=[Microsoft.Win32.Registry]::LocalMachine.OpenSubKey("$class\InprocServer32",$true)
     if (-not $key) { throw 'Machine COM registration missing' }
     $originalClass=$key.GetValue('')
@@ -114,7 +147,7 @@ try {
         $key.SetValue('',"$work/conflict.dll",[Microsoft.Win32.RegistryValueKind]::String)
         MSI $upgrade "$work/rollback.log" @(1603)
         if ((Get-Content "$work/rollback.log" -Raw) -notmatch 'CustomActionSchedule\(Action=RegisterTIP' -or (Get-ItemProperty $arp).ProductCode -ne $oldCode) { throw 'Registration rollback was not exercised' }
-        Verify $payload
+        Verify $payload -CheckSigned
     } finally { $key.SetValue('',$originalClass,[Microsoft.Win32.RegistryValueKind]::String); $key.Close() }
     $ready=Join-Path $work 'holder.ready'; $stop=Join-Path $work 'holder.stop'
     $holder=Start-Process "$root/build/tsf-$Arch/Release/shixin_dll_hold.exe" -ArgumentList "`"$install/shixin_tsf.dll`" `"$ready`" `"$stop`"" -PassThru

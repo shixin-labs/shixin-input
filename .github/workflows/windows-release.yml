@@ -17,7 +17,12 @@ on:
         description: 'MSI release version (major.minor.build)'
         type: string
         required: true
-        default: '0.2.0'
+        default: '0.3.6'
+      unsigned_preview:
+        description: 'Build unsigned preview instead of signing with SSL.com eSigner'
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -208,6 +213,9 @@ jobs:
     needs: [dictionary, llama, librime]
     strategy:
       fail-fast: false
+      # Serialize signing jobs so amd64 and arm64 never contend on the same
+      # 30-second SSL.com eSigner TOTP window.
+      max-parallel: 1
       matrix:
         include:
           - runner: windows-2025
@@ -224,6 +232,39 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
+      - uses: actions/setup-java@v6
+        if: ${{ !inputs.unsigned_preview }}
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Restore pinned SSL.com CodeSignTool
+        id: cst
+        if: ${{ !inputs.unsigned_preview }}
+        uses: actions/cache/restore@v6
+        with:
+          path: build/downloads/CodeSignTool-v1.3.2.zip
+          key: codesigntool-v1.3.2-f14b1e1ef14bfa1fd00279c363aab0debbf5dcfba0e4bcdce5d22bb771de0e3a
+      - name: Download and verify pinned SSL.com CodeSignTool
+        if: ${{ !inputs.unsigned_preview }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $zip='build/downloads/CodeSignTool-v1.3.2.zip'
+          $want='f14b1e1ef14bfa1fd00279c363aab0debbf5dcfba0e4bcdce5d22bb771de0e3a'
+          New-Item -ItemType Directory -Force build/downloads | Out-Null
+          if (-not (Test-Path $zip)) {
+            Invoke-WebRequest -Uri 'https://github.com/SSLcom/CodeSignTool/releases/download/v1.3.2/CodeSignTool-v1.3.2.zip' -OutFile $zip
+          }
+          $got=(Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($got -ne $want) { throw "CodeSignTool SHA-256 mismatch: got $got, want $want" }
+          Remove-Item build/codesigntool -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive $zip build/codesigntool
+      - name: Cache pinned SSL.com CodeSignTool
+        if: ${{ !inputs.unsigned_preview && steps.cst.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v6
+        with:
+          path: build/downloads/CodeSignTool-v1.3.2.zip
+          key: codesigntool-v1.3.2-f14b1e1ef14bfa1fd00279c363aab0debbf5dcfba0e4bcdce5d22bb771de0e3a
       - name: Fetch tested llama.cpp
         uses: actions/download-artifact@v8
         with:
@@ -252,24 +293,55 @@ jobs:
         run: |
           Expand-Archive build/downloads/rime-ice-full.zip build/rime-data
           Remove-Item build/rime-data/lua -Recurse -Force -ErrorAction SilentlyContinue
-      - name: Package unsigned release
+      - name: Package signed release
+        if: ${{ !inputs.unsigned_preview }}
+        shell: pwsh
+        env:
+          SHIXIN_ARCH: ${{ matrix.arch }}
+          SHIXIN_VERSION: ${{ inputs.version }}
+          ES_USERNAME: ${{ secrets.ES_USERNAME }}
+          ES_PASSWORD: ${{ secrets.ES_PASSWORD }}
+          ES_CREDENTIAL_ID: ${{ secrets.ES_CREDENTIAL_ID }}
+          ES_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }}
+        run: ./scripts/package-windows.ps1 -Arch $env:SHIXIN_ARCH -Version $env:SHIXIN_VERSION -CodeSignTool "$PWD/build/codesigntool" -Llama "$PWD/build/llama-windows-$env:SHIXIN_ARCH/lib"
+      - name: Package unsigned preview
+        if: ${{ inputs.unsigned_preview }}
         shell: pwsh
         env:
           SHIXIN_ARCH: ${{ matrix.arch }}
           SHIXIN_VERSION: ${{ inputs.version }}
         run: ./scripts/package-windows.ps1 -Arch $env:SHIXIN_ARCH -Version $env:SHIXIN_VERSION -UnsignedPreview -Llama "$PWD/build/llama-windows-$env:SHIXIN_ARCH/lib"
-      - name: Validate on disposable native Windows
+      - name: Validate signed release on disposable native Windows
+        if: ${{ !inputs.unsigned_preview }}
         shell: pwsh
         env:
           SHIXIN_ARCH: ${{ matrix.arch }}
           SHIXIN_VERSION: ${{ inputs.version }}
         run: ./packaging/windows/test-install.ps1 -Arch $env:SHIXIN_ARCH -Version $env:SHIXIN_VERSION -DisposableVM
+      - name: Validate unsigned preview on disposable native Windows
+        if: ${{ inputs.unsigned_preview }}
+        shell: pwsh
+        env:
+          SHIXIN_ARCH: ${{ matrix.arch }}
+          SHIXIN_VERSION: ${{ inputs.version }}
+        run: ./packaging/windows/test-install.ps1 -Arch $env:SHIXIN_ARCH -Version $env:SHIXIN_VERSION -UnsignedPreview -DisposableVM
       - name: Record build provenance
         shell: pwsh
         env:
           SHIXIN_ARCH: ${{ matrix.arch }}
           SHIXIN_VERSION: ${{ inputs.version }}
+          SHIXIN_UNSIGNED_PREVIEW: ${{ inputs.unsigned_preview }}
         run: |
+          $preview=$env:SHIXIN_UNSIGNED_PREVIEW -eq 'true'
+          $dir=if ($preview) { 'build/dist/preview' } else { 'build/dist' }
+          $suffix=if ($preview) { '-unsigned-preview' } else { '' }
+          $setup="$dir/ShixinSetup-$env:SHIXIN_VERSION-$env:SHIXIN_ARCH$suffix.exe"
+          $thumbprint=$null
+          if (-not $preview) {
+            $sig=Get-AuthenticodeSignature $setup
+            if ($sig.Status -ne 'Valid') { throw "Invalid release signature: $($sig.Status)" }
+            $thumbprint=$sig.SignerCertificate.Thumbprint
+          }
           $info=[ordered]@{
             version=$env:SHIXIN_VERSION
             architecture=$env:SHIXIN_ARCH
@@ -277,14 +349,27 @@ jobs:
             librime=(& git rev-parse HEAD:third_party/librime).Trim()
             llama=(& git rev-parse HEAD:third_party/llama.cpp).Trim()
             dictionary_sha256=(Get-FileHash build/downloads/rime-ice-full.zip -Algorithm SHA256).Hash.ToLowerInvariant()
-            unsigned_preview=$true
+            unsigned_preview=$preview
+            signer_thumbprint=$thumbprint
             gpu_scoring_validated=$false
           }
-          $info | ConvertTo-Json | Set-Content "build/dist/preview/build-info-$env:SHIXIN_ARCH.json" -Encoding utf8NoBOM
-      - name: Upload validated release assets
+          $info | ConvertTo-Json | Set-Content "$dir/build-info-$env:SHIXIN_ARCH.json" -Encoding utf8NoBOM
+      - name: Upload validated signed release assets
+        if: ${{ !inputs.unsigned_preview }}
         uses: actions/upload-artifact@v7
         with:
           name: windows-${{ matrix.arch }}-${{ inputs.version }}
+          path: |
+            build/dist/*.exe
+            build/dist/*.sha256
+            build/dist/build-info-*.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Upload validated preview assets
+        if: ${{ inputs.unsigned_preview }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-${{ matrix.arch }}-${{ inputs.version }}-unsigned-preview
           path: |
             build/dist/preview/*.exe
             build/dist/preview/*.sha256

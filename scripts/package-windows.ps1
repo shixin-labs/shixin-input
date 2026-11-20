@@ -1,13 +1,15 @@
-# Produce a signed Windows installer, or an explicitly unsigned manual preview.
+﻿# Produce a signed Windows installer, or an explicitly unsigned manual preview.
 # Requires native Windows, PowerShell 7, Go, Visual Studio C++, Windows SDK,
 # fetched Rime data and our matching build-librime.ps1 output with its staged
-# license notices. Uses only installed SDK tools and Windows Installer; never
-# downloads executable tools.
+# license notices. Uses installed SDK tools, Windows Installer and an optional
+# caller-supplied SSL.com CodeSignTool directory; never downloads tools itself.
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)][string]$Version,
     [ValidateSet('amd64','arm64')][string]$Arch = 'amd64',
     [ValidatePattern('^[0-9A-Fa-f]{40}$')][string]$CertificateThumbprint,
+    [string]$CodeSignTool,
+    [string]$Java,
     [switch]$UnsignedPreview,
     [ValidateSet('CurrentUser','LocalMachine')][string]$CertificateStore = 'CurrentUser',
     [string]$TimestampServer = 'http://timestamp.digicert.com',
@@ -24,21 +26,90 @@ if (-not $IsWindows) { throw 'Windows packaging requires native Windows and Powe
 if ($Version -notmatch '^(0|[1-9][0-9]{0,2})\.(0|[1-9][0-9]{0,2})\.(0|[1-9][0-9]{0,4})$' -or
     [int]$Matches[1] -gt 255 -or [int]$Matches[2] -gt 255 -or [int]$Matches[3] -gt 65535) { throw 'Use a stable MSI version: major.minor.build (255.255.65535 maximum)' }
 $root=Split-Path $PSScriptRoot -Parent
-if ($UnsignedPreview -and $CertificateThumbprint) { throw 'Choose unsigned preview or certificate signing, not both' }
-if (-not $UnsignedPreview) {
-    if (-not $CertificateThumbprint) { throw 'Set CertificateThumbprint for a signed release, or explicitly select -UnsignedPreview' }
+$modes=@([bool]$UnsignedPreview,[bool]$CertificateThumbprint,[bool]$CodeSignTool) | Where-Object { $_ }
+if ($modes.Count -ne 1) { throw 'Choose exactly one of -CertificateThumbprint, -CodeSignTool or -UnsignedPreview' }
+$cstJar=$null
+if ($CertificateThumbprint) {
     $certificate=Get-Item "Cert:/$CertificateStore/My/$CertificateThumbprint"
     if (-not $certificate.HasPrivateKey) { throw 'The signing certificate has no accessible private key' }
     if (-not ($certificate.EnhancedKeyUsageList.ObjectId -contains '1.3.6.1.5.5.7.3.3')) { throw 'The certificate must allow code signing' }
+} elseif ($CodeSignTool) {
+    $CodeSignTool=(Resolve-Path $CodeSignTool).Path
+    $cstJar=Get-ChildItem (Join-Path $CodeSignTool 'jar') -File -Filter 'code_sign_tool-*.jar' | Sort-Object Name -Descending | Select-Object -First 1
+    if (-not $cstJar) { throw "No code_sign_tool-*.jar found under $CodeSignTool/jar" }
+    if (-not (Test-Path (Join-Path $CodeSignTool 'conf/code_sign_tool.properties'))) { throw "Missing conf/code_sign_tool.properties under $CodeSignTool" }
+    foreach ($name in @('ES_USERNAME','ES_PASSWORD','ES_CREDENTIAL_ID','ES_TOTP_SECRET')) {
+        if (-not [Environment]::GetEnvironmentVariable($name)) { throw "Environment variable $name is required for -CodeSignTool signing" }
+    }
+    if (-not $Java) {
+        if ($env:JAVA_HOME -and (Test-Path (Join-Path $env:JAVA_HOME 'bin/java.exe'))) {
+            $Java=Join-Path $env:JAVA_HOME 'bin/java.exe'
+        } else {
+            $Java=(Get-Command java -ErrorAction Stop).Source
+        }
+    }
 }
 if (-not $SignTool -or -not $ManifestTool) {
     $kits=(Get-ItemProperty 'HKLM:/SOFTWARE/Microsoft/Windows Kits/Installed Roots').KitsRoot10
     $sdk=Get-ChildItem (Join-Path $kits 'bin') -Directory | Where-Object Name -Match '^10\.' | Sort-Object {[version]$_.Name} -Descending | Select-Object -First 1
     $hostTool=if ([Runtime.InteropServices.RuntimeInformation]::OSArchitecture -eq 'Arm64') {'arm64'} else {'x64'}
-    if (-not $SignTool) {$SignTool=Join-Path $sdk.FullName "$hostTool/signtool.exe"}
-    if (-not $ManifestTool) {$ManifestTool=Join-Path $sdk.FullName "$hostTool/mt.exe"}
+    if (-not $SignTool) {
+        $SignTool=Join-Path $sdk.FullName "$hostTool/signtool.exe"
+        if (-not (Test-Path $SignTool)) { $SignTool=Join-Path $sdk.FullName 'x64/signtool.exe' }
+    }
+    if (-not $ManifestTool) {
+        $ManifestTool=Join-Path $sdk.FullName "$hostTool/mt.exe"
+        if (-not (Test-Path $ManifestTool)) { $ManifestTool=Join-Path $sdk.FullName 'x64/mt.exe' }
+    }
 }
 function Check([string]$step) { if ($LASTEXITCODE -ne 0) { throw "$step failed (exit $LASTEXITCODE)" } }
+function Redact([string]$text) {
+    if (-not $text) { return '' }
+    foreach ($secret in @($env:ES_PASSWORD,$env:ES_TOTP_SECRET)) {
+        if ($secret) { $text=$text.Replace($secret,'***') }
+    }
+    return $text
+}
+$script:lastCodeSignWindow=-1
+function WaitFreshTOTPWindow() {
+    if ($script:lastCodeSignWindow -lt 0) { return }
+    while ($true) {
+        $now=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+        $win=[long][Math]::Floor($now / 30)
+        if ($win -gt $script:lastCodeSignWindow) { return }
+        $waitSec=[int]((($script:lastCodeSignWindow + 1) * 30) - $now + 1)
+        Write-Host "Waiting ${waitSec}s for next eSigner TOTP window..."
+        Start-Sleep -Seconds ([Math]::Max(1,$waitSec))
+    }
+}
+function InvokeCodeSignTool([string[]]$commandArgs) {
+    WaitFreshTOTPWindow
+    $startWin=[long][Math]::Floor([DateTimeOffset]::UtcNow.ToUnixTimeSeconds() / 30)
+    $start=[Diagnostics.ProcessStartInfo]::new($Java)
+    $start.WorkingDirectory=$CodeSignTool
+    $start.UseShellExecute=$false
+    $start.RedirectStandardOutput=$true
+    $start.RedirectStandardError=$true
+    $start.Environment['CODE_SIGN_TOOL_PATH']=$CodeSignTool
+    $start.ArgumentList.Add('-Dfile.encoding=UTF-8')
+    $start.ArgumentList.Add('-Xmx1024M')
+    $start.ArgumentList.Add('-jar')
+    $start.ArgumentList.Add($cstJar.FullName)
+    foreach ($arg in $commandArgs) { $start.ArgumentList.Add($arg) }
+    $process=[Diagnostics.Process]::Start($start)
+    $outTask=$process.StandardOutput.ReadToEndAsync()
+    $errTask=$process.StandardError.ReadToEndAsync()
+    $process.WaitForExit()
+    $endWin=[long][Math]::Floor([DateTimeOffset]::UtcNow.ToUnixTimeSeconds() / 30)
+    $script:lastCodeSignWindow=[Math]::Max($startWin,$endWin)
+    $stdout=$outTask.GetAwaiter().GetResult()
+    $stderr=$errTask.GetAwaiter().GetResult()
+    $combined=($stdout + "`n" + $stderr).Trim()
+    if ($process.ExitCode -ne 0 -or $combined -match '(?m)^(Error|Exception)\b|Exception:|Error:|Missing required option|Unmatched argument') {
+        throw "CodeSignTool $($commandArgs[0]) failed (exit $($process.ExitCode)): $(Redact $combined)"
+    }
+    return (Redact $combined)
+}
 function Manifest([string]$path) {
     & $ManifestTool -nologo -manifest "$root/packaging/windows/setup.manifest" "-outputresource:$path;#1"
     Check "set asInvoker manifest in $path"
@@ -52,11 +123,72 @@ function Manifest([string]$path) {
 }
 function Sign([string]$path) {
     if ($UnsignedPreview) { return }
+    if ($CodeSignTool) {
+        $stageOut=Join-Path ([IO.Path]::GetDirectoryName($path)) ('sign-' + [Guid]::NewGuid().ToString('N'))
+        New-Item -ItemType Directory -Force $stageOut | Out-Null
+        try {
+            $output=InvokeCodeSignTool @(
+                'sign',
+                "-username=$env:ES_USERNAME",
+                "-password=$env:ES_PASSWORD",
+                "-credential_id=$env:ES_CREDENTIAL_ID",
+                "-totp_secret=$env:ES_TOTP_SECRET",
+                '-program_name=Shixin Input',
+                "-input_file_path=$path",
+                "-output_dir_path=$stageOut"
+            )
+            $signed=Join-Path $stageOut (Split-Path $path -Leaf)
+            if (-not (Test-Path $signed)) { throw "CodeSignTool sign produced no output for ${path}: $output" }
+            & $SignTool verify /pa /all $signed | Out-Null; Check "verify $path"
+            Move-Item $signed $path -Force
+        } finally {
+            Remove-Item $stageOut -Recurse -Force -ErrorAction SilentlyContinue
+        }
+        return
+    }
     $options=@('sign','/sha1',$CertificateThumbprint,'/fd','SHA256','/s','My','/d','拾新输入法 Shixin Input','/du','https://github.com/shixin-labs/shixin-input')
     if ($CertificateStore -eq 'LocalMachine') { $options+='/sm' }
     if ($TimestampServer) { $options+=@('/tr',$TimestampServer,'/td','SHA256') }
     & $SignTool @options $path | Out-Null; Check "sign $path"
     & $SignTool verify /pa /all $path | Out-Null; Check "verify $path"
+}
+function SignBatch([IO.FileInfo[]]$files) {
+    if ($UnsignedPreview -or $files.Count -eq 0) { return }
+    if (-not $CodeSignTool) {
+        foreach ($f in $files) { Sign $f.FullName }
+        return
+    }
+    $stageIn=Join-Path $work 'sign-in'
+    $stageOut=Join-Path $work 'sign-out'
+    Remove-Item $stageIn,$stageOut -Recurse -Force -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory -Force $stageIn,$stageOut | Out-Null
+    try {
+        $seen=@{}
+        foreach ($f in $files) {
+            $key=$f.Name.ToLowerInvariant()
+            if ($seen.ContainsKey($key)) { throw "Duplicate filename in batch signing: $($f.Name)" }
+            $seen[$key]=$f.FullName
+            Copy-Item $f.FullName (Join-Path $stageIn $f.Name)
+        }
+        $output=InvokeCodeSignTool @(
+            'batch_sign',
+            "-username=$env:ES_USERNAME",
+            "-password=$env:ES_PASSWORD",
+            "-credential_id=$env:ES_CREDENTIAL_ID",
+            "-totp_secret=$env:ES_TOTP_SECRET",
+            '-program_name=Shixin Input',
+            "-input_dir_path=$stageIn",
+            "-output_dir_path=$stageOut"
+        )
+        foreach ($f in $files) {
+            $signed=Join-Path $stageOut $f.Name
+            if (-not (Test-Path $signed)) { throw "CodeSignTool batch_sign produced no output for $($f.Name): $output" }
+            & $SignTool verify /pa /all $signed | Out-Null; Check "verify $($f.Name)"
+            Copy-Item $signed $f.FullName -Force
+        }
+    } finally {
+        Remove-Item $stageIn,$stageOut -Recurse -Force -ErrorAction SilentlyContinue
+    }
 }
 function MicrosoftCRT([string]$name) {
     return $crtNames -contains $name
@@ -170,7 +302,8 @@ try {
     foreach ($file in (Get-ChildItem $payload -File -Filter '*.dll' | Where-Object { MicrosoftCRT $_.Name })) { VerifyMicrosoftCRT $file.FullName }
     & "$native/Release/shixin_dll_test.exe" "$payload/shixin_tsf.dll"; Check 'test stamped public TSF DLL'
     if ($Arch -eq 'arm64') { & "$x64/Release/shixin_dll_test.exe" "$payload/shixin_tsf.dll"; Check 'test stamped public TSF DLL from x64' }
-    foreach ($binary in (Get-ChildItem $payload -Recurse -File | Where-Object { $_.Extension -in @('.exe','.dll') -and -not (MicrosoftCRT $_.Name) })) { Sign $binary.FullName }
+    $toSign=@(Get-ChildItem $payload -Recurse -File | Where-Object { $_.Extension -in @('.exe','.dll') -and -not (MicrosoftCRT $_.Name) })
+    SignBatch $toSign
     $msi=Join-Path $work 'Shixin.msi'
     & (Get-Process -Id $PID).Path -NoProfile -ExecutionPolicy Bypass -File "$root/packaging/windows/msi.ps1" -Payload $payload -Output $msi -Version $Version -Arch $Arch
     Check 'author MSI'
@@ -187,6 +320,9 @@ try {
     "$hash  $([IO.Path]::GetFileName($setup))" | Set-Content "$setup.sha256" -Encoding ascii
     Write-Host "Release installer: $setup"
 } finally {
+    if ($CodeSignTool) {
+        Get-ChildItem (Join-Path $CodeSignTool 'logs') -File -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
+    }
     $env:GOOS=$savedOS; $env:GOARCH=$savedArch; $env:CGO_ENABLED=$savedCGO
     Pop-Location
 }

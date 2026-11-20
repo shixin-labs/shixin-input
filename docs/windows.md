@@ -162,13 +162,17 @@ Build on the matching native Windows architecture with PowerShell 7, Go,
 Visual Studio C++, the Windows SDK, fetched Rime data and our built librime:
 
 ```powershell
-./scripts/package-windows.ps1 -Version 0.2.0 -Arch arm64 -CertificateThumbprint <code-signing-certificate-thumbprint>
+./scripts/package-windows.ps1 -Version 0.3.6 -Arch arm64 -CertificateThumbprint <code-signing-certificate-thumbprint>
+# Or sign remotely with SSL.com eSigner CodeSignTool (reads ES_USERNAME, ES_PASSWORD, ES_CREDENTIAL_ID, ES_TOTP_SECRET):
+./scripts/package-windows.ps1 -Version 0.3.6 -Arch arm64 -CodeSignTool <extracted-CodeSignTool-dir>
 ```
 
-Use `-Arch amd64` for x64. The certificate must have an accessible private
-key in `CurrentUser/My` (or select `-CertificateStore LocalMachine`).
-`-SignTool` overrides SDK discovery; `-TimestampServer` selects the RFC 3161
-server (the default is DigiCert; an empty string disables timestamping for
+Use `-Arch amd64` for x64. With `-CertificateThumbprint`, the certificate must have an accessible private
+key in `CurrentUser/My` (or select `-CertificateStore LocalMachine`). With `-CodeSignTool`, `package-windows.ps1`
+batch-signs Shixin's binaries, signs the MSI and outer bootstrapper through the caller-supplied SSL.com
+CodeSignTool JAR (spacing calls across 30-second TOTP windows), and verifies every signature with `signtool verify /pa /all`.
+`-SignTool` overrides SDK discovery; `-Java` overrides `java.exe` discovery for `-CodeSignTool`; `-TimestampServer` selects the RFC 3161
+server for `signtool.exe` (the default is DigiCert; an empty string disables timestamping for
 isolated VM tests). `-Data`, `-Librime`, `-OpenCC` and `-Llama` override the normal
 build outputs. Shixin-built executables/DLLs, the MSI and the outer installer
 are signed and verified; app-local Microsoft CRTs retain their verified vendor
@@ -270,14 +274,19 @@ over a certificate-bearing executable. All 119 installed payload files and
 the Microsoft runtime signatures were checked after install and upgrade.
 
 The manually dispatched `Windows release packages` workflow builds both
-architectures on matching native runners and uploads installers only after
-lifecycle validation. Both jobs use the same dictionary snapshot. Build
-metadata records the source/submodule commits and dictionary checksum.
+architectures on matching native runners, signs releases by default with a
+SHA-256-pinned SSL.com `CodeSignTool` archive using the repository's eSigner
+secrets (`ES_USERNAME`, `ES_PASSWORD`, `ES_CREDENTIAL_ID`, `ES_TOTP_SECRET`;
+pass `-f unsigned_preview=true` for an unsigned preview), and uploads installers
+only after lifecycle validation. Both jobs use the same dictionary snapshot. Build
+metadata records the source/submodule commits, dictionary checksum and signer
+thumbprint.
 The workflow builds its shader compiler, headers and Vulkan import library
 from pinned source with `scripts/build-vulkan-tools.ps1`; it installs no GPU
-driver and runs no downloaded executable tools.
+driver and runs no unpinned downloaded tools.
 
-`packaging/windows/test-install.ps1 -Arch amd64 -Version 0.2.0 -DisposableVM`
+`packaging/windows/test-install.ps1 -Arch amd64 -Version 0.3.6 -DisposableVM`
+(add `-UnsignedPreview` for unsigned preview packages)
 requires an elevated disposable Windows VM with no existing Shixin state.
 It checks real installed bytes, registration, an isolated installed-engine
 replay, signed-target protection, forced rollback, held-DLL upgrade and
