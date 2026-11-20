@@ -106,6 +106,7 @@ type Client struct {
 	secure                bool
 	marked                []byte // last text actually sent to Applier.Preedit
 	clearSeq              uint32 // results before this fence belong to a finished composition
+	markSeq               uint32 // seq of local 1-char mark in marked awaiting its engine result
 	ownedFirst, ownedLast uint32 // printable keys retained while state is unknown
 	ownedPrefix           int    // length of engine preedit in marked before ownedFirst
 	contextFence          uint32 // target-context Clear reply is a fence, never a usable policy
@@ -333,6 +334,7 @@ func (c *Client) HandleKey(keysym, mods uint32) bool {
 			// this key composes: uppercase and Shift/Caps Lock must not
 			// bypass this protection.
 			c.marked = append(c.marked[:0], byte(keysym))
+			c.markSeq = c.seq
 			c.a.Preedit(c.marked, 1)
 		} else if len(c.marked) == 0 && act.Next() != policy.Composing && mods&policy.ReleaseMask == 0 {
 			// An eaten key outside a composition commits directly (Chinese
@@ -342,12 +344,13 @@ func (c *Client) HandleKey(keysym, mods uint32) bool {
 			// handler, as Squirrel does, waiting within the budget.
 			if c.wait(c.seq) {
 				c.Drain()
-			} else if keysym >= 0x20 && keysym < 0x7f && mods&^policy.ShiftMask == 0 {
+			} else if keysym >= 0x20 && keysym < 0x7f && mods & ^uint32(policy.ShiftMask|policy.LockMask) == 0 {
 				// Too slow: mark the key itself so the app doesn't type it
 				// as well. The commit, or the repair of a declined key,
 				// replaces the marked text when the result arrives.
 				c.stats.Timeouts++
 				c.marked = append(c.marked[:0], byte(keysym))
+				c.markSeq = c.seq
 				c.a.Preedit(c.marked, 1)
 			} else {
 				c.stats.Timeouts++
@@ -539,6 +542,7 @@ func (c *Client) sendSeq(m *outMsg, k sentKey) bool {
 // FocusIn tells the engine which app and kind of field has focus. The
 // local secure guard takes effect before the asynchronous reply. Main thread.
 func (c *Client) FocusIn(app string, secure bool) {
+	c.markSeq = 0
 	c.ownedFirst, c.ownedLast, c.ownedPrefix = 0, 0, 0
 	if c.opt.PerAppContexts {
 		ctx := c.appContext(app)
@@ -643,6 +647,7 @@ func (c *Client) CommitComposition() {
 		}
 	}
 	c.marked = c.marked[:0]
+	c.markSeq = 0
 	c.ownedFirst, c.ownedLast, c.ownedPrefix = 0, 0, 0
 	c.composing = false
 	c.clearSeq, c.dropZero = c.seq+1, true
@@ -777,7 +782,11 @@ func (c *Client) drainOnce() {
 		case evDisconnected:
 			if c.ownedFirst != 0 && !c.secure {
 				if last != nil {
-					c.showPreedit(&last.res)
+					if c.markSeq != 0 {
+						c.restoreMarked()
+					} else {
+						c.showPreedit(&last.res)
+					}
 				}
 				text := c.marked[:0]
 				for i, b := range c.marked {
@@ -786,9 +795,11 @@ func (c *Client) drainOnce() {
 					}
 				}
 				c.marked = c.marked[:0]
+				c.markSeq = 0
 				c.ownedFirst, c.ownedLast, c.ownedPrefix = 0, 0, 0
 				c.commit(text)
 			}
+			c.markSeq = 0
 			c.ownedFirst, c.ownedLast, c.ownedPrefix = 0, 0, 0
 			c.connected, c.composing = false, false
 			c.sp.on = false
@@ -801,8 +812,12 @@ func (c *Client) drainOnce() {
 			last = nil
 		}
 	}
-	if last != nil && !c.secure && (len(last.res.Preedit) > 0 || len(c.marked) > 0 || c.ownedFirst != 0) {
-		c.showPreedit(&last.res)
+	if last != nil && !c.secure {
+		if c.markSeq != 0 {
+			c.restoreMarked()
+		} else if len(last.res.Preedit) > 0 || len(c.marked) > 0 || c.ownedFirst != 0 {
+			c.showPreedit(&last.res)
+		}
 	}
 	if last != nil {
 		if k := c.sentKey(last.res.Seq); k != nil {
@@ -828,22 +843,46 @@ func (c *Client) drainOnce() {
 	}
 }
 
+func (c *Client) appendOwned() {
+	if c.ownedFirst == 0 {
+		return
+	}
+	for seq := c.ownedFirst; ; seq++ {
+		if k := c.sentKey(seq); k != nil {
+			c.marked = append(c.marked, byte(k.keysym))
+		}
+		if seq == c.ownedLast {
+			break
+		}
+	}
+}
+
 func (c *Client) showPreedit(r *ipc.Result) {
 	c.marked = append(c.marked[:0], r.Preedit...)
 	c.ownedPrefix = len(c.marked)
 	cursor := int(r.Cursor)
 	if c.ownedFirst != 0 {
-		for seq := c.ownedFirst; ; seq++ {
-			if k := c.sentKey(seq); k != nil {
-				c.marked = append(c.marked, byte(k.keysym))
-			}
-			if seq == c.ownedLast {
-				break
-			}
-		}
+		c.appendOwned()
 		cursor = len(c.marked)
 	}
 	c.a.Preedit(c.marked, cursor)
+}
+
+// restoreMarked rebuilds a local first-key mark (and any retained suffix)
+// when an earlier result's commit or repair cleared the app's marked text
+// before markSeq arrived.
+func (c *Client) restoreMarked() {
+	if len(c.marked) > 0 {
+		return
+	}
+	if k := c.sentKey(c.markSeq); k != nil {
+		c.marked = append(c.marked[:0], byte(k.keysym))
+		c.ownedPrefix = len(c.marked)
+	}
+	c.appendOwned()
+	if len(c.marked) > 0 {
+		c.a.Preedit(c.marked, len(c.marked))
+	}
 }
 
 // sentKey returns the record of the key with sequence number seq, or nil.
@@ -856,6 +895,9 @@ func (c *Client) sentKey(seq uint32) *sentKey {
 
 func (c *Client) applyResult(r *ipc.Result) {
 	if r.Seq != 0 {
+		if c.markSeq != 0 && int32(r.Seq-c.markSeq) >= 0 {
+			c.markSeq = 0
+		}
 		if c.ownedFirst != 0 && int32(r.Seq-c.ownedFirst) >= 0 {
 			if int32(r.Seq-c.ownedLast) >= 0 {
 				c.ownedFirst, c.ownedLast, c.ownedPrefix = 0, 0, 0
@@ -881,6 +923,8 @@ func (c *Client) applyResult(r *ipc.Result) {
 		if !c.secure && k.seq == r.Seq && k.eaten && r.Flags&ipc.ResultHandled == 0 {
 			if k.keysym >= 0x20 && k.keysym < 0x7f {
 				// Same effect as having passed the key through.
+				c.marked = c.marked[:0]
+				c.ownedPrefix = 0
 				c.sp.buf1[0] = byte(k.keysym)
 				c.commit(c.sp.buf1[:])
 				c.stats.Repairs++

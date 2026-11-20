@@ -59,5 +59,21 @@ func TestKeyDown(t *testing.T) {
 		if a.Text() != want || a.Marked() != "b" || a.Leaked != leaked {
 			t.Errorf("%s: text %q marked %q leaked %d", p.Name, a.Text(), a.Marked(), a.Leaked)
 		}
+		// Setting marked text and clearing it again before KeyDown returns
+		// leaves no marked text and no inserted text, so TypesEatenKey still
+		// types the key itself.
+		a.Preedit(nil, 0)
+		a.KeyDown('n', func() bool {
+			a.Preedit([]byte("n"), 1)
+			a.Preedit(nil, 0)
+			return true
+		})
+		if p.TypesEatenKey {
+			want += "n"
+			leaked++
+		}
+		if a.Text() != want || a.Marked() != "" || a.Leaked != leaked {
+			t.Errorf("%s after cleared mark: text %q marked %q leaked %d", p.Name, a.Text(), a.Marked(), a.Leaked)
+		}
 	}
 }

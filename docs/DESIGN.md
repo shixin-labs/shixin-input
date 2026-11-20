@@ -252,7 +252,12 @@ are sent once per connection; results refer to them by ID.
   - **First key:** when an eaten printable ASCII key starts a composition,
     the client sets it as marked text inside `handleEvent:`, as Squirrel
     does, including uppercase letters and Shift/Caps Lock modifiers;
-    the engine's preedit replaces it when the result arrives. Some
+    the engine's preedit replaces it when the result arrives. The local mark
+    tracks that key's sequence number so earlier replies (such as a prior
+    `PASS_NOTIFY` key or commit draining re-entrantly inside `setMarkedText:`
+    or while 智能排序 holds the first key) cannot clear it before that key's
+    result arrives; if an earlier commit or repair replaces the app's marked
+    text, the local mark is restored immediately. Some
     apps insert an eaten key themselves unless marked text exists when the
     key returns: WeChat 4.x typed "zhege" as "z 这个" (its own `z`, then
     auto spacing). Only that first letter is local; it costs no wait, round
@@ -264,8 +269,9 @@ are sent once per connection; results refer to them by ID.
     inserted when it returns: "," became ",，". The client waits for that
     key's result within the key budget and inserts the commit inside
     `handleEvent:`, as Squirrel does. On timeout the key stays eaten, is
-    marked so the app doesn't type it, and the commit replaces the mark
-    when it arrives.
+    marked (including under Shift/Caps Lock, with the same sequence guard
+    against earlier replies) so the app doesn't type it, and the commit
+    replaces the mark when it arrives.
   - **Unknown state after focus, mode toggle, commit or local finish:**
     `FocusIn` has no sequence number, so the client follows it with a
     sequenced `Clear` and treats the policy as unknown (`spec == nil`) until

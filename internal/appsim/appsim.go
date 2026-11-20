@@ -89,7 +89,7 @@ type App struct {
 	CharWidth float64
 
 	text, marked []rune
-	changed      bool // text or marked text changed during this key
+	inserted     bool // text was inserted during this key
 	pending      int  // turns until the text is laid out; 0 when laid out
 	laid         Rect // the caret of the last layout
 
@@ -116,12 +116,12 @@ func New(p Profile, origin Rect) *App {
 // reports whether it handled the key. A key it doesn't handle is typed;
 // one it handles may be typed anyway (TypesEatenKey).
 func (a *App) KeyDown(r rune, handle func() bool) bool {
-	a.changed = false
+	a.inserted = false
 	handled := handle()
 	switch {
 	case !handled:
 		a.typeKey(r)
-	case a.TypesEatenKey && !a.changed && len(a.marked) == 0:
+	case a.TypesEatenKey && !a.inserted && len(a.marked) == 0:
 		a.typeKey(r)
 		a.Leaked++
 	}
@@ -143,7 +143,6 @@ func (a *App) Turn() {
 }
 
 func (a *App) touch() {
-	a.changed = true
 	a.pending = a.LayoutTurns
 	if a.pending == 0 {
 		a.laid = a.TrueCaret()
@@ -159,6 +158,7 @@ func (a *App) Candidates(r *ipc.Result) { a.Shown = len(r.Candidates) }
 func (a *App) Commit(text []byte) {
 	a.text = append(a.text, []rune(string(text))...)
 	a.marked = a.marked[:0]
+	a.inserted = true
 	a.touch()
 	a.reenter()
 }
