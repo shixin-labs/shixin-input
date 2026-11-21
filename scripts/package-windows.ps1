@@ -82,8 +82,8 @@ function WaitFreshTOTPWindow() {
         Start-Sleep -Seconds ([Math]::Max(1,$waitSec))
     }
 }
-function InvokeCodeSignTool([string[]]$commandArgs) {
-    WaitFreshTOTPWindow
+function InvokeCodeSignTool([string[]]$commandArgs,[switch]$UseTOTP) {
+    if ($UseTOTP) { WaitFreshTOTPWindow }
     $startWin=[long][Math]::Floor([DateTimeOffset]::UtcNow.ToUnixTimeSeconds() / 30)
     $start=[Diagnostics.ProcessStartInfo]::new($Java)
     $start.WorkingDirectory=$CodeSignTool
@@ -100,15 +100,28 @@ function InvokeCodeSignTool([string[]]$commandArgs) {
     $outTask=$process.StandardOutput.ReadToEndAsync()
     $errTask=$process.StandardError.ReadToEndAsync()
     $process.WaitForExit()
-    $endWin=[long][Math]::Floor([DateTimeOffset]::UtcNow.ToUnixTimeSeconds() / 30)
-    $script:lastCodeSignWindow=[Math]::Max($startWin,$endWin)
+    if ($UseTOTP) {
+        $endWin=[long][Math]::Floor([DateTimeOffset]::UtcNow.ToUnixTimeSeconds() / 30)
+        $script:lastCodeSignWindow=[Math]::Max($startWin,$endWin)
+    }
     $stdout=$outTask.GetAwaiter().GetResult()
     $stderr=$errTask.GetAwaiter().GetResult()
     $combined=($stdout + "`n" + $stderr).Trim()
-    if ($process.ExitCode -ne 0 -or $combined -match '(?m)^(Error|Exception)\b|Exception:|Error:|Missing required option|Unmatched argument') {
+    if ($process.ExitCode -ne 0 -or $combined -match '(?m)^(Error|Exception)\b|Exception:|Error:|Missing required option|Unmatched argument|code object is a malware') {
         throw "CodeSignTool $($commandArgs[0]) failed (exit $($process.ExitCode)): $(Redact $combined)"
     }
     return (Redact $combined)
+}
+$script:codeSignScanNeeded=$false
+if ($CodeSignTool) {
+    $scanSettings=InvokeCodeSignTool @(
+        'get_scan_settings',
+        "-username=$env:ES_USERNAME",
+        "-password=$env:ES_PASSWORD",
+        "-credential_id=$env:ES_CREDENTIAL_ID"
+    )
+    $script:codeSignScanNeeded=$scanSettings -notmatch '\bfalse\b'
+    Write-Host "SSL.com eSigner ready (pre-sign malware scan: $($script:codeSignScanNeeded))"
 }
 function Manifest([string]$path) {
     & $ManifestTool -nologo -manifest "$root/packaging/windows/setup.manifest" "-outputresource:$path;#1"
@@ -127,7 +140,7 @@ function Sign([string]$path) {
         $stageOut=Join-Path ([IO.Path]::GetDirectoryName($path)) ('sign-' + [Guid]::NewGuid().ToString('N'))
         New-Item -ItemType Directory -Force $stageOut | Out-Null
         try {
-            $output=InvokeCodeSignTool @(
+            $output=InvokeCodeSignTool -UseTOTP @(
                 'sign',
                 "-username=$env:ES_USERNAME",
                 "-password=$env:ES_PASSWORD",
@@ -168,9 +181,20 @@ function SignBatch([IO.FileInfo[]]$files) {
             $key=$f.Name.ToLowerInvariant()
             if ($seen.ContainsKey($key)) { throw "Duplicate filename in batch signing: $($f.Name)" }
             $seen[$key]=$f.FullName
-            Copy-Item $f.FullName (Join-Path $stageIn $f.Name)
+            $staged=Join-Path $stageIn $f.Name
+            Copy-Item $f.FullName $staged
+            if ($script:codeSignScanNeeded) {
+                $null=InvokeCodeSignTool @(
+                    'scan_code',
+                    "-username=$env:ES_USERNAME",
+                    "-password=$env:ES_PASSWORD",
+                    "-credential_id=$env:ES_CREDENTIAL_ID",
+                    '-program_name=Shixin Input',
+                    "-input_file_path=$staged"
+                )
+            }
         }
-        $output=InvokeCodeSignTool @(
+        $output=InvokeCodeSignTool -UseTOTP @(
             'batch_sign',
             "-username=$env:ES_USERNAME",
             "-password=$env:ES_PASSWORD",
